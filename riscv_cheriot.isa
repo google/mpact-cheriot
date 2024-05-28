@@ -1,0 +1,667 @@
+// This file contains the ISA description for the RiscV32G architecture.
+
+includes {
+#include "absl/functional/bind_front.h"
+}
+
+// First disasm field is 18 char wide and left justified.
+disasm widths = {-18};
+
+int global_latency = 0;
+
+isa RiscVCheriot {
+  namespace mpact::sim::cheriot::isa32;
+  slots { riscv32_cheriot; }
+}
+
+// Basic integer ALU instructions, part of the RiscV 32i subset.
+slot riscv32i {
+  includes {
+    #include "cheriot/riscv_cheriot_i_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    addi{: rs1, I_imm12 : rd},
+      disasm: "addi", "%rd, %rs1, %I_imm12",
+      semfunc: "&RiscVIAdd";
+    slti{: rs1, I_imm12 : rd},
+      disasm: "slti", "%rd, %rs1, %I_imm12",
+      semfunc: "&RiscVISlt";
+    sltiu{: rs1, I_imm12 : rd},
+      disasm: "sltiu", "%rd, %rs1, %I_imm12",
+      semfunc: "&RiscVISltu";
+    andi{: rs1, I_imm12 : rd},
+      disasm: "andi", "%rd, %rs1, %I_imm12",
+      semfunc: "&RiscVIAnd";
+    ori{: rs1, I_imm12 : rd},
+      disasm: "ori", "%rd, %rs1, %I_imm12",
+      semfunc: "&RiscVIOr";
+    xori{: rs1, I_imm12 : rd},
+      disasm: "xori", "%rd, %rs1, %I_imm12",
+      semfunc: "&RiscVIXor";
+    slli{: rs1, I_uimm5 : rd},
+      disasm: "slli", "%rd, %rs1, 0x%(I_uimm5:x)",
+      semfunc: "&RiscVISll";
+    srli{: rs1, I_uimm5 : rd},
+      disasm: "srli", "%rd  %rs1, 0x%(I_uimm5:x)",
+      semfunc: "&RiscVISrl";
+    srai{: rs1, I_uimm5 : rd},
+      disasm: "srai", "%rd, %rs1, 0x%(I_uimm5:x)",
+      semfunc: "&RiscVISra";
+    lui{: U_imm20 : rd},
+      disasm: "lui", "%rd, 0x%(U_imm20:8x)",
+      semfunc: "&RiscVILui";
+    add{: rs1, rs2 : rd},
+      disasm: "add", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVIAdd";
+    slt{: rs1, rs2 : rd},
+      disasm: "slt", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVISlt";
+    sltu{: rs1, rs2 : rd},
+      disasm: "sltu", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVISltu";
+    and{: rs1, rs2 : rd},
+      disasm: "and", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVIAnd";
+    or{: rs1, rs2 : rd},
+      disasm: "or", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVIOr";
+    xor{: rs1, rs2 : rd},
+      disasm: "xor", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVIXor";
+    sll{: rs1, rs2 : rd},
+      disasm: "sll", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVISll";
+    srl{: rs1, rs2 : rd},
+      disasm: "srl", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVISrl";
+    sub{: rs1, rs2 : rd},
+      disasm: "sub", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVISub";
+    sra{: rs1, rs2 : rd},
+      disasm: "sra", "%rd, %rs1, %rs2",
+      semfunc: "&RiscVISra";
+    nop{},
+      disasm: "nop",
+      semfunc: "&RiscVINop";
+    hint{},
+      disasm: "hint",
+      semfunc: "&RiscVINop";
+    beq{: rs1, rs2, B_imm12 : },
+      disasm: "beq", "%rs1, %rs2, %(@+B_imm12:08x)",
+      semfunc: "&RiscVIBeq";
+    bne{: rs1, rs2, B_imm12 : },
+      disasm: "bne", "%rs1, %rs2, %(@+B_imm12:08x)",
+      semfunc: "&RiscVIBne";
+    blt{: rs1, rs2, B_imm12 : },
+      disasm: "blt", "%rs1, %rs2, %(@+B_imm12:08x)",
+      semfunc: "&RiscVIBlt";
+    bltu{: rs1, rs2, B_imm12 : },
+      disasm: "bltu", "%rs1, %rs2, %(@+B_imm12:08x)",
+      semfunc: "&RiscVIBltu";
+    bge{: rs1, rs2, B_imm12 : },
+      disasm: "bge", "%rs1, %rs2, %(@+B_imm12:08x)",
+      semfunc: "&RiscVIBge";
+    bgeu{: rs1, rs2, B_imm12 : },
+      disasm: "bgeu", "%rs1, %rs2, %(@+B_imm12:08x)",
+      semfunc: "&RiscVIBgeu";
+    lw{(: cs1, I_imm12), (: : rd)},
+      disasm: "clw", "%rd, %I_imm12(%cs1)",
+      semfunc: "&RiscVILw", "&RiscVILwChild";
+    lh{(: cs1, I_imm12 :), (: : rd)},
+      disasm: "clh", "%rd, %I_imm12(%cs1)",
+      semfunc: "&RiscVILh", "&RiscVILhChild";
+    lhu{(: cs1, I_imm12 :), (: : rd)},
+      disasm: "clhu", "%rd, %I_imm12(%cs1)",
+      semfunc: "&RiscVILhu", "&RiscVILhuChild";
+    lb{(: cs1, I_imm12 :), (: : rd)},
+      disasm: "clb", "%rd, %I_imm12(%cs1)",
+      semfunc: "&RiscVILb", "&RiscVILbChild";
+    lbu{(: cs1, I_imm12 :), (: : rd)},
+      disasm: "clbu", "%rd, %I_imm12(%cs1)",
+      semfunc: "&RiscVILbu", "&RiscVILbuChild";
+    sw{: cs1, S_imm12, rs2 : },
+      disasm: "csw", "%rs2, %S_imm12(%cs1)",
+      semfunc: "&RiscVISw";
+    sh{: cs1, S_imm12, rs2 : },
+      disasm: "csh", "%rs2, %S_imm12(%cs1)",
+      semfunc: "&RiscVISh";
+    sb{: cs1, S_imm12, rs2 : },
+      disasm: "csb", "%rs2, %S_imm12(%cs1)",
+      semfunc: "&RiscVISb";
+    fence{: I_imm12 : },
+      disasm: "fence",
+      semfunc: "&RiscVIFence";
+    ecall{},
+      disasm: "ecall",
+      semfunc: "&RiscVIEcall";
+    ebreak{},
+      disasm: "ebreak",
+      semfunc: "&RiscVIEbreak";
+  }
+}
+
+slot cheriot {
+  includes {
+    #include "cheriot/riscv_cheriot_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    cheriot_auicgp{: cgp, S_imm20 : cd},
+      disasm: "auicgp", "%cd, 0x%(S_imm20:08x)",
+      semfunc: "&CheriotAuicap";
+    cheriot_auipcc{: pcc, S_imm20 : cd},
+      disasm: "auipcc", "%cd, 0x%(S_imm20:08x)",
+      semfunc: "&CheriotAuicap";
+    cheriot_andperm{: cs1, rs2 : cd},
+      disasm: "candperm", "%cd, %cs1, %rs2",
+      semfunc: "&CheriotCAndPerm";
+    cheriot_cleartag{: cs1 : cd},
+      disasm: "ccleartag", "%cd, %cs1",
+      semfunc: "&CheriotCClearTag";
+    cheriot_getaddr{: cs1 : rd},
+      disasm: "cgetaddr", "%rd, %cs1",
+      semfunc: "&CheriotCGetAddr";
+    cheriot_getbase{: cs1 : rd},
+      disasm: "cgetbase", "%rd, %cs1",
+      semfunc: "&CheriotCGetBase";
+    cheriot_gethigh{: cs1 : rd},
+      disasm: "cgethigh", "%rd, %cs1",
+      semfunc: "&CheriotCGetHigh";
+    cheriot_getlen{: cs1 : rd},
+      disasm: "cgetlen", "%rd, %cs1",
+      semfunc: "&CheriotCGetLen";
+    cheriot_getperm{: cs1 : rd},
+      disasm: "cgetperm", "%rd, %cs1",
+      semfunc: "&CheriotCGetPerm";
+    cheriot_gettag{: cs1 : rd},
+      disasm: "cgettag", "%rd, %cs1",
+      semfunc: "&CheriotCGetTag";
+    cheriot_gettop{: cs1 : rd},
+      disasm: "cgettop", "%rd, %cs1",
+      semfunc: "&CheriotCGetTop";
+    cheriot_gettype{: cs1 : rd},
+      disasm: "cgettype", "%rd, %cs1",
+      semfunc: "&CheriotCGetType";
+    cheriot_incaddr{: cs1, rs2 : cd},
+      disasm: "cincaddr", "%cd, %cs1, %rs2",
+      semfunc: "&CheriotCIncAddr";
+    cheriot_incaddrimm{: cs1, I_imm12 : cd},
+      disasm: "cincaddrimm", "%cd, %cs1, 0x%(I_imm12:08x)",
+      semfunc: "&CheriotCIncAddr";
+    cheriot_jal{: J_imm20 : cd},
+      disasm: "cjal", "%cd, 0x%(J_imm20:08x)",
+      semfunc: "&CheriotCJal";
+    cheriot_j{: J_imm20 : },
+      disasm: "cj", "0x%(J_imm20:08x)",
+      semfunc: "&CheriotCJ";
+    cheriot_jalr{: cs1, J_imm12 : cd},
+      disasm: "cjalr", "%cd, %cs1, 0x%(J_imm12:08x)",
+      semfunc: "&CheriotCJalr";
+    cheriot_jr{: cs1, J_imm12 : },
+      disasm: "cjalr", "%cs1, 0x%(J_imm12:08x)",
+      semfunc: "&CheriotCJr";
+    cheriot_lc{(: cs1, I_imm12 :),(: : cd)},
+      disasm: "clc", "%cd, %cs1, 0x%(I_imm12:08x)",
+      semfunc: "&CheriotCLc", "&CheriotCLcChild";
+    cheriot_move{: cs1 : cd},
+      disasm: "cmove", "%cd, %cs1",
+      semfunc: "&CheriotCMove";
+    cheriot_representablealignmentmask{: rs1 : rd},
+      disasm: "crepresentablealignmentmask", "%rd, %rs1",
+      semfunc: "&CheriotCRepresentableAlignmentMask";
+    cheriot_roundrepresentablelength{: rs1 : rd},
+      disasm: "croundrepresentablelength", "%rd, %rs1",
+      semfunc: "&CheriotCRoundRepresentableLength";
+    cheriot_sc{: cs1, S_imm12, cs2 :},
+      disasm: "csc", "%cs2, %S_imm12(%cs1)",
+      semfunc: "&CheriotCSc";
+    cheriot_seal{: cs1, cs2 : cd},
+      disasm: "cseal", "%cd, %cs1, %cs2",
+      semfunc: "&CheriotCSeal";
+    cheriot_setaddr{: cs1, rs2 : cd},
+      disasm: "csetaddr", "%cd, %cs1, %rs2",
+      semfunc: "&CheriotCSetAddr";
+    cheriot_setbounds{: cs1, rs2 : cd},
+      disasm: "csetbounds", "%cd, %cs1, %rs2",
+      semfunc: "&CheriotCSetBounds";
+    cheriot_setboundsexact{: cs1, rs2 : cd},
+      disasm: "csetboundsexact", "%cd, %cs1, %rs2",
+      semfunc: "&CheriotCSetBoundsExact";
+    cheriot_setboundsimm{: cs1, I_uimm12 : cd},
+      disasm: "csetboundsimm", "%cd, %cs1, 0x%(I_uimm12:08x)",
+      semfunc: "&CheriotCSetBounds";
+    cheriot_setequalexact{: cs1, cs2 : rd},
+      disasm: "csetequalexact", "%rd, %cs1, %cs2",
+      semfunc: "&CheriotCSetEqualExact";
+    cheriot_sethigh{: cs1, rs2 : cd},
+      disasm: "csethigh", "%cd, %cs1, %rs2",
+      semfunc: "&CheriotCSetHigh";
+    cheriot_specialr{: scr : cd},
+      disasm: "cspecialrw", "%cd, %scr",
+      semfunc: "&CheriotCSpecialR";
+    cheriot_specialrw{: cs1, scr : cd, scr},
+      disasm: "cspecialrw", "%cd, %scr, %cs1",
+      semfunc: "&CheriotCSpecialRW";
+    cheriot_sub{: cs1, cs2 : cd},
+      disasm: "csub", "%cd, %cs1, %cs2",
+      semfunc: "&CheriotCSub";
+    cheriot_testsubset{: cs1, cs2 : rd},
+      disasm: "ctestsubset", "%rd, %cs1, %cs2",
+      semfunc: "&CheriotCTestSubset";
+    cheriot_unseal{: cs1, cs2 : cd},
+      disasm: "cunseal", "%cd, %cs1, %cs2",
+      semfunc: "&CheriotCUnseal";
+  }
+}
+
+// Privileged instructions.
+slot privileged {
+  includes {
+    #include "cheriot/riscv_cheriot_priv_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    mret{: : },
+      disasm: "mret",
+      semfunc: "&RiscVPrivMRet";
+    wfi{},
+      disasm: "wfi",
+      semfunc: "&RiscVPrivWfi";
+  }
+}
+
+// Instruction fence.
+slot zfencei {
+  includes {
+    #include "cheriot/riscv_cheriot_zfencei_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    fencei{: I_imm12 : },
+      disasm: "fence.i",
+      semfunc: "&RiscVZFencei";
+  }
+}
+
+// RiscV32 multiply/divide instructions.
+slot riscv32m {
+  includes {
+    #include "cheriot/riscv_cheriot_m_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    mul{: rs1, rs2 : rd},
+      disasm: "mul", "%rd, %rs1, %rs2",
+      semfunc: "&MMul";
+    mulh{: rs1, rs2 : rd},
+      disasm: "mulh", "%rd, %rs1, %rs2",
+      semfunc: "&MMulh";
+    mulhu{: rs1, rs2: rd},
+      disasm: "mulhu", "%rd, %rs1, %rs2",
+      semfunc: "&MMulhu";
+    mulhsu{: rs1, rs2: rd},
+      disasm: "mulhsu", "%rd, %rs1, %rs2",
+      semfunc: "&MMulhsu";
+    div{: rs1, rs2 : rd},
+      disasm: "div", "%rd, %rs1, %rs2",
+      semfunc: "&MDiv";
+    divu{: rs1, rs2 : rd},
+      disasm: "divu", "%rd, %rs1, %rs2",
+      semfunc: "&MDivu";
+    rem{: rs1, rs2 : rd},
+      disasm: "rem", "%rd, %rs1, %rs2",
+      semfunc: "&MRem";
+    remu{: rs1, rs2 : rd},
+      disasm: "remu", "%rd, %rs1, %rs2",
+      semfunc: "&MRemu";
+  }
+}
+
+// The RiscV architecture allows for different subsets of the AMO instructions
+// to be implemented. The following slot definitions define these subsets.
+
+// RiscV atomic memory instructions subset AMO None.
+slot riscv32_amo_none {
+  includes {
+    #include "cheriot/riscv_cheriot_a_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    lrw{(: rs1, A_aq, A_rl :),(: : rd)},
+            semfunc: "&ALrw", "&RiscVILwChild";
+    scw{(: rs1, rs2, A_aq, A_rl :), (: : rd)},
+            semfunc: "&AScw", "&RiscVILwChild";
+  }
+}
+
+// RiscV atomic memory instructions subset AMO swap.
+slot riscv32_amo_swap : riscv32_amo_none {
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    amoswapw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmoswapw", "&RiscVILwChild";
+  }
+}
+
+// RiscV atomic memory instructions subset AMO logical.
+slot riscv32_amo_logical : riscv32_amo_swap {
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    amoandw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmoandw", "&RiscVILwChild";
+    amoorw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmoorw", "&RiscVILwChild";
+    amoxorw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmoxorw", "&RiscVILwChild";
+  }
+}
+
+// RiscV atomic memory instructions subset AMO arithmetic.
+slot riscv32_amo_arithmetic : riscv32_amo_logical {
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    amoaddw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmoaddw", "&RiscVILwChild";
+    amomaxw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmomaxw", "&RiscVILwChild";
+    amomaxuw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmomaxuw", "&RiscVILwChild";
+    amominw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmominw", "&RiscVILwChild";
+    amominuw{(: rs1, rs2, A_aq, A_rl: ), (: : rd)},
+            semfunc: "&AAmominuw", "&RiscVILwChild";
+  }
+}
+
+// RiscV32 CSR manipulation instructions.
+slot zicsr {
+  includes {
+    #include "cheriot/riscv_cheriot_zicsr_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    csrrw{: rs1, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrw",
+      disasm: "csrrw", "%rd, %csr, %rs1";
+    csrrs{: rs1, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrs",
+      disasm: "csrrs", "%rd, %csr, %rs1";
+    csrrc{: rs1, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrc",
+      disasm: "csrrc", "%rd, %csr, %rs1";
+    csrrs_nr{: rs1, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrs",
+      disasm: "csrrs", "%csr, %rs1";
+    csrrc_nr{: rs1, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrc",
+      disasm: "csrrc", "%csr, %rs1";
+    csrrw_nr{: rs1, csr : csr},
+      semfunc: "&RiscVZiCsrrwNr", // rd == 0 (x0).
+      disasm: "csrrw", "%csr, %rs1";
+    csrrs_nw{: csr : rd},
+      semfunc: "&RiscVZiCsrrNw", // rs1 == 0 (x0).
+      disasm: "csrrs", "%rd, %csr";
+    csrrc_nw{: csr : rd},
+      semfunc: "&RiscVZiCsrrNw", // rs1 == 0 (x0).
+      disasm: "csrrc", "%rd, %csr";
+    csrrwi{: CSR_uimm5, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrw",
+      disasm: "csrrwi", "%rd, %csr, %CSR_uimm5";
+    csrrsi{: CSR_uimm5, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrs",
+      disasm: "csrrsi", "%rd, %csr, %CSR_uimm5";
+    csrrci{: CSR_uimm5, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrc",
+      disasm: "csrrci", "%rd, %csr, %CSR_uimm5";
+    csrrsi_nr{: CSR_uimm5, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrs",
+      disasm: "csrrsi", "%csr, %CSR_uimm5";
+    csrrci_nr{: CSR_uimm5, csr : rd, csr},
+      semfunc: "&RiscVZiCsrrc",
+      disasm: "csrrci", "%csr, %CSR_uimm5";
+    csrrwi_nr{: CSR_uimm5, csr : csr},
+      semfunc: "&RiscVZiCsrrwNr",  // rd == 0 (x0).
+      disasm: "csrrwi", "%csr, %CSR_uimm5";
+    csrrsi_nw{: csr : rd},
+      semfunc: "&RiscVZiCsrrNw", // uimm5 == 0.
+      disasm: "csrrsi", "%rd, %csr, 0";
+    csrrci_nw{: csr : rd},
+      semfunc: "&RiscVZiCsrrNw", // uimm5 == 0.
+      disasm: "csrrwi", "%rd, %csr, 0";
+  }
+}
+
+// RiscV32 F (single precision floating point) instructions.
+slot riscv32f {
+  includes {
+    #include "cheriot/riscv_cheriot_f_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  opcodes {
+    flw{(: rs1, I_imm12 : ), (: : frd)},
+      semfunc: "&RiscVILw", "&RiscVIFlwChild",
+      disasm: "flw", "%frd, %I_imm12(%rs1)";
+    fsw{: rs1, S_imm12, frs2},
+      semfunc: "&RiscVFSw",
+      disasm: "fsw", "%frs2, %S_imm12(%rs1)";
+    fadd_s{: frs1, frs2, rm : frd},
+            semfunc: "&RiscVFAdd",
+      disasm: "fadd", "%frd, %frs1, %frs2";
+    fsub_s{: frs1, frs2, rm : frd},
+            semfunc: "&RiscVFSub",
+      disasm: "fsub", "%frd, %frs1, %frs2";
+    fmul_s{: frs1, frs2, rm : frd},
+            semfunc: "&RiscVFMul",
+      disasm: "fmul", "%frd, %frs1, %frs2";
+    fdiv_s{: frs1, frs2, rm : frd},
+            semfunc: "&RiscVFDiv",
+      disasm: "fdiv", "%frd, %frs1, %frs2";
+    fsqrt_s{: frs1, rm : frd},
+            semfunc: "&RiscVFSqrt",
+      disasm: "fsqrt", "%frd, %frs1";
+    fmin_s{: frs1, frs2 : frd, fflags},
+            semfunc: "&RiscVFMin",
+      disasm: "fmin", "%frd, %frs1, %frs2";
+    fmax_s{: frs1, frs2 : frd, fflags},
+            semfunc: "&RiscVFMax",
+      disasm: "fmax", "%frd, %frs1, %frs2";
+    fmadd_s{: frs1, frs2, frs3, rm : frd, fflags},
+      semfunc: "&RiscVFMadd",
+      disasm: "fmadd", "%frd, %frs1, %frs2, %frs3";
+    fmsub_s{: frs1, frs2, frs3, rm : frd, fflags},
+      semfunc: "&RiscVFMsub",
+      disasm: "fmsub", "%frd, %frs1, %frs2, %frs3";
+    fnmadd_s{: frs1, frs2, frs3, rm : frd, fflags},
+      semfunc: "&RiscVFNmadd",
+      disasm: "fnmadd", "%frd, %frs1, %frs2, %frs3";
+    fnmsub_s{: frs1, frs2, frs3, rm : frd, fflags},
+      semfunc: "&RiscVFNmsub",
+      disasm: "fnmsub", "%frd, %frs1, %frs2, %frs3";
+    fcvt_ws{: frs1, rm : rd, fflags},
+            semfunc: "&RiscVFCvtWs",
+      disasm: "fcvt.w.s", "%rd, %frs1";
+    fcvt_sw{: rs1, rm : frd},
+            semfunc: "&RiscVFCvtSw",
+      disasm: "fcvt.s.w", "%frd, %rs1";
+    fcvt_wus{: frs1, rm : rd, fflags},
+            semfunc: "&RiscVFCvtWus",
+      disasm: "fcvt.wu.s", "%rd, %frs1";
+    fcvt_swu{: rs1, rm : frd},
+            semfunc: "&RiscVFCvtSwu",
+      disasm: "fcvt.s.wu", "%frd, %rs1";
+    fsgnj_s{: frs1, frs2 : frd},
+            semfunc: "&RiscVFSgnj",
+      disasm: "fsgn.s", "%frd, %frs1, %frs2";
+    fsgnjn_s{: frs1, frs2 : frd},
+            semfunc: "&RiscVFSgnjn",
+      disasm: "fsgnjx.s", "%frd, %frs1, %frs2";
+    fsgnjx_s{: frs1, frs2 : frd},
+            semfunc: "&RiscVFSgnjx",
+      disasm: "fsgnjx.s", "%frd, %frs1, %frs2";
+    fmv_xw{: frs1 : rd},
+      disasm: "mv.x.w", "%rd, %frs1",
+      semfunc: "&RiscVFMvxw";
+    fmv_wx{: rs1 : frd},
+      disasm: "mv.w.x", "%frd, %rs1",
+      semfunc: "&RiscVFMvwx";
+    fcmpeq_s{: frs1, frs2 : rd, fflags},
+      semfunc: "&RiscVFCmpeq",
+      disasm: "fcmpeq", "%rd, %frs1, %frs2";
+    fcmplt_s{: frs1, frs2 : rd, fflags},
+      semfunc: "&RiscVFCmplt",
+      disasm: "fcmplt", "%rd, %frs1, %frs2";
+    fcmple_s{: frs1, frs2 : rd, fflags},
+      semfunc: "&RiscVFCmple",
+      disasm: "fcmple", "%rd, %frs1, %frs2";
+    fclass_s{: frs1 : rd},
+      semfunc: "&RiscVFClass",
+      disasm: "fclass", "%rd, %frs1";
+  }
+}
+
+// RISCV32 C (compact instructions).
+slot riscv32c {
+  default size = 2;
+  default latency = global_latency;
+  opcodes {
+    clwsp{(: c2, I_ci_uimm6x4 : ), (: : rd)},
+      disasm: "c.lw", "%rd, %I_ci_uimm6x4(%c2)",
+      semfunc: "&RiscVILw", "&RiscVILwChild";
+    cflwsp{(: c2, I_ci_uimm6x4 : ), (: : frd)},
+      disasm: "c.flw", "%frd, %I_ci_uimm6x4(%c2)",
+      semfunc: "&RiscVILw", "&RiscVILwChild";
+    // Reused for clc
+    cldsp{(: c2, I_ci_uimm6x8 : ), (: : cd)},
+      disasm: "c.clc", "%cd, %I_ci_uimm6x8(%c2)",
+      semfunc: "&CheriotCLc", "&CheriotCLcChild";
+    // cfldsp{(: x2, I_ci_uimm6x8 : ), (: : drd)},
+    //  disasm: "fld", "%drd, %I_ci_uimm6x8(%x2)",
+    //  semfunc: "&RV64::RiscVILd", "&RV64::RiscVILdChild";
+    cswsp{: c2, I_css_uimm6x4, crs2 : },
+      disasm: "c.csw", "%crs2, %I_css_uimm6x4(%c2)",
+      semfunc: "&RiscVISw";
+    cfswsp{: c2, I_css_uimm6x4, cfrs2 : },
+      disasm: ".cfsw", "%cfrs2, %I_css_uimm6x4(%c2)",
+      semfunc: "&RiscVISw";
+    // Reused for csc
+    csdsp{: c2, I_css_uimm6x8, ccs2 : },
+      disasm: "c.csc", "%ccs2, %I_css_uimm6x8(%c2)",
+      semfunc: "&CheriotCSc";
+    // cfsdsp{: x2, I_css_uimm6x8, rdrs2 : },
+    //   disasm: "fsd", "%rdrs2, %I_css_uimm6x8(%x2)",
+    //   semfunc: "&RV64::RiscVISd";
+    clw{(: c3rs1, I_cl_uimm5x4 : ), (: : c3rd)},
+      disasm: ".clw", "%c3rd, %I_cl_uimm5x4(%c3rs1)",
+      semfunc: "&RiscVILw", "&RiscVILwChild";
+    // Reused for clc
+    cld{(: c3cs1, I_cl_uimm5x8 : ), (: : c3cd)},
+      disasm: "c.clc", "%c3cd, %I_cl_uimm5x8(%c3cs1)",
+      semfunc: "&CheriotCLc", "&CheriotCLcChild";
+    // cfld{(: c3rs1, I_cl_uimm5x8 : ), (: : c3drd)},
+    //   disasm: "fld", "%c3drd, %I_cl_uimm5x8(%c3rs1)",
+    //   semfunc: "&RV64::RiscVILd", "&RV64::RiscVILdChild";
+    csw{: c3rs1, I_cl_uimm5x4, c3cs2 : },
+      disasm: "c.csw", "%c3cs2, %I_cl_uimm5x4(%c3rs1)",
+      semfunc: "&RiscVISw";
+    // Reused for csc
+    csd{: c3cs1, I_cl_uimm5x8, c3cs2 : },
+      disasm: "c.csc", "%c3cs2, %I_cl_uimm5x8(%c3cs1)",
+      semfunc: "&CheriotCSc";
+    // cfsd{: c3rs1, I_cl_uimm5x8, c3drs2 : },
+    //   disasm: "fsd", "%c3drs2, %I_cl_uimm5x8(%c3rs1)",
+    //   semfunc: "&RiscVDSd";
+    cheriot_cj{: I_cj_imm11, x0 :},
+      disasm: "c.j", "%(@+I_cj_imm11:08x)",
+      semfunc: "&CheriotCJ";
+    cheriot_cjal{: I_cj_imm11, x0 :  x1},
+      disasm: "c.jal", "%(@+I_cj_imm11:08x)",
+      semfunc: "&CheriotCJal";
+    cheriot_cjr{: crs1, x0 :},
+      disasm: "c.jr", "%crs1",
+      semfunc: "&CheriotCJr";
+    cheriot_cjalr{: crs1, x0 :  x1},
+      disasm: "c.jalr", "%crs1",
+      semfunc: "&CheriotCJalr";
+    cbeqz{: c3rs1, x0, I_cb_imm8 : },
+      disasm: "c.beqz", "%c3rs1, %(@+I_cb_imm8:08x)",
+      semfunc: "&RiscVIBeq";
+    cbnez{: c3rs1, x0, I_cb_imm8 : },
+      disasm: "c.bnez", "%c3rs1, %(@+I_cb_imm8:08x)",
+      semfunc: "&RiscVIBne";
+    cli{: x0, I_ci_imm6 : rd},
+      disasm: "c.li", "%rd, %I_ci_imm6",
+      semfunc: "&RiscVIAdd";
+    clui{: I_ci_imm6_12 : rd},
+      disasm: "c.lui", "%rd, 0x%(I_ci_imm6_12:08x)",
+      semfunc: "&RiscVILui";
+    caddi{: rd, I_ci_imm6 : rd},
+      disasm: "c.cincoffset", "%rd, %rd, %I_ci_imm6",
+      semfunc: "&RiscVIAdd";
+    // Reused for compact CIncAddressImmediate
+    caddi16sp{: c2, I_ci_imm6x16 : c2},
+      disasm: "c.cincoffset", "%c2, %c2, %(I_ci_imm6x16:d)",
+      semfunc: "&CheriotCIncAddr";
+    caddi4spn{: x2, I_ciw_uimm8x4 : c3cd},
+      disasm: "c.cincoffset", "%c3cd, %x2, %I_ciw_uimm8x4",
+      semfunc: "&CheriotCIncAddr";
+    cslli{: rd, I_ci_uimm6 : rd},
+      disasm: "c.slli", "%rd, %rd, 0x%(I_ci_uimm6:x)",
+      semfunc: "&RiscVISll";
+    csrli{: c3rs1, I_csh_uimm6 : c3rs1},
+      disasm: "c.srli", "%c3rs1, %c3rs1, 0x%(I_csh_uimm6:x)",
+      semfunc: "&RiscVISrl";
+    csrai{: c3rs1, I_csh_uimm6 : c3rs1},
+      disasm: "c.srai", "%c3rs1, %c3rs1, 0x%(I_csh_uimm6:x)",
+      semfunc: "&RiscVISra";
+    candi{: c3rs1, I_csh_imm6 : c3rs1},
+      disasm: "c.andi", "%c3rs1, %c3rs1, %I_csh_imm6",
+      semfunc: "&RiscVIAnd";
+    cmv{: crs2 , x0: rd},
+      disasm: "c.mv", "%rd, %crs2",
+      semfunc: "&RiscVIAdd";
+    cadd{: crs2, rd: rd},
+      disasm: "c.add", "%rd, %rd, %crs2",
+      semfunc: "&RiscVIAdd";
+    cand{: c3rs1, c3rs2 : c3rs1},
+      disasm: "c.and", "%c3rs1, %c3rs1, %c3rs2",
+      semfunc: "&RiscVIAnd";
+    cor{: c3rs1, c3rs2 : c3rs1},
+      disasm: "c.or", "%c3rs1, %c3rs1, %c3rs2",
+      semfunc: "&RiscVIOr";
+    cxor{: c3rs1, c3rs2 : c3rs1},
+      disasm: "c.xor", "%c3rs1, %c3rs1, %c3rs2",
+      semfunc: "&RiscVIXor";
+    csub{: c3rs1, c3rs2 : c3rs1},
+      disasm: "c.sub", "%c3rs1, %c3rs1, %c3rs2",
+      semfunc: "&RiscVISub";
+    cnop{},
+      disasm: "c.nop",
+      semfunc: "&RiscVINop";
+    cebreak{},
+      disasm: "c.ebreak",
+      semfunc: "&RiscVIEbreak";
+  }
+}
+
+// This should be the RiscV32 CHERIoT set.
+slot riscv32_cheriot : riscv32i, cheriot, riscv32_amo_arithmetic, riscv32c, 
+                       riscv32m, riscv32f, zicsr, privileged {
+  default size = 4;
+  default opcode =
+    disasm: "Illegal instruction at 0x%(@:08x)",
+    semfunc: "&RiscVIllegalInstruction";
+}
+
+
