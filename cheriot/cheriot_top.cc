@@ -334,15 +334,16 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
   // Step the simulator forward until the number of steps have been achieved, or
   // there is a halt request.
 
-  // This holds the value of the current pc, and post-loop, the address of
-  // the most recently executed instruction.
-  uint64_t pc;
+  // Clear the halt reason.
+  halt_reason_ = *HaltReason::kNone;
   // At the top of the loop this holds the address of the instruction to be
   // executed next. Post-loop it holds the address of the next instruction to
   // be executed.
   uint64_t next_pc = pcc_->data_buffer()->Get<uint32_t>(0);
+  // This holds the value of the current pc, and post-loop, the address of
+  // the most recently executed instruction.
+  uint64_t pc = next_pc;
   while (!halted_ && (count < num)) {
-    pc = next_pc;
     SetPc(pc);
     auto *inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
     // Set the next_pc to the next sequential instruction.
@@ -377,7 +378,10 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
         halt_reason_ = *HaltReason::kHardwareBreakpoint;
       }
     }
-    if (!halted_) continue;
+    if (!halted_) {
+      pc = next_pc;
+      continue;
+    }
     // If it's an action point, just step over and continue.
     if (halt_reason_ == *HaltReason::kActionPoint) {
       auto status = StepPastBreakpoint();
@@ -420,6 +424,7 @@ absl::Status CheriotTop::Run() {
     if (!status.ok()) return status;
   }
   run_status_ = RunStatus::kRunning;
+  halt_reason_ = *HaltReason::kNone;
   halted_ = false;
 
   // The simulator is now run in a separate thread so as to allow a user
@@ -428,15 +433,14 @@ absl::Status CheriotTop::Run() {
   run_halted_ = new absl::Notification();
   // The thread is detached so it executes without having to be joined.
   std::thread([this]() {
-    // This holds the value of the current pc, and post-loop, the address of
-    // the most recently executed instruction.
-    uint64_t pc;
     // At the top of the loop this holds the address of the instruction to be
     // executed next. Post-loop it holds the address of the next instruction to
     // be executed.
     uint64_t next_pc = pcc_->data_buffer()->Get<uint32_t>(0);
+    // This holds the value of the current pc, and post-loop, the address of
+    // the most recently executed instruction.
+    uint64_t pc = next_pc;
     while (!halted_) {
-      pc = next_pc;
       auto *inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
       SetPc(pc);
       // Set the PC destination operand to next_seq_pc. Any branch that is
@@ -474,7 +478,10 @@ absl::Status CheriotTop::Run() {
           halt_reason_ = *HaltReason::kHardwareBreakpoint;
         }
       }
-      if (!halted_) continue;
+      if (!halted_) {
+        pc = next_pc;
+        continue;
+      }
       // If it's an action point, just step over and continue executing, as
       // this is not a full breakpoint.
       if (halt_reason_ == *HaltReason::kActionPoint) {

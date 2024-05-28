@@ -15,7 +15,6 @@
 #include "cheriot/riscv_cheriot_instructions.h"
 
 #include <any>
-#include <bit>
 #include <cstdint>
 #include <type_traits>
 

@@ -655,6 +655,7 @@ void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
   // Update the PC from the mtvec_ capability. Update the address in case of
   // vectored mode.
   pcc()->CopyFrom(*mtcc_);
+  pcc()->set_address(trap_target);
   set_branch(true);
   // TODO(torerik): set next pc
   mstatus_->Submit();

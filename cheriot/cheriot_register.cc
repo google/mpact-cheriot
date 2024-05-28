@@ -294,6 +294,7 @@ void CheriotRegister::Expand(uint32_t address, uint32_t compressed, bool tag) {
   raw_ = compressed;
   is_dirty_ = false;
   is_null_ = false;
+  raw_ = compressed;
 }
 
 void CheriotRegister::Validate() {
