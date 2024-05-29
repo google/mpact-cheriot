@@ -233,31 +233,33 @@ absl::StatusOr<uint64_t> CheriotRenode::LoadExecutable(
     entry_pt = res.value();
   }
   auto res = program_loader_->GetSymbol("tohost");
-  // if 'tohost' is not found, just return entry_pt.
-  if (!res.ok()) return entry_pt;
-  // If there is a 'tohost' symbol, set up a write watchpoint on that address
-  // to catch writes that mark program exit.
-  uint64_t tohost_addr = res.value().first;
-  // Add to_host watchpoint that halts the execution when program exit is
-  // signaled.
-  auto *db = cheriot_top_->state()->db_factory()->Allocate<uint32_t>(2);
-  auto status = cheriot_top_->tagged_watcher()->SetStoreWatchCallback(
-      TaggedMemoryWatcher::AddressRange{tohost_addr,
-                                        tohost_addr + 2 * sizeof(uint32_t) - 1},
-      [this, tohost_addr, db](uint64_t addr, int sz) {
-        static DataBuffer *load_db = db;
-        if (load_db == nullptr) return;
-        tagged_memory_->Load(tohost_addr, load_db, nullptr, nullptr);
-        uint32_t code = load_db->Get<uint32_t>(0);
-        if (code & 0x1) {
-          // The return code is in the upper 31 bits.
-          code >>= 1;
-          LOG(INFO) << absl::StrCat(
-              "Simulation halting due to tohost write: exit ", absl::Hex(code));
-          (void)cheriot_top_->RequestHalt(HaltReason::kProgramDone, nullptr);
-          load_db->DecRef();
-        }
-      });
+  // Add watchpoint for tohost if the symbol exists.
+  if (!res.ok()) {
+    // If there is a 'tohost' symbol, set up a write watchpoint on that address
+    // to catch writes that mark program exit.
+    uint64_t tohost_addr = res.value().first;
+    // Add to_host watchpoint that halts the execution when program exit is
+    // signaled.
+    auto *db = cheriot_top_->state()->db_factory()->Allocate<uint32_t>(2);
+    auto status = cheriot_top_->tagged_watcher()->SetStoreWatchCallback(
+        TaggedMemoryWatcher::AddressRange{
+            tohost_addr, tohost_addr + 2 * sizeof(uint32_t) - 1},
+        [this, tohost_addr, db](uint64_t addr, int sz) {
+          static DataBuffer *load_db = db;
+          if (load_db == nullptr) return;
+          tagged_memory_->Load(tohost_addr, load_db, nullptr, nullptr);
+          uint32_t code = load_db->Get<uint32_t>(0);
+          if (code & 0x1) {
+            // The return code is in the upper 31 bits.
+            code >>= 1;
+            LOG(INFO) << absl::StrCat(
+                "Simulation halting due to tohost write: exit ",
+                absl::Hex(code));
+            (void)cheriot_top_->RequestHalt(HaltReason::kProgramDone, nullptr);
+            load_db->DecRef();
+          }
+        });
+  }
   // Add instruction profiler it hasn't already been added.
   if (inst_profiler_ == nullptr) {
     inst_profiler_ = new Profiler(*program_loader_, 2);
