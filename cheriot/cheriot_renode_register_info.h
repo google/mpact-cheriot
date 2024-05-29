@@ -19,7 +19,7 @@
 
 #include <vector>
 
-#include "third_party/mpact_renode/renode_debug_interface.h"
+#include "mpact/sim/util/renode/renode_debug_interface.h"
 
 namespace mpact {
 namespace sim {
@@ -30,7 +30,7 @@ namespace cheriot {
 
 class CheriotRenodeRegisterInfo {
  public:
-  using RenodeRegisterInfo = std::vector<renode::RenodeCpuRegister>;
+  using RenodeRegisterInfo = std::vector<util::renode::RenodeCpuRegister>;
 
   static const RenodeRegisterInfo &GetRenodeRegisterInfo();
 

@@ -25,7 +25,7 @@
 #include "absl/status/statusor.h"
 #include "cheriot/cheriot_renode_cli_top.h"
 #include "mpact/sim/generic/core_debug_interface.h"
-#include "third_party/mpact_renode/cli_forwarder.h"
+#include "mpact/sim/util/renode/cli_forwarder.h"
 
 // This file defines a class that forwards calls from the CLI to the class that
 // merges requests from the CLI and ReNode.
@@ -35,7 +35,7 @@ namespace sim {
 namespace cheriot {
 
 using ::mpact::sim::generic::AccessType;
-using ::mpact::sim::renode::CLIForwarder;
+using ::mpact::sim::util::renode::CLIForwarder;
 
 class CheriotCLIForwarder : public CLIForwarder {
  public:

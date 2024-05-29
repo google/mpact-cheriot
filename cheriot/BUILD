@@ -345,9 +345,6 @@ cc_library(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
-        "@com_google_mpact-renode//renode",
-        "@com_google_mpact-renode//renode:renode_debug_interface",
-        "@com_google_mpact-renode//renode:socket_cli",
         "@com_google_mpact-riscv//riscv:riscv_arm_semihost",
         "@com_google_mpact-riscv//riscv:riscv_clint",
         "@com_google_mpact-riscv//riscv:riscv_state",
@@ -358,6 +355,9 @@ cc_library(
         "@com_google_mpact-sim//mpact/sim/proto:component_data_cc_proto",
         "@com_google_mpact-sim//mpact/sim/util/memory",
         "@com_google_mpact-sim//mpact/sim/util/program_loader:elf_loader",
+        "@com_google_mpact-sim//mpact/sim/util/renode",
+        "@com_google_mpact-sim//mpact/sim/util/renode:renode_debug_interface",
+        "@com_google_mpact-sim//mpact/sim/util/renode:socket_cli",
         "@com_google_protobuf//:protobuf",
     ],
 )
@@ -368,7 +368,7 @@ cc_binary(
     linkstatic = True,
     deps = [
         ":cheriot_renode",
-        "@com_google_mpact-renode//renode",
+        "@com_google_mpact-sim//mpact/sim/util/renode",
     ],
 )
 

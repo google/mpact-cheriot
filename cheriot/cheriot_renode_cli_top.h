@@ -25,7 +25,7 @@
 #include "absl/status/statusor.h"
 #include "cheriot/cheriot_debug_interface.h"
 #include "cheriot/cheriot_top.h"
-#include "third_party/mpact_renode/renode_cli_top.h"
+#include "mpact/sim/util/renode/renode_cli_top.h"
 
 namespace mpact {
 namespace sim {
@@ -33,7 +33,7 @@ namespace cheriot {
 
 // This class extends the RenodeCLITop with a few features specific to the
 // CherIoT CLI.
-class CheriotRenodeCLITop : public renode::RenodeCLITop {
+class CheriotRenodeCLITop : public util::renode::RenodeCLITop {
  public:
   CheriotRenodeCLITop(CheriotTop *cheriot_top, bool wait_for_cli);
 

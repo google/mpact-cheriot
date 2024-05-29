@@ -17,14 +17,6 @@ workspace(name = "com_google_mpact-cheriot")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
-# MPACT-Sim repo
-http_archive(
-    name = "com_google_mpact-sim",
-    sha256 = "384daa4f4bcacf0552cebdb5b3001b51af19dfed3dfa3367de5e3babcd65511d",
-    strip_prefix = "mpact-sim-a3dbb21f3f3d3193a8d0b6667f1d0807d1dc4dd4",
-    url = "https://github.com/google/mpact-sim/archive/a3dbb21f3f3d3193a8d0b6667f1d0807d1dc4dd4.tar.gz"
-)
-
 # MPACT-RiscV repo
 http_archive(
     name = "com_google_mpact-riscv",
@@ -33,12 +25,13 @@ http_archive(
     url = "https://github.com/google/mpact-riscv/archive/a43a92ba38d8260f4207416e11721ceee7135624.tar.gz"
 )
 
-# MPACT-ReNode repo will go here.
-git_repository(
-  name = "com_google_mpact-renode",
-  branch = "main",
-  remote = "https://mpact.googlesource.com/mpact-renode",
-)
+load("@com_google_mpact-riscv//:repos.bzl, "mpact_riscv_repos")
+
+mpact_riscv_repos()
+
+load("@com_google_mpact-riscv//::deps.bzl, "mpact_riscv_deps")
+
+mpact_riscv_deps()
 
 load("@com_google_mpact-sim//:repos.bzl", "mpact_sim_repos")
 

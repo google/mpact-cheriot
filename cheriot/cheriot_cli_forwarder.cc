@@ -23,14 +23,14 @@
 #include "absl/status/statusor.h"
 #include "cheriot/cheriot_renode_cli_top.h"
 #include "mpact/sim/generic/core_debug_interface.h"
-#include "third_party/mpact_renode/cli_forwarder.h"
+#include "mpact/sim/util/renode/cli_forwarder.h"
 
 namespace mpact {
 namespace sim {
 namespace cheriot {
 
 using ::mpact::sim::generic::AccessType;
-using ::mpact::sim::renode::CLIForwarder;
+using ::mpact::sim::util::renode::CLIForwarder;
 using RunStatus = ::mpact::sim::generic::CoreDebugInterface::RunStatus;
 using HaltReasonValueType =
     ::mpact::sim::generic::CoreDebugInterface::HaltReasonValueType;

@@ -38,10 +38,10 @@
 #include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 #include "mpact/sim/util/memory/tagged_memory_interface.h"
 #include "mpact/sim/util/program_loader/elf_program_loader.h"
+#include "mpact/sim/util/renode/renode_debug_interface.h"
+#include "mpact/sim/util/renode/socket_cli.h"
 #include "riscv//riscv_arm_semihost.h"
 #include "riscv//riscv_clint.h"
-#include "third_party/mpact_renode/renode_debug_interface.h"
-#include "third_party/mpact_renode/socket_cli.h"
 
 // This file defines a wrapper class for the CheriotTop that adds Arm
 // semihosting. In addition, the .cc class defines a global namespace
@@ -55,7 +55,7 @@
 // a combined ReNode/CLI interface that manages the priorities and access of
 // ReNode and command line commands to the simulator control class.
 
-extern ::mpact::sim::renode::RenodeDebugInterface *CreateMpactSim(
+extern ::mpact::sim::util::renode::RenodeDebugInterface *CreateMpactSim(
     std::string name, ::mpact::sim::util::MemoryInterface *renode_sysbus);
 
 namespace mpact {
@@ -63,7 +63,6 @@ namespace sim {
 namespace cheriot {
 
 using ::mpact::sim::generic::DataBufferFactory;
-using ::mpact::sim::renode::SocketCLI;
 using ::mpact::sim::riscv::RiscVArmSemihost;
 using ::mpact::sim::riscv::RiscVClint;
 using ::mpact::sim::util::AtomicMemory;
@@ -72,8 +71,9 @@ using ::mpact::sim::util::MemoryInterface;
 using ::mpact::sim::util::SingleInitiatorRouter;
 using ::mpact::sim::util::TaggedFlatDemandMemory;
 using ::mpact::sim::util::TaggedMemoryInterface;
+using ::mpact::sim::util::renode::SocketCLI;
 
-class CheriotRenode : public renode::RenodeDebugInterface {
+class CheriotRenode : public util::renode::RenodeDebugInterface {
  public:
   // Supported IRQ request types.
   enum class IrqType {
@@ -94,7 +94,7 @@ class CheriotRenode : public renode::RenodeDebugInterface {
 
   using ::mpact::sim::generic::CoreDebugInterface::HaltReason;
   using ::mpact::sim::generic::CoreDebugInterface::RunStatus;
-  using RenodeCpuRegister = ::mpact::sim::renode::RenodeCpuRegister;
+  using RenodeCpuRegister = ::mpact::sim::util::renode::RenodeCpuRegister;
 
   // Constructor takes a name and a memory interface that is used for memory
   // transactions routed to the system bus.

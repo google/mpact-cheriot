@@ -25,7 +25,7 @@
 #include "absl/status/statusor.h"
 #include "cheriot/cheriot_debug_interface.h"
 #include "cheriot/cheriot_top.h"
-#include "third_party/mpact_renode/renode_cli_top.h"
+#include "mpact/sim/util/renode/renode_cli_top.h"
 
 namespace mpact {
 namespace sim {
@@ -33,7 +33,7 @@ namespace cheriot {
 
 CheriotRenodeCLITop::CheriotRenodeCLITop(CheriotTop *cheriot_top,
                                          bool wait_for_cli)
-    : renode::RenodeCLITop(cheriot_top, wait_for_cli),
+    : util::renode::RenodeCLITop(cheriot_top, wait_for_cli),
       cheriot_top_(cheriot_top) {}
 
 absl::StatusOr<size_t> CheriotRenodeCLITop::CLIReadTagMemory(uint64_t address,

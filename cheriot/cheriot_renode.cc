@@ -51,15 +51,15 @@
 #include "mpact/sim/util/memory/single_initiator_router.h"
 #include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 #include "mpact/sim/util/memory/tagged_memory_watcher.h"
+#include "mpact/sim/util/memory/tagged_to_untagged_memory_transactor.h"
+#include "mpact/sim/util/renode/renode_debug_interface.h"
 #include "riscv//riscv_arm_semihost.h"
 #include "riscv//riscv_clint.h"
 #include "riscv//riscv_state.h"
 #include "riscv//stoull_wrapper.h"
 #include "src/google/protobuf/text_format.h"
-#include "third_party/mpact_renode/renode_debug_interface.h"
-#include "third_party/mpact_renode/tagged_to_untagged_memory_transactor.h"
 
-::mpact::sim::renode::RenodeDebugInterface *CreateMpactSim(
+::mpact::sim::util::renode::RenodeDebugInterface *CreateMpactSim(
     std::string name, ::mpact::sim::util::MemoryInterface *renode_sysbus) {
   auto *top = new ::mpact::sim::cheriot::CheriotRenode(name, renode_sysbus);
   return top;
@@ -72,10 +72,10 @@ namespace cheriot {
 using ::mpact::sim::cheriot::RiscVCheriotMInstret;
 using ::mpact::sim::cheriot::RiscVCheriotMInstreth;
 using ::mpact::sim::proto::ComponentData;
-using ::mpact::sim::renode::TaggedToUntaggedMemoryTransactor;
 using ::mpact::sim::riscv::RiscVClint;
 using ::mpact::sim::util::AtomicMemoryOpInterface;
 using ::mpact::sim::util::TaggedMemoryWatcher;
+using ::mpact::sim::util::TaggedToUntaggedMemoryTransactor;
 
 using HaltReasonValueType =
     ::mpact::sim::generic::CoreDebugInterface::HaltReasonValueType;
