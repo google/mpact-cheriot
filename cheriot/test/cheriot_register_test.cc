@@ -349,6 +349,8 @@ TEST_F(CheriotRegisterTest, SealExecuteCapability) {
     if ((i == ObjectType::kSentry) ||
         (i == ObjectType::kInterruptDisablingSentry) ||
         (i == ObjectType::kInterruptEnablingSentry) ||
+        (i == ObjectType::kInterruptDisablingReturnSentry) ||
+        (i == ObjectType::kInterruptEnablingReturnSentry) ||
         (i == ObjectType::kSealedExecutable6) ||
         (i == ObjectType::kSealedExecutable7)) {
       EXPECT_TRUE(status.ok()) << status.message();
@@ -415,7 +417,7 @@ TEST_F(CheriotRegisterTest, CopyFrom) {
   // Copy from null capability.
   cap_reg()->ResetNull();
   cap_reg()->data_buffer()->Set<uint32_t>(0, kAddress);
-  cap_reg()->set_object_type(ObjectType::kReserved4);
+  cap_reg()->set_object_type(ObjectType::kReserved8);
   cap_reg()->set_reserved(1);
   cap_reg_copy->CopyFrom(*cap_reg());
   EXPECT_FALSE(cap_reg_copy->IsValid());
@@ -430,7 +432,7 @@ TEST_F(CheriotRegisterTest, CopyFrom) {
   // Copy from memory root capability.
   cap_reg()->ResetMemoryRoot();
   cap_reg()->data_buffer()->Set<uint32_t>(0, kAddress);
-  cap_reg()->set_object_type(ObjectType::kReserved4);
+  cap_reg()->set_object_type(ObjectType::kReserved8);
   cap_reg()->set_reserved(1);
   (void)cap_reg()->SetBounds(kBase, kAddress + 1);
   cap_reg_copy->CopyFrom(*cap_reg());
@@ -445,7 +447,7 @@ TEST_F(CheriotRegisterTest, CopyFrom) {
   // Copy from execute root capability.
   cap_reg()->ResetExecuteRoot();
   cap_reg()->data_buffer()->Set<uint32_t>(0, kAddress);
-  cap_reg()->set_object_type(ObjectType::kReserved4);
+  cap_reg()->set_object_type(ObjectType::kReserved8);
   cap_reg()->set_reserved(1);
   (void)cap_reg()->SetBounds(kBase, kAddress + 1);
   cap_reg_copy->CopyFrom(*cap_reg());
@@ -460,7 +462,7 @@ TEST_F(CheriotRegisterTest, CopyFrom) {
   // Copy from sealing root capability.
   cap_reg()->ResetSealingRoot();
   cap_reg()->data_buffer()->Set<uint32_t>(0, kAddress);
-  cap_reg()->set_object_type(ObjectType::kReserved4);
+  cap_reg()->set_object_type(ObjectType::kReserved8);
   cap_reg()->set_reserved(1);
   (void)cap_reg()->SetBounds(kBase, kAddress + 1);
   cap_reg_copy->CopyFrom(*cap_reg());

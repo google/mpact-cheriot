@@ -200,9 +200,18 @@ slot cheriot {
     cheriot_jalr{: cs1, J_imm12 : cd},
       disasm: "cjalr", "%cd, %cs1, 0x%(J_imm12:08x)",
       semfunc: "&CheriotCJalr";
+    cheriot_jalr_cra{: cs1, J_imm12 : cd},
+      disasm: "cjalr", "%cd, %cs1, 0x%(J_imm12:08x)",
+      semfunc: "&CheriotCJalrCra";
     cheriot_jr{: cs1, J_imm12 : },
       disasm: "cjalr", "%cs1, 0x%(J_imm12:08x)",
       semfunc: "&CheriotCJr";
+    cheriot_jr_cra{: cs1, J_imm12 : },
+      disasm: "cjalr", "%cs1, 0x%(J_imm12:08x)",
+      semfunc: "&CheriotCJrCra";
+    cheriot_jalr_zero{: cs1 :},
+      disasm: "cjalr", "czero, czero, 0",
+      semfunc: "&CheriotCJalrZero";
     cheriot_lc{(: cs1, I_imm12 :),(: : cd)},
       disasm: "clc", "%cd, %cs1, 0x%(I_imm12:08x)",
       semfunc: "&CheriotCLc", "&CheriotCLcChild";
@@ -442,95 +451,6 @@ slot zicsr {
   }
 }
 
-// RiscV32 F (single precision floating point) instructions.
-slot riscv32f {
-  includes {
-    #include "cheriot/riscv_cheriot_f_instructions.h"
-  }
-  default size = 4;
-  default latency = global_latency;
-  opcodes {
-    flw{(: rs1, I_imm12 : ), (: : frd)},
-      semfunc: "&RiscVILw", "&RiscVIFlwChild",
-      disasm: "flw", "%frd, %I_imm12(%rs1)";
-    fsw{: rs1, S_imm12, frs2},
-      semfunc: "&RiscVFSw",
-      disasm: "fsw", "%frs2, %S_imm12(%rs1)";
-    fadd_s{: frs1, frs2, rm : frd},
-            semfunc: "&RiscVFAdd",
-      disasm: "fadd", "%frd, %frs1, %frs2";
-    fsub_s{: frs1, frs2, rm : frd},
-            semfunc: "&RiscVFSub",
-      disasm: "fsub", "%frd, %frs1, %frs2";
-    fmul_s{: frs1, frs2, rm : frd},
-            semfunc: "&RiscVFMul",
-      disasm: "fmul", "%frd, %frs1, %frs2";
-    fdiv_s{: frs1, frs2, rm : frd},
-            semfunc: "&RiscVFDiv",
-      disasm: "fdiv", "%frd, %frs1, %frs2";
-    fsqrt_s{: frs1, rm : frd},
-            semfunc: "&RiscVFSqrt",
-      disasm: "fsqrt", "%frd, %frs1";
-    fmin_s{: frs1, frs2 : frd, fflags},
-            semfunc: "&RiscVFMin",
-      disasm: "fmin", "%frd, %frs1, %frs2";
-    fmax_s{: frs1, frs2 : frd, fflags},
-            semfunc: "&RiscVFMax",
-      disasm: "fmax", "%frd, %frs1, %frs2";
-    fmadd_s{: frs1, frs2, frs3, rm : frd, fflags},
-      semfunc: "&RiscVFMadd",
-      disasm: "fmadd", "%frd, %frs1, %frs2, %frs3";
-    fmsub_s{: frs1, frs2, frs3, rm : frd, fflags},
-      semfunc: "&RiscVFMsub",
-      disasm: "fmsub", "%frd, %frs1, %frs2, %frs3";
-    fnmadd_s{: frs1, frs2, frs3, rm : frd, fflags},
-      semfunc: "&RiscVFNmadd",
-      disasm: "fnmadd", "%frd, %frs1, %frs2, %frs3";
-    fnmsub_s{: frs1, frs2, frs3, rm : frd, fflags},
-      semfunc: "&RiscVFNmsub",
-      disasm: "fnmsub", "%frd, %frs1, %frs2, %frs3";
-    fcvt_ws{: frs1, rm : rd, fflags},
-            semfunc: "&RiscVFCvtWs",
-      disasm: "fcvt.w.s", "%rd, %frs1";
-    fcvt_sw{: rs1, rm : frd},
-            semfunc: "&RiscVFCvtSw",
-      disasm: "fcvt.s.w", "%frd, %rs1";
-    fcvt_wus{: frs1, rm : rd, fflags},
-            semfunc: "&RiscVFCvtWus",
-      disasm: "fcvt.wu.s", "%rd, %frs1";
-    fcvt_swu{: rs1, rm : frd},
-            semfunc: "&RiscVFCvtSwu",
-      disasm: "fcvt.s.wu", "%frd, %rs1";
-    fsgnj_s{: frs1, frs2 : frd},
-            semfunc: "&RiscVFSgnj",
-      disasm: "fsgn.s", "%frd, %frs1, %frs2";
-    fsgnjn_s{: frs1, frs2 : frd},
-            semfunc: "&RiscVFSgnjn",
-      disasm: "fsgnjx.s", "%frd, %frs1, %frs2";
-    fsgnjx_s{: frs1, frs2 : frd},
-            semfunc: "&RiscVFSgnjx",
-      disasm: "fsgnjx.s", "%frd, %frs1, %frs2";
-    fmv_xw{: frs1 : rd},
-      disasm: "mv.x.w", "%rd, %frs1",
-      semfunc: "&RiscVFMvxw";
-    fmv_wx{: rs1 : frd},
-      disasm: "mv.w.x", "%frd, %rs1",
-      semfunc: "&RiscVFMvwx";
-    fcmpeq_s{: frs1, frs2 : rd, fflags},
-      semfunc: "&RiscVFCmpeq",
-      disasm: "fcmpeq", "%rd, %frs1, %frs2";
-    fcmplt_s{: frs1, frs2 : rd, fflags},
-      semfunc: "&RiscVFCmplt",
-      disasm: "fcmplt", "%rd, %frs1, %frs2";
-    fcmple_s{: frs1, frs2 : rd, fflags},
-      semfunc: "&RiscVFCmple",
-      disasm: "fcmple", "%rd, %frs1, %frs2";
-    fclass_s{: frs1 : rd},
-      semfunc: "&RiscVFClass",
-      disasm: "fclass", "%rd, %frs1";
-  }
-}
-
 // RISCV32 C (compact instructions).
 slot riscv32c {
   default size = 2;
@@ -591,9 +511,12 @@ slot riscv32c {
     cheriot_cjr{: crs1, x0 :},
       disasm: "c.jr", "%crs1",
       semfunc: "&CheriotCJr";
-    cheriot_cjalr{: crs1, x0 :  x1},
+    cheriot_cjr_cra{: crs1, x0 :},
+      disasm: "c.jr", "%crs1",
+      semfunc: "&CheriotCJrCra";
+    cheriot_cjalr_cra{: crs1, x0 :  x1},
       disasm: "c.jalr", "%crs1",
-      semfunc: "&CheriotCJalr";
+      semfunc: "&CheriotCJalrCra";
     cbeqz{: c3rs1, x0, I_cb_imm8 : },
       disasm: "c.beqz", "%c3rs1, %(@+I_cb_imm8:08x)",
       semfunc: "&RiscVIBeq";
@@ -649,6 +572,9 @@ slot riscv32c {
     cnop{},
       disasm: "c.nop",
       semfunc: "&RiscVINop";
+    chint{},
+      disasm: "c.hint",
+      semfunc: "&RiscVINop";
     cebreak{},
       disasm: "c.ebreak",
       semfunc: "&RiscVIEbreak";
@@ -657,7 +583,7 @@ slot riscv32c {
 
 // This should be the RiscV32 CHERIoT set.
 slot riscv32_cheriot : riscv32i, cheriot, riscv32_amo_arithmetic, riscv32c, 
-                       riscv32m, riscv32f, zicsr, privileged {
+                       riscv32m, zicsr, privileged {
   default size = 4;
   default opcode =
     disasm: "Illegal instruction at 0x%(@:08x)",

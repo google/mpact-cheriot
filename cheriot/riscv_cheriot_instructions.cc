@@ -202,8 +202,8 @@ void CheriotCJal(const Instruction *instruction) {
   cd->set_address(instruction->address() + instruction->size());
   bool interrupt_enable = state->mstatus()->mie();
   (void)cd->Seal(*state->sealing_root(),
-                 interrupt_enable ? CapReg::kInterruptEnablingSentry
-                                  : CapReg::kInterruptDisablingSentry);
+                 interrupt_enable ? CapReg::kInterruptEnablingReturnSentry
+                                  : CapReg::kInterruptDisablingReturnSentry);
   // Update pcc.
   pcc->set_address(new_pc);
   state->set_branch(true);
@@ -222,14 +222,24 @@ void CheriotCJ(const Instruction *instruction) {
 
 // Helper function to check for exceptions for Jr and Jalr.
 static bool CheriotCJrCheck(const Instruction *instruction, uint64_t new_pc,
-                            uint32_t offset, const CheriotRegister *cs1) {
+                            uint32_t offset, const CheriotRegister *cs1,
+                            bool has_dest, bool uses_ra) {
   auto *state = static_cast<CheriotState *>(instruction->state());
   if (!cs1->tag()) {
     state->HandleCheriRegException(instruction, instruction->address(),
                                    EC::kCapExTagViolation, cs1);
     return false;
   }
-  if (cs1->IsSealed() && (!cs1->IsSentry() || offset != 0)) {
+  bool ok = false;
+  ok |= !has_dest && uses_ra && cs1->IsBackwardSentry();
+  ok |= !has_dest && !uses_ra &&
+        ((cs1->object_type() == CapReg::kUnsealed) ||
+         (cs1->object_type() == CapReg::kSentry));
+  ok |= has_dest && ((cs1->object_type() == CapReg::kUnsealed) ||
+                     (cs1->object_type() == CapReg::kSentry));
+  ok |= has_dest && uses_ra && (cs1->object_type() >= CapReg::kUnsealed) &&
+        (cs1->object_type() <= CapReg::kInterruptEnablingSentry);
+  if ((cs1->IsSealed() && offset != 0) || !ok) {
     state->HandleCheriRegException(instruction, instruction->address(),
                                    EC::kCapExSealViolation, cs1);
     return false;
@@ -248,63 +258,41 @@ static bool CheriotCJrCheck(const Instruction *instruction, uint64_t new_pc,
   return true;
 }
 
-void CheriotCJalr(const Instruction *instruction) {
-  // TODO(torerik): fix this mess.
+static inline void CheriotCJalrHelper(const Instruction *instruction,
+                                      bool has_dest, bool uses_ra) {
   auto *state = static_cast<CheriotState *>(instruction->state());
   auto *cs1 = GetCapSource(instruction, 0);
   auto offset = generic::GetInstructionSource<uint32_t>(instruction, 1);
   auto *pcc = state->pcc();
   auto new_pc = offset + cs1->address();
   new_pc &= ~0b1ULL;
-  if (!CheriotCJrCheck(instruction, new_pc, offset, cs1)) {
+  if (!CheriotCJrCheck(instruction, new_pc, offset, cs1, has_dest, uses_ra)) {
     return;
   }
-  // Update link register.
-  state->temp_reg()->CopyFrom(*pcc);
-  state->temp_reg()->set_address(instruction->address() + instruction->size());
   auto *mstatus = state->mstatus();
-  bool interrupt_enable = (mstatus->GetUint32() & 0b1000) != 0;
-  auto status = state->temp_reg()->Seal(
-      *state->sealing_root(), interrupt_enable
-                                  ? CapReg::kInterruptEnablingSentry
-                                  : CapReg::kInterruptDisablingSentry);
-  if (!status.ok()) {
-    LOG(ERROR) << "Failed to seal: " << status;
-    return;
-  }
-  // Update pcc.
-  pcc->CopyFrom(*cs1);
-  // If the new pcc is a sentry, unseal and set/clear mie accordingly.
-  if (pcc->IsSentry()) {
-    if (pcc->object_type() != CapReg::kSentry) {
-      interrupt_enable = pcc->object_type() == CapReg::kInterruptEnablingSentry;
-      mstatus->set_mie(interrupt_enable);
-      mstatus->Submit();
+  if (has_dest) {
+    // Update link register.
+    state->temp_reg()->CopyFrom(*pcc);
+    state->temp_reg()->set_address(instruction->address() +
+                                   instruction->size());
+    bool interrupt_enable = (mstatus->GetUint32() & 0b1000) != 0;
+    auto status = state->temp_reg()->Seal(
+        *state->sealing_root(), interrupt_enable
+                                    ? CapReg::kInterruptEnablingReturnSentry
+                                    : CapReg::kInterruptDisablingReturnSentry);
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to seal: " << status;
+      return;
     }
-    (void)pcc->Unseal(*state->sealing_root(), pcc->object_type());
   }
-  pcc->set_address(new_pc);
-  state->set_branch(true);
-  auto *cd = GetCapDest(instruction, 0);
-  cd->CopyFrom(*state->temp_reg());
-}
-
-void CheriotCJr(const Instruction *instruction) {
-  auto *state = static_cast<CheriotState *>(instruction->state());
-  auto *cs1 = GetCapSource(instruction, 0);
-  auto offset = generic::GetInstructionSource<uint32_t>(instruction, 1);
-  auto *pcc = state->pcc();
-  auto new_pc = offset + cs1->address();
-  new_pc &= ~0b1ULL;
-  if (!CheriotCJrCheck(instruction, new_pc, offset, cs1)) return;
   // Update pcc.
   pcc->CopyFrom(*cs1);
   // If the new pcc is a sentry, unseal and set/clear mie accordingly.
   if (pcc->IsSentry()) {
     if (pcc->object_type() != CapReg::kSentry) {
       bool interrupt_enable =
-          pcc->object_type() == CapReg::kInterruptEnablingSentry;
-      auto *mstatus = state->mstatus();
+          (pcc->object_type() == CapReg::kInterruptEnablingSentry) |
+          (pcc->object_type() == CapReg::kInterruptEnablingReturnSentry);
       mstatus->set_mie(interrupt_enable);
       mstatus->Submit();
     }
@@ -312,6 +300,33 @@ void CheriotCJr(const Instruction *instruction) {
   }
   pcc->set_address(new_pc);
   state->set_branch(true);
+  if (has_dest) {
+    auto *cd = GetCapDest(instruction, 0);
+    cd->CopyFrom(*state->temp_reg());
+  }
+}
+
+void CheriotCJalr(const Instruction *instruction) {
+  CheriotCJalrHelper(instruction, /*has_dest=*/true, /*uses_ra=*/false);
+}
+
+void CheriotCJalrCra(const Instruction *instruction) {
+  CheriotCJalrHelper(instruction, /*has_dest=*/true, /*uses_ra=*/true);
+}
+
+void CheriotCJrCra(const Instruction *instruction) {
+  CheriotCJalrHelper(instruction, /*has_dest=*/false, /*uses_ra=*/true);
+}
+
+void CheriotCJr(const Instruction *instruction) {
+  CheriotCJalrHelper(instruction, /*has_dest=*/false, /*uses_ra=*/false);
+}
+
+void CheriotCJalrZero(const Instruction *instruction) {
+  auto *state = static_cast<CheriotState *>(instruction->state());
+  auto *cs1 = GetCapSource(instruction, 0);
+  state->HandleCheriRegException(instruction, instruction->address(),
+                                 EC::kCapExTagViolation, cs1);
 }
 
 void CheriotCLc(const Instruction *instruction) {

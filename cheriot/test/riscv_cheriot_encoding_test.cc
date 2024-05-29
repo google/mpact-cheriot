@@ -140,33 +140,6 @@ constexpr uint32_t kRemu = 0b0000001'00000'00000'111'00000'0110011;
 // constexpr uint32_t kAmomaxw = 0b10100'0'0'00000'00000'010'00000'0101111;
 // constexpr uint32_t kAmominuw = 0b11000'0'0'00000'00000'010'00000'0101111;
 // constexpr uint32_t kAmomaxuw = 0b11100'0'0'00000'00000'010'00000'0101111;
-// RV32F
-constexpr uint32_t kFlw = 0b000000000000'00000'010'00000'0000111;
-constexpr uint32_t kFsw = 0b0000000'00000'00000'010'00000'0100111;
-constexpr uint32_t kFmadds = 0b00000'00'00000'00000'000'00000'1000011;
-constexpr uint32_t kFmsubs = 0b00000'00'00000'00000'000'00000'1000111;
-constexpr uint32_t kFnmsubs = 0b00000'00'00000'00000'000'00000'1001011;
-constexpr uint32_t kFnmadds = 0b00000'00'00000'00000'000'00000'1001111;
-constexpr uint32_t kFadds = 0b0000000'00000'00000'000'00000'1010011;
-constexpr uint32_t kFsubs = 0b0000100'00000'00000'000'00000'1010011;
-constexpr uint32_t kFmuls = 0b0001000'00000'00000'000'00000'1010011;
-constexpr uint32_t kFdivs = 0b0001100'00000'00000'000'00000'1010011;
-constexpr uint32_t kFsqrts = 0b0101100'00000'00000'000'00000'1010011;
-constexpr uint32_t kFsgnjs = 0b0010000'00000'00000'000'00000'1010011;
-constexpr uint32_t kFsgnjns = 0b0010000'00000'00000'001'00000'1010011;
-constexpr uint32_t kFsgnjxs = 0b0010000'00000'00000'010'00000'1010011;
-constexpr uint32_t kFmins = 0b0010100'00000'00000'000'00000'1010011;
-constexpr uint32_t kFmaxs = 0b0010100'00000'00000'001'00000'1010011;
-constexpr uint32_t kFcvtws = 0b1100000'00000'00000'000'00000'1010011;
-constexpr uint32_t kFcvtwus = 0b1100000'00001'00000'000'00000'1010011;
-constexpr uint32_t kFmvxw = 0b1110000'00000'00000'000'00000'1010011;
-constexpr uint32_t kFeqs = 0b1010000'00000'00000'010'00000'1010011;
-constexpr uint32_t kFlts = 0b1010000'00000'00000'001'00000'1010011;
-constexpr uint32_t kFles = 0b1010000'00000'00000'000'00000'1010011;
-constexpr uint32_t kFclasss = 0b1110000'00000'00000'001'00000'1010011;
-constexpr uint32_t kFcvtsw = 0b1101000'00000'00000'000'00000'1010011;
-constexpr uint32_t kFcvtswu = 0b1101000'00001'00000'000'00000'1010011;
-constexpr uint32_t kFmvwx = 0b1111000'00000'00000'000'00000'1010011;
 // RV32C
 constexpr uint32_t kClwsp = 0b010'0'00000'00000'10;
 constexpr uint32_t kCldsp = 0b011'0'00000'00000'10;
@@ -265,7 +238,7 @@ TEST_F(RiscVCheriotEncodingTest, RV32IOpcodes) {
             OpcodeEnum::kCheriotJal);
   enc_->ParseInstruction(SetRd(kCheriotJalr, kRdValue));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kCheriotJalr);
+            OpcodeEnum::kCheriotJalrCra);
   enc_->ParseInstruction(kBeq);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kBeq);
   enc_->ParseInstruction(kBne);
@@ -429,72 +402,6 @@ TEST_F(RiscVCheriotEncodingTest, RV32MOpcodes) {
 //  OpcodeEnum::kAmomaxuw);
 // }
 
-TEST_F(RiscVCheriotEncodingTest, RV32FOpcodes) {
-  // RV32F
-  enc_->ParseInstruction(kFlw);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFlw);
-  enc_->ParseInstruction(kFsw);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFsw);
-  enc_->ParseInstruction(kFmadds);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFmaddS);
-  enc_->ParseInstruction(kFmsubs);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFmsubS);
-  enc_->ParseInstruction(kFnmsubs);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFnmsubS);
-  enc_->ParseInstruction(kFnmadds);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFnmaddS);
-  enc_->ParseInstruction(kFadds);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFaddS);
-  enc_->ParseInstruction(kFsubs);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFsubS);
-  enc_->ParseInstruction(kFmuls);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFmulS);
-  enc_->ParseInstruction(kFdivs);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFdivS);
-  enc_->ParseInstruction(kFsqrts);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFsqrtS);
-  enc_->ParseInstruction(kFsgnjs);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFsgnjS);
-  enc_->ParseInstruction(kFsgnjns);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFsgnjnS);
-  enc_->ParseInstruction(kFsgnjxs);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFsgnjxS);
-  enc_->ParseInstruction(kFmins);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFminS);
-  enc_->ParseInstruction(kFmaxs);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFmaxS);
-  enc_->ParseInstruction(kFcvtws);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFcvtWs);
-  enc_->ParseInstruction(kFcvtwus);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFcvtWus);
-  enc_->ParseInstruction(kFmvxw);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFmvXw);
-  enc_->ParseInstruction(kFeqs);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFcmpeqS);
-  enc_->ParseInstruction(kFlts);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFcmpltS);
-  enc_->ParseInstruction(kFles);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFcmpleS);
-  enc_->ParseInstruction(kFclasss);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFclassS);
-  enc_->ParseInstruction(kFcvtsw);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFcvtSw);
-  enc_->ParseInstruction(kFcvtswu);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kFcvtSwu);
-  enc_->ParseInstruction(kFmvwx);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kFmvWx);
-}
-
 // Test for decoding compact opcodes.
 TEST_F(RiscVCheriotEncodingTest, RV32COpcodes) {
   enc_->ParseInstruction(Set16Rd(kClwsp, 1));
@@ -530,10 +437,10 @@ TEST_F(RiscVCheriotEncodingTest, RV32COpcodes) {
             OpcodeEnum::kCheriotCjal);
   enc_->ParseInstruction(Set16Rd(kCheriotCjr, 1));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kCheriotCjr);
+            OpcodeEnum::kCheriotCjrCra);
   enc_->ParseInstruction(Set16Rd(kCheriotCjalr, 1));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kCheriotCjalr);
+            OpcodeEnum::kCheriotCjalrCra);
   enc_->ParseInstruction(kCbeqz);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCbeqz);
   enc_->ParseInstruction(kCbnez);
@@ -626,13 +533,13 @@ TEST_F(RiscVCheriotEncodingTest, RiscVCheriotOpcodes) {
             OpcodeEnum::kCheriotJal);
   enc_->ParseInstruction(SetRd(kCheriotJalr, kRdValue));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kCheriotJalr);
+            OpcodeEnum::kCheriotJalrCra);
   enc_->ParseInstruction(kCheriotJal);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCheriotJ);
   enc_->ParseInstruction(kCheriotJalr);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kCheriotJr);
+            OpcodeEnum::kCheriotJalrZero);
   enc_->ParseInstruction(kCheriotLc);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCheriotLc);

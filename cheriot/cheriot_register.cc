@@ -317,6 +317,8 @@ bool CheriotRegister::IsSealed() const {
     return (object_type() == kSentry) ||
            (object_type() == kInterruptEnablingSentry) ||
            (object_type() == kInterruptDisablingSentry) ||
+           (object_type() == kInterruptEnablingReturnSentry) ||
+           (object_type() == kInterruptDisablingReturnSentry) ||
            (object_type() == kSealedExecutable6) ||
            (object_type() == kSealedExecutable7);
   } else {
@@ -357,6 +359,8 @@ absl::Status CheriotRegister::Seal(const CheriotRegister &source,
         case kSentry:
         case kInterruptEnablingSentry:
         case kInterruptDisablingSentry:
+        case kInterruptEnablingReturnSentry:
+        case kInterruptDisablingReturnSentry:
         case kSealedExecutable6:
         case kSealedExecutable7:
           // The sealing type is ok.
@@ -429,7 +433,12 @@ bool CheriotRegister::IsRepresentable() const {
 
 bool CheriotRegister::IsSentry() const {
   return !is_null_ && (object_type() >= kSentry) &&
-         (object_type() <= kInterruptEnablingSentry);
+         (object_type() <= kInterruptEnablingReturnSentry);
+}
+
+bool CheriotRegister::IsBackwardSentry() const {
+  return !is_null_ && ((object_type() == kInterruptEnablingReturnSentry) ||
+                       (object_type() == kInterruptDisablingReturnSentry));
 }
 
 void CheriotRegister::CopyFrom(const CheriotRegister &other) {

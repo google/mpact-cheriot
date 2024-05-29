@@ -79,7 +79,6 @@ generic::Instruction *CheriotTestRigDecoder::DecodeInstruction(
   cheriot_encoding_->ParseInstruction(inst_word);
   auto format = cheriot_encoding_->GetFormat(SlotEnum::kRiscv32Cheriot, 0);
   auto opcode = cheriot_encoding_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0);
-
   // Extract the numerical register specifies of the instruction.
   int rd = 0;
   int rs1 = 0;
@@ -124,11 +123,13 @@ generic::Instruction *CheriotTestRigDecoder::DecodeInstruction(
       rs2 = 0;
       break;
     }
+      /*
     case FormatEnum::kR4Type:  // 4 reg operands, rd, rs1, rs3, and rs4.
       rd = encoding::r4_type::ExtractRd(inst_word);
       rs1 = encoding::r4_type::ExtractRs1(inst_word);
       rs2 = encoding::r4_type::ExtractRs2(inst_word);
       break;
+      */
     case FormatEnum::kRType:  // 3 reg operands: rd, rs1, and rs2.
       rd = encoding::r_type::ExtractRd(inst_word);
       rs1 = encoding::r_type::ExtractRs1(inst_word);
@@ -220,7 +221,7 @@ generic::Instruction *CheriotTestRigDecoder::DecodeInstruction(
           rs1 = encoding::c_r::ExtractRs1(inst_word16);
           rs2 = 0;
           break;
-        case OpcodeEnum::kCheriotCjalr:
+        case OpcodeEnum::kCheriotCjalrCra:
           rd = 1;
           rs1 = encoding::c_r::ExtractRs1(inst_word16);
           rs2 = 0;
@@ -262,6 +263,11 @@ generic::Instruction *CheriotTestRigDecoder::DecodeInstruction(
   }
   if (opcode == OpcodeEnum::kCslli) {
     rs1 = 0;
+  }
+  if ((opcode == OpcodeEnum::kHint) || (opcode == OpcodeEnum::kChint)) {
+    rs1 = 0;
+    rs2 = 0;
+    rd = 0;
   }
   decode_info.rd = rd;
   decode_info.rs1 = rs1;

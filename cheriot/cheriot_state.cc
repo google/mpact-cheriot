@@ -613,7 +613,8 @@ void CheriotState::Cease(const Instruction *inst) {
 void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
                         uint64_t exception_code, uint64_t epc,
                         const Instruction *inst) {
-  // Call the handler.
+  // LOG(INFO) << "Trap: " << std::hex << is_interrupt << " " << trap_value << "
+  // " << exception_code << " " << epc; Call the handler.
   if (on_trap_ != nullptr) {
     bool res = on_trap_(is_interrupt, trap_value, exception_code, epc, inst);
     // If the handler returns true, the trap has been handled. Just return.

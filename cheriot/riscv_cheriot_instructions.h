@@ -81,6 +81,15 @@ void CheriotCJalr(const Instruction *instruction);
 // This instruction takes 2 sources. Source 0 is the source capability, source 1
 // is the offset. The pcc is implied.
 void CheriotCJr(const Instruction *instruction);
+// This instruction takes 2 sources and one destination operand. Source 0 is the
+// source capability, source 1 is the offset. Destination 0 is the link
+// capability. The pcc is implied.
+void CheriotCJalrCra(const Instruction *instruction);
+// This instruction takes 2 sources. Source 0 is the source capability, source 1
+// is the offset. The pcc is implied.
+void CheriotCJrCra(const Instruction *instruction);
+// This instruction takes no sources, no destinations.
+void CheriotCJalrZero(const Instruction *instruction);
 // This takes 2 source operands and 1 destination operand. Source 0 is the
 // address source capability, source 1 is the integer offset. Destination 0 is
 // the target capability.

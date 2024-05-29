@@ -188,6 +188,7 @@ void RiscVCheriotEncoding::InitializeSourceOperandGetters() {
     auto *csr = res.value();
     return new generic::ImmediateOperand<uint32_t>(csr_indx, csr->name());
   });
+  /*
   source_op_getters_.emplace(*SourceOpEnum::kFrs1, [this]() {
     int num = encoding::r_type::ExtractRs1(inst_word_);
     return GetRegisterSourceOp<RVFpRegister>(
@@ -206,6 +207,7 @@ void RiscVCheriotEncoding::InitializeSourceOperandGetters() {
         state_, absl::StrCat(CheriotState::kFregPrefix, num),
         kFRegisterAliases[num]);
   });
+  */
   source_op_getters_.emplace(*SourceOpEnum::kICbImm8, [this]() {
     return new generic::ImmediateOperand<int32_t>(
         encoding::inst16_format::ExtractBimm(inst_word_));
@@ -289,6 +291,7 @@ void RiscVCheriotEncoding::InitializeSourceOperandGetters() {
   source_op_getters_.emplace(*SourceOpEnum::kPcc, [this]() {
     return GetRegisterSourceOp<CheriotRegister>(state_, "pcc", "pcc");
   });
+  /*
   source_op_getters_.emplace(*SourceOpEnum::kRm,
                              [this]() -> SourceOperandInterface * {
                                uint32_t rm = (inst_word_ >> 12) & 0x7;
@@ -313,6 +316,7 @@ void RiscVCheriotEncoding::InitializeSourceOperandGetters() {
                                    return nullptr;
                                }
                              });
+  */
   source_op_getters_.emplace(
       *SourceOpEnum::kRd, [this]() -> SourceOperandInterface * {
         int num = encoding::r_type::ExtractRd(inst_word_);
@@ -482,9 +486,11 @@ void RiscVCheriotEncoding::InitializeDestinationOperandGetters() {
         state_, absl::StrCat(CheriotState::kXregPrefix, 1), latency,
         kXRegisterAliases[1]);
   });
+  /*
   dest_op_getters_.emplace(*DestOpEnum::kFflags, [this](int latency) {
     return GetCSRSetBitsDestinationOp<uint32_t>(state_, "fflags", latency, "");
   });
+  */
   dest_op_getters_.emplace(*DestOpEnum::kNone,
                            [](int latency) { return nullptr; });
 }

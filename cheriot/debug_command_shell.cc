@@ -1422,8 +1422,9 @@ absl::Status DebugCommandShell::StepOverCall(int core, std::ostream &os) {
   // If it's not a jump-and-link, it's a single step.
   if ((inst->opcode() != *isa32::OpcodeEnum::kCheriotJal) &&
       (inst->opcode() != *isa32::OpcodeEnum::kCheriotJalr) &&
+      (inst->opcode() != *isa32::OpcodeEnum::kCheriotJalrCra) &&
       (inst->opcode() != *isa32::OpcodeEnum::kCheriotCjal) &&
-      (inst->opcode() != *isa32::OpcodeEnum::kCheriotCjalr)) {
+      (inst->opcode() != *isa32::OpcodeEnum::kCheriotCjalrCra)) {
     return core_access_[current_core_].debug_interface->Step(1).status();
   }
   // If it is a jump-and-link, we have to set a breakpoint on the instruction

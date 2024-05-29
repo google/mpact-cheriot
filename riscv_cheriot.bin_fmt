@@ -211,12 +211,22 @@ instruction group RiscVCheriotInst32[32] : Inst32Format {
   cheriot_gettype  : R2Type : func7 == 0x7f, func5 == 0x01, func3 == 0, opcode == 0x5b;
   cheriot_incaddr  : RType : func7 == 0x11, func3 == 0, opcode == 0x5b;
   cheriot_incaddrimm : IType : func3 == 0x1, opcode == 0x5b;
-  cheriot_jal  : JType : rd != 0, opcode == 0x6f;
-  cheriot_j    : JType : rd == 0, opcode == 0x6f;
-  cheriot_jalr : IType : func3 == 0x0, rd != 0, opcode == 0x67;
-  cheriot_jr   : IType : func3 == 0x0, rd == 0, opcode == 0x67;
-  cheriot_lc   : IType : func3 == 0x3, opcode == 0x03;
-  cheriot_move : RType : func7 == 0x7f, rs2 == 0xa, func3 == 0, opcode == 0x5b;
+  cheriot_jal      : JType : rd != 0, opcode == 0x6f;
+  cheriot_j        : JType : rd == 0, opcode == 0x6f;
+  // For jalr and jr, need to differentiate when the destination (jalr) or the
+  // source (jr) designates the cra register.
+  // Function call (dest != cra) (unsealed or interrupt inheriting forward sentry {0, 1})
+  cheriot_jalr     : IType : func3 == 0x0, rd > 1, opcode == 0x67;
+  // Function call (dest == cra) (unsealed or forward sentries {0, 1, 2, 3}).
+  cheriot_jalr_cra : IType : func3 == 0x0, rd == 1, opcode == 0x67;
+  // Tail call src != cra (unsealed or interrupt inheriting forward sentry {0, 1})
+  cheriot_jr       : IType : func3 == 0x0, rd == 0, rs1 > 1, opcode == 0x67;
+  // Function return src == cra (return sentries only {4, 5})
+  cheriot_jr_cra   : IType : func3 == 0x0, rd == 0, rs1 == 1, opcode == 0x67;
+  // Jalr causing exception: both rd and rs1 are 0.
+  cheriot_jalr_zero: IType : func3 == 0x0, rd == 0, rs1 == 0, opcode == 0x67;
+  cheriot_lc       : IType : func3 == 0x3, opcode == 0x03;
+  cheriot_move     : RType : func7 == 0x7f, rs2 == 0xa, func3 == 0, opcode == 0x5b;
   cheriot_representablealignmentmask : R2Type : func7 == 0x7f, func5 == 0x9, func3 == 0, opcode == 0x5b;
   cheriot_roundrepresentablelength :   R2Type : func7 == 0x7f, func5 == 0x8, func3 == 0, opcode == 0x5b;
   cheriot_sc             : SType : func3 == 0x3, opcode == 0x23;
@@ -255,33 +265,6 @@ instruction group RiscVCheriotInst32[32] : Inst32Format {
   amomaxw  : AType  : func5 == 0b1'0100, func3 == 0b010, opcode == 0b010'1111;
   amominuw : AType  : func5 == 0b1'1000, func3 == 0b010, opcode == 0b010'1111;
   amomaxuw : AType  : func5 == 0b1'1100, func3 == 0b010, opcode == 0b010'1111;
-  // RiscV32 single precision floating point instructions.
-  flw      : IType  : func3 == 0b010, opcode == 0b000'0111;
-  fsw      : SType  : func3 == 0b010, opcode == 0b010'0111;
-  fmadd_s  : R4Type : func2 == 0b00,  opcode == 0b100'0011;
-  fmsub_s  : R4Type : func2 == 0b00,  opcode == 0b100'0111;
-  fnmsub_s : R4Type : func2 == 0b00,  opcode == 0b100'1011;
-  fnmadd_s : R4Type : func2 == 0b00,  opcode == 0b100'1111;
-  fadd_s   : RType  : func7 == 0b000'0000, opcode == 0b101'0011;
-  fsub_s   : RType  : func7 == 0b000'0100, opcode == 0b101'0011;
-  fmul_s   : RType  : func7 == 0b000'1000, opcode == 0b101'0011;
-  fdiv_s   : RType  : func7 == 0b000'1100, opcode == 0b101'0011;
-  fsqrt_s  : R2Type  : func7 == 0b010'1100, func5 == 0, opcode == 0b101'0011;
-  fsgnj_s  : RType  : func7 == 0b001'0000, func3 == 0b000, opcode == 0b101'0011;
-  fsgnjn_s : RType  : func7 == 0b001'0000, func3 == 0b001, opcode == 0b101'0011;
-  fsgnjx_s : RType  : func7 == 0b001'0000, func3 == 0b010, opcode == 0b101'0011;
-  fmin_s   : RType  : func7 == 0b001'0100, func3 == 0b000, opcode == 0b101'0011;
-  fmax_s   : RType  : func7 == 0b001'0100, func3 == 0b001, opcode == 0b101'0011;
-  fcvt_ws  : R2Type  : func7 == 0b110'0000, func5 == 0, opcode == 0b101'0011;
-  fcvt_wus : R2Type  : func7 == 0b110'0000, func5 == 1, opcode == 0b101'0011;
-  fmv_xw   : R2Type  : func7 == 0b111'0000, func5 == 0, func3 == 0b000, opcode == 0b101'0011;
-  fcmpeq_s : RType  : func7 == 0b101'0000, func3 == 0b010, opcode == 0b101'0011;
-  fcmplt_s : RType  : func7 == 0b101'0000, func3 == 0b001, opcode == 0b101'0011;
-  fcmple_s : RType  : func7 == 0b101'0000, func3 == 0b000, opcode == 0b101'0011;
-  fclass_s : R2Type  : func7 == 0b111'0000, func5 == 0, func3 == 0b001, opcode == 0b101'0011;
-  fcvt_sw  : R2Type  : func7 == 0b110'1000, func5 == 0, opcode == 0b101'0011;
-  fcvt_swu : R2Type  : func7 == 0b110'1000, func5 == 1, opcode == 0b101'0011;
-  fmv_wx   : R2Type  : func7 == 0b111'1000, func5 == 0, func3 == 0b000, opcode == 0b101'0011;
   // RiscV32 CSR manipulation instructions.
   csrrw    : IType  : func3 == 0b001, rd != 0,  opcode == 0b111'0011;
   csrrs    : IType  : func3 == 0b010, rs1 != 0, rd != 0, opcode == 0b111'0011;
@@ -456,15 +439,21 @@ instruction group RiscVCheriotInst16[16] : Inst16Format {
   csw       : CS : func3 == 0b110, op == 0b00;
   csd       : CS : func3 == 0b111, op == 0b00;
   cnop      : CI : func3 == 0b000, imm1 == 0, rs1 == 0, imm5 == 0, op == 0b01;
+  chint     : CI : func3 == 0b000, imm6 != 0, rs1 == 0, op == 0b01;
   caddi     : CI : func3 == 0b000, imm6 != 0, rd != 0, op == 0b01;
+  chint     : CI : func3 == 0b000, imm6 == 0, rd != 0, op == 0b01;
   cli       : CI : func3 == 0b010, rd != 0, op == 0b01;
+  chint     : CI : func3 == 0b010, rd == 0, op == 0b01;
   caddi16sp : CI : func3 == 0b011, ci_imm10 != 0, rd == 2, op == 0b01;
   clui      : CI : func3 == 0b011, rd != 0, rd != 2, imm18 != 0, op == 0b01;
+  chint     : CI : func3 == 0b011, rd == 0, imm18 != 0, op == 0b01;
   // TODO(torerik): The following two instructions should have imm1 == 0  and 
   // imm5 != 0 instead of imm6 != 0 in the constraints, but that has been 
   // temporarily removed so as to make it easier to verify in TestRIG 
   csrli     : CSH : func3 == 0b100, op2 == 0b00, uimm6 != 0, op == 0b01;
+  chint     : CSH : func3 == 0b100, op2 == 0b00, uimm6 == 0, op == 0b01;
   csrai     : CSH : func3 == 0b100, op2 == 0b01, uimm6 != 0, op == 0b01;
+  chint     : CSH : func3 == 0b100, op2 == 0b01, uimm6 == 0, op == 0b01;
   candi     : CSH : func3 == 0b100, op2 == 0b10, op == 0b01;
   csub      : CA : func6 == 0b100'011, func2 == 0b00, op == 0b01;
   cxor      : CA : func6 == 0b100'011, func2 == 0b01, op == 0b01;
@@ -473,15 +462,19 @@ instruction group RiscVCheriotInst16[16] : Inst16Format {
   cbeqz     : CB : func3 == 0b110, op == 0b01;
   cbnez     : CB : func3 == 0b111, op == 0b01;
   cslli     : CI : func3 == 0b000, imm1 == 0, imm5 != 0, rs1 != 0, op == 0b10;
+  chint     : CI : func3 == 0b000, imm1 == 0, rs1 == 0, imm5 != 0, op == 0b10;
+  chint     : CI : func3 == 0b000, imm6 == 0, op == 0b10;
   clwsp     : CI : func3 == 0b010, rd != 0, op == 0b10;
   cldsp     : CI : func3 == 0b011, rd != 0, op == 0b10;
   cmv       : CR : func4 == 0b1000, rs1 != 0, rs2 != 0, op == 0b10;
   cebreak   : Inst16Format : func3 == 0b100, bits == 0b1'00000'00000, op == 0b10;
   cadd      : CR : func4 == 0b1001, rs1 != 0, rs2 != 0, op == 0b10;
+  chint     : CR : func4 == 0b1001, rs1 == 0, rs2 != 0, op == 0b10;
   cswsp     : CSS: func3 == 0b110, op == 0b10;
   csdsp     : CSS: func3 == 0b111, op == 0b10;
-  cheriot_cj    : CJ : func3 == 0b101, op == 0b01;
-  cheriot_cjal  : CJ : func3 == 0b001, op == 0b01;
-  cheriot_cjr   : CR : func4 == 0b1000, rs1 != 0, rs2 == 0, op == 0b10;
-  cheriot_cjalr : CR : func4 == 0b1001, rs1 != 0, rs2 == 0, op == 0b10;
+  cheriot_cj        : CJ : func3 == 0b101, op == 0b01;
+  cheriot_cjal      : CJ : func3 == 0b001, op == 0b01;
+  cheriot_cjr       : CR : func4 == 0b1000, rs1 > 1, rs2 == 0, op == 0b10;
+  cheriot_cjr_cra   : CR : func4 == 0b1000, rs1 == 1, rs2 == 0, op == 0b10;
+  cheriot_cjalr_cra : CR : func4 == 0b1001, rs1 != 0, rs2 == 0, op == 0b10;
 };

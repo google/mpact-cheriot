@@ -72,8 +72,8 @@ class CheriotRegister : public generic::Register<uint32_t> {
     kSentry = 1,
     kInterruptDisablingSentry = 2,
     kInterruptEnablingSentry = 3,
-    kReserved4 = 4,
-    kReserved5 = 5,
+    kInterruptDisablingReturnSentry = 4,
+    kInterruptEnablingReturnSentry = 5,
     kSealedExecutable6 = 6,
     kSealedExecutable7 = 7,
     kReserved8 = 8,
@@ -149,6 +149,8 @@ class CheriotRegister : public generic::Register<uint32_t> {
   bool IsUnsealed() const;
   // Returns true if the capability is a sentry.
   bool IsSentry() const;
+  // Returns true if the capability is a backward sentry.
+  bool IsBackwardSentry() const;
   // Clears the tag.
   void Invalidate() { set_tag(false); }
   // Set bounds, return true if they're precise, i.e., that the base and length
