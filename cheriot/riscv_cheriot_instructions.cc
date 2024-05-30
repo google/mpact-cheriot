@@ -291,7 +291,7 @@ static inline void CheriotCJalrHelper(const Instruction *instruction,
   if (pcc->IsSentry()) {
     if (pcc->object_type() != CapReg::kSentry) {
       bool interrupt_enable =
-          (pcc->object_type() == CapReg::kInterruptEnablingSentry) |
+          (pcc->object_type() == CapReg::kInterruptEnablingSentry) ||
           (pcc->object_type() == CapReg::kInterruptEnablingReturnSentry);
       mstatus->set_mie(interrupt_enable);
       mstatus->Submit();
