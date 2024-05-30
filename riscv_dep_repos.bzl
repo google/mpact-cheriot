@@ -14,9 +14,9 @@
 
 """Call the first level dependent repos to load their dependencies."""
 
-load("@com_google_mpact-riscv//:repos.bzl", "mpact_riscv_dep_repos")
+load("@com_google_mpact-riscv//:dep_repos.bzl", "mpact_riscv_dep_repos")
 
-def mpact_cheriot_dep_repos():
+def mpact_cheriot_riscv_dep_repos():
     """ Extra dependencies to finish setting up repositories"""
 
     mpact_riscv_dep_repos()

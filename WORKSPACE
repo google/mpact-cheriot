@@ -14,15 +14,21 @@
 
 workspace(name = "com_google_mpact-cheriot")
 
-# First load the immediate repo dependencies (mpact-sim).
+# First load the immediate repo dependencies (mpact-riscv).
 load("@com_google_mpact-cheriot//:repos.bzl", "mpact_cheriot_repos")
 
 mpact_cheriot_repos()
 
-# Next load in the transitive repo dependencies.
-load("@com_google_mpact-cheriot//:dep_repos.bzl", "mpact_cheriot_dep_repos")
+# Next load in the riscv immediate dependency.
+load("@com_google_mpact-cheriot//:riscv_repos.bzl", "mpact_cheriot_riscv_repos")
 
-mpact_cheriot_dep_repos()
+mpact_cheriot_riscv_repos()
+
+# Next load in the transitive repo dependencies.
+load("@com_google_mpact-cheriot//:riscv_dep_repos.bzl",
+     "mpact_cheriot_riscv_dep_repos")
+
+mpact_cheriot_riscv_dep_repos()
 
 # Call the deps function. It will call any other dependent deps functions.
 load("@com_google_mpact-cheriot//:deps.bzl", "mpact_cheriot_deps");
