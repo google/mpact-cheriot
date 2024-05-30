@@ -1,4 +1,4 @@
-# Copyright 2023 Google LLC
+# Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-workspace(name = "com_google_mpact-cheriot")
+"""Set up extra repositories with the dependencies"""
 
-# First load the immediate repo dependencies (mpact-sim).
-load("@com_google_mpact-cheriot//:repos.bzl", "mpact_cheriot_repos")
+load("@com_google_mpact-riscv//:deps.bzl", "mpact_riscv_deps")
 
-mpact_cheriot_repos()
+def mpact_cheriot_deps():
+    """ Extra dependencies to finish setting up Google repositories"""
 
-# Next load in the transitive repo dependencies.
-load("@com_google_mpact-cheriot//:dep_repos.bzl", "mpact_cheriot_dep_repos")
-
-mpact_cheriot_dep_repos()
-
-# Call the deps function. It will call any other dependent deps functions.
-load("@com_google_mpact-cheriot//:deps.bzl", "mpact_cheriot_deps");
-
-mpact_cheriot_deps()
+    mpact_riscv_deps()
