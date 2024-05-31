@@ -53,20 +53,22 @@ class CheriotCLIForwarder : public CheriotDebugInterface {
   // given access type (load/store) will halt execution following the completion
   // of that access.
   absl::Status SetDataWatchpoint(uint64_t address, size_t length,
-                                 AccessType access_type);
+                                 AccessType access_type) override;
   // Clear data watchpoint for the given memory address and access type.
-  absl::Status ClearDataWatchpoint(uint64_t address, AccessType access_type);
+  absl::Status ClearDataWatchpoint(uint64_t address,
+                                   AccessType access_type) override;
 
   // Set an action point at the given address to execute the specified action.
   absl::StatusOr<int> SetActionPoint(
-      uint64_t address, absl::AnyInvocable<void(uint64_t, int)> action);
+      uint64_t address,
+      absl::AnyInvocable<void(uint64_t, int)> action) override;
   // Clear action point id at the given address.
-  absl::Status ClearActionPoint(uint64_t address, int id);
+  absl::Status ClearActionPoint(uint64_t address, int id) override;
   // Enable/disable action id at the given address.
-  absl::Status EnableAction(uint64_t address, int id);
-  absl::Status DisableAction(uint64_t address, int id);
+  absl::Status EnableAction(uint64_t address, int id) override;
+  absl::Status DisableAction(uint64_t address, int id) override;
   // Enable breaking on control flow change.
-  void SetBreakOnControlFlowChange(bool value);
+  void SetBreakOnControlFlowChange(bool value) override;
   // Request that core stop running.
   absl::Status Halt() override;
   // Step the core by num instructions.
@@ -121,7 +123,6 @@ class CheriotCLIForwarder : public CheriotDebugInterface {
 
  private:
   CheriotRenodeCLITop *cheriot_cli_top_;
-  CLIForwarder *cli_forwarder_;
 };
 
 }  // namespace cheriot
