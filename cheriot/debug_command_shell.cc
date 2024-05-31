@@ -84,7 +84,7 @@ DebugCommandShell::DebugCommandShell()
       clear_watch_re_{R"(\s*watch\s+clear\s+(\w+)(\s+r|\s+w|\s+rw)?\s*)"},
       clear_watch_n_re_{R"(\s*watch\s+clear\s+\#(\d+)\s*)"},
       clear_all_watch_re_{R"(\s*watch\s+clear-all\s*)"},
-      list_action_re_{R"(\s*action\*)"},
+      list_action_re_{R"(\s*action\s*)"},
       enable_action_n_re_{R"(\s*action\s+enable\s+\*(\d+)\s*)"},
       disable_action_n_re_{R"(\s*action\s+disable\s+\*(\d+)\s*)"},
       clear_action_n_re_{R"(\s*action\s+clear\s+\*(\d+)\s*)"},
@@ -205,10 +205,10 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
     std::string prompt;
     if (halt_reason) {
       halt_reason = false;
-      auto halt_reason =
+      auto result =
           core_access_[current_core_].debug_interface->GetLastHaltReason();
-      if (halt_reason.ok()) {
-        switch (halt_reason.value()) {
+      if (result.ok()) {
+        switch (result.value()) {
           case *HaltReason::kSoftwareBreakpoint:
             absl::StrAppend(&prompt, "Stopped at software breakpoint\n");
             break;
@@ -222,8 +222,8 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
             absl::StrAppend(&prompt, "Program done\n");
             break;
           default:
-            if ((halt_reason.value() >= *HaltReason::kUserSpecifiedMin) &&
-                (halt_reason.value() <= *HaltReason::kUserSpecifiedMax)) {
+            if ((result.value() >= *HaltReason::kUserSpecifiedMin) &&
+                (result.value() <= *HaltReason::kUserSpecifiedMax)) {
               absl::StrAppend(&prompt, "Stopped for custom halt reason\n");
             }
             break;
@@ -231,10 +231,9 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       }
     }
     if (pcc_result.ok()) {
-      if (core_access_[current_core_].loader != nullptr) {
-        auto symbol_result =
-            core_access_[current_core_].loader->GetFcnSymbolName(
-                pcc_result.value());
+      auto *loader = core_access_[current_core_].loader_getter();
+      if (loader != nullptr) {
+        auto symbol_result = loader->GetFcnSymbolName(pcc_result.value());
         if (symbol_result.ok()) {
           absl::StrAppend(&prompt, symbol_result.value(), ":\n");
         }
@@ -261,6 +260,8 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         current_is.getline(line, kLineSize);
       } while ((is_file && RE2::FullMatch(line, *empty_re_)) &&
                !current_is.bad() && !current_is.eof());
+
+      if (command_streams_.empty()) return;
 
       // If the current is at eof or gone bad, pop the stream and try the next.
       if (current_is.bad() || current_is.eof()) {
@@ -384,6 +385,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       if (result.value() != count) {
         os << result.value() << " instructions executed" << std::endl;
         os.flush();
+        halt_reason = true;
       }
       continue;
     }
@@ -590,9 +592,9 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         bool active =
             core_access_[current_core_].debug_interface->HasBreakpoint(address);
         std::string symbol;
-        if (core_access_[current_core_].loader != nullptr) {
-          auto res =
-              core_access_[current_core_].loader->GetFcnSymbolName(address);
+        auto *loader = core_access_[current_core_].loader_getter();
+        if (loader != nullptr) {
+          auto res = loader->GetFcnSymbolName(address);
           if (res.ok()) symbol = std::move(res.value());
         }
         absl::StrAppend(&bp_list,
@@ -891,9 +893,9 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       for (auto const &[index, info] :
            core_access_[current_core_].watchpoint_map) {
         std::string symbol;
-        if (core_access_[current_core_].loader != nullptr) {
-          auto res = core_access_[current_core_].loader->GetFcnSymbolName(
-              info.address);
+        auto *loader = core_access_[current_core_].loader_getter();
+        if (loader != nullptr) {
+          auto res = loader->GetFcnSymbolName(info.address);
           if (res.ok()) symbol = std::move(res.value());
         }
         std::string access_type;
@@ -1398,9 +1400,10 @@ absl::StatusOr<uint64_t> DebugCommandShell::GetValueFromString(
     return convert_result.status();
   }
   // If all else fails, let's see if it's a symbol.
-  if (core_access_[current_core_].loader == nullptr)
-    return absl::NotFoundError("Symbol not found");
-  auto result = core_access_[current_core_].loader->GetSymbol(str_value);
+  auto *loader = core_access_[core].loader_getter();
+  if (loader == nullptr)
+    return absl::NotFoundError("No symbol table available");
+  auto result = loader->GetSymbol(str_value);
   if (!result.ok()) return result.status();
   return result.value().first;
 }

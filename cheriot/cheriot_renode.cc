@@ -462,7 +462,7 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
         cmd_shell_, cheriot_top_, mem_profiler_);
     cmd_shell_->AddCore(
         {static_cast<CheriotDebugInterface *>(cheriot_cli_forwarder_),
-         program_loader_});
+         [this]() { return program_loader_; }});
     cmd_shell_->AddCommand(
         instrumentation_control_->Usage(),
         absl::bind_front(&CheriotInstrumentationControl::PerformShellCommand,

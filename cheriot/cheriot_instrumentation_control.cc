@@ -114,11 +114,12 @@ bool CheriotInstrumentationControl::PerformShellCommand(
       return true;
     }
     // Let's see if it is a symbol.
-    if (core_access.loader == nullptr) {
+    auto *loader = core_access.loader_getter();
+    if (loader == nullptr) {
       output = "Error: cannot perform symbol lookup";
       return true;
     }
-    auto result = core_access.loader->GetSymbol(where);
+    auto result = loader->GetSymbol(where);
     if (!result.ok()) {
       output = absl::StrCat("Error: symbol ", where, " not found");
       return true;

@@ -314,6 +314,9 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
   if (num <= 0) {
     return absl::InvalidArgumentError("Step count must be > 0");
   }
+  if (halt_reason_ == *HaltReason::kProgramDone) {
+    return absl::FailedPreconditionError("Step: Program has completed.");
+  }
   // If the simulator is running, return with an error.
   if (run_status_ != RunStatus::kHalted) {
     return absl::FailedPreconditionError(
@@ -411,6 +414,9 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
 }
 
 absl::Status CheriotTop::Run() {
+  if (halt_reason_ == *HaltReason::kProgramDone) {
+    return absl::FailedPreconditionError("Run: Program has completed.");
+  }
   // Verify that the core isn't running already.
   if (run_status_ == RunStatus::kRunning) {
     return absl::FailedPreconditionError(

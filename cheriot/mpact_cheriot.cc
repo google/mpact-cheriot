@@ -434,7 +434,7 @@ int main(int argc, char **argv) {
   CheriotInstrumentationControl *cheriot_instrumentation_control = nullptr;
   if (interactive) {
     mpact::sim::cheriot::DebugCommandShell cmd_shell;
-    cmd_shell.AddCore({&cheriot_top, &elf_loader});
+    cmd_shell.AddCore({&cheriot_top, [&elf_loader]() { return &elf_loader; }});
     cheriot_instrumentation_control = new CheriotInstrumentationControl(
         &cmd_shell, &cheriot_top, memory_use_profiler);
     // Add custom command to interactive debug command shell.
