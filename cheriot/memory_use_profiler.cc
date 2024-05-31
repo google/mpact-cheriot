@@ -193,7 +193,8 @@ void TaggedMemoryUseProfiler::Load(DataBuffer *address_db, DataBuffer *mask_db,
 void TaggedMemoryUseProfiler::Load(uint64_t address, DataBuffer *db,
                                    DataBuffer *tags, Instruction *inst,
                                    ReferenceCount *context) {
-  if (is_enabled_) tracker_.MarkUsed(address, db->size<uint8_t>());
+  if ((db != nullptr) && is_enabled_)
+    tracker_.MarkUsed(address, db->size<uint8_t>());
   if (tagged_memory_) tagged_memory_->Load(address, db, tags, inst, context);
 }
 
@@ -216,7 +217,8 @@ void TaggedMemoryUseProfiler::Store(DataBuffer *address_db, DataBuffer *mask_db,
 
 void TaggedMemoryUseProfiler::Store(uint64_t address, DataBuffer *db,
                                     DataBuffer *tags) {
-  if (is_enabled_) tracker_.MarkUsed(address, db->size<uint8_t>());
+  if ((db != nullptr) && is_enabled_)
+    tracker_.MarkUsed(address, db->size<uint8_t>());
   if (tagged_memory_) tagged_memory_->Store(address, db, tags);
 }
 

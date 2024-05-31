@@ -34,6 +34,7 @@
 #include "absl/strings/str_cat.h"
 #include "cheriot/cheriot_cli_forwarder.h"
 #include "cheriot/cheriot_debug_info.h"
+#include "cheriot/cheriot_debug_interface.h"
 #include "cheriot/cheriot_instrumentation_control.h"
 #include "cheriot/cheriot_renode_cli_top.h"
 #include "cheriot/cheriot_renode_register_info.h"
@@ -234,7 +235,7 @@ absl::StatusOr<uint64_t> CheriotRenode::LoadExecutable(
   }
   auto res = program_loader_->GetSymbol("tohost");
   // Add watchpoint for tohost if the symbol exists.
-  if (!res.ok()) {
+  if (res.ok()) {
     // If there is a 'tohost' symbol, set up a write watchpoint on that address
     // to catch writes that mark program exit.
     uint64_t tohost_addr = res.value().first;
@@ -459,7 +460,9 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
     cmd_shell_ = new DebugCommandShell();
     instrumentation_control_ = new CheriotInstrumentationControl(
         cmd_shell_, cheriot_top_, mem_profiler_);
-    cmd_shell_->AddCore({cheriot_cli_forwarder_, program_loader_});
+    cmd_shell_->AddCore(
+        {static_cast<CheriotDebugInterface *>(cheriot_cli_forwarder_),
+         program_loader_});
     cmd_shell_->AddCommand(
         instrumentation_control_->Usage(),
         absl::bind_front(&CheriotInstrumentationControl::PerformShellCommand,

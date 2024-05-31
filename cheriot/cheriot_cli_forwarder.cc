@@ -16,27 +16,27 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "cheriot/cheriot_renode_cli_top.h"
+#include "cheriot/cheriot_state.h"
 #include "mpact/sim/generic/core_debug_interface.h"
-#include "mpact/sim/util/renode/cli_forwarder.h"
 
 namespace mpact {
 namespace sim {
 namespace cheriot {
 
 using ::mpact::sim::generic::AccessType;
-using ::mpact::sim::util::renode::CLIForwarder;
 using RunStatus = ::mpact::sim::generic::CoreDebugInterface::RunStatus;
 using HaltReasonValueType =
     ::mpact::sim::generic::CoreDebugInterface::HaltReasonValueType;
 
 CheriotCLIForwarder::CheriotCLIForwarder(CheriotRenodeCLITop *cheriot_cli_top)
-    : CLIForwarder(cheriot_cli_top), cheriot_cli_top_(cheriot_cli_top) {}
+    : cheriot_cli_top_(cheriot_cli_top) {}
 
 // Forward the calls to the CheriotRenodeCLITop class - CLI methods.
 
@@ -76,6 +76,81 @@ absl::Status CheriotCLIForwarder::DisableAction(uint64_t address, int id) {
 
 void CheriotCLIForwarder::SetBreakOnControlFlowChange(bool value) {
   cheriot_cli_top_->CLISetBreakOnControlFlowChange(value);
+}
+
+absl::Status CheriotCLIForwarder::Halt() { return cheriot_cli_top_->CLIHalt(); }
+
+absl::StatusOr<int> CheriotCLIForwarder::Step(int num) {
+  return cheriot_cli_top_->CLIStep(num);
+}
+
+absl::Status CheriotCLIForwarder::Run() { return cheriot_cli_top_->CLIRun(); }
+
+absl::Status CheriotCLIForwarder::Wait() { return cheriot_cli_top_->CLIWait(); }
+
+// Returns the current run status.
+absl::StatusOr<RunStatus> CheriotCLIForwarder::GetRunStatus() {
+  return cheriot_cli_top_->CLIGetRunStatus();
+}
+
+// Returns the reason for the most recent halt.
+absl::StatusOr<HaltReasonValueType> CheriotCLIForwarder::GetLastHaltReason() {
+  return cheriot_cli_top_->CLIGetLastHaltReason();
+}
+
+// Read/write the named registers.
+absl::StatusOr<uint64_t> CheriotCLIForwarder::ReadRegister(
+    const std::string &name) {
+  return cheriot_cli_top_->CLIReadRegister(name);
+}
+
+absl::Status CheriotCLIForwarder::WriteRegister(const std::string &name,
+                                                uint64_t value) {
+  return cheriot_cli_top_->CLIWriteRegister(name, value);
+}
+
+absl::StatusOr<DataBuffer *> CheriotCLIForwarder::GetRegisterDataBuffer(
+    const std::string &name) {
+  return cheriot_cli_top_->CLIGetRegisterDataBuffer(name);
+}
+
+// Read/write the buffers to memory.
+absl::StatusOr<size_t> CheriotCLIForwarder::ReadMemory(uint64_t address,
+                                                       void *buf,
+                                                       size_t length) {
+  return cheriot_cli_top_->CLIReadMemory(address, buf, length);
+}
+
+absl::StatusOr<size_t> CheriotCLIForwarder::WriteMemory(uint64_t address,
+                                                        const void *buf,
+                                                        size_t length) {
+  return cheriot_cli_top_->CLIWriteMemory(address, buf, length);
+}
+
+bool CheriotCLIForwarder::HasBreakpoint(uint64_t address) {
+  return cheriot_cli_top_->CLIHasBreakpoint(address);
+}
+
+absl::Status CheriotCLIForwarder::SetSwBreakpoint(uint64_t address) {
+  return cheriot_cli_top_->CLISetSwBreakpoint(address);
+}
+
+absl::Status CheriotCLIForwarder::ClearSwBreakpoint(uint64_t address) {
+  return cheriot_cli_top_->CLIClearSwBreakpoint(address);
+}
+
+absl::Status CheriotCLIForwarder::ClearAllSwBreakpoints() {
+  return cheriot_cli_top_->CLIClearAllSwBreakpoints();
+}
+
+absl::StatusOr<Instruction *> CheriotCLIForwarder::GetInstruction(
+    uint64_t address) {
+  return cheriot_cli_top_->CLIGetInstruction(address);
+}
+
+absl::StatusOr<std::string> CheriotCLIForwarder::GetDisassembly(
+    uint64_t address) {
+  return cheriot_cli_top_->CLIGetDisassembly(address);
 }
 
 }  // namespace cheriot

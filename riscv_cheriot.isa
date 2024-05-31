@@ -483,7 +483,7 @@ slot riscv32c {
     //   disasm: "fsd", "%rdrs2, %I_css_uimm6x8(%x2)",
     //   semfunc: "&RV64::RiscVISd";
     clw{(: c3rs1, I_cl_uimm5x4 : ), (: : c3rd)},
-      disasm: ".clw", "%c3rd, %I_cl_uimm5x4(%c3rs1)",
+      disasm: "c.clw", "%c3rd, %I_cl_uimm5x4(%c3rs1)",
       semfunc: "&RiscVILw", "&RiscVILwChild";
     // Reused for clc
     cld{(: c3cs1, I_cl_uimm5x8 : ), (: : c3cd)},

@@ -743,6 +743,7 @@ absl::StatusOr<size_t> CheriotTop::ReadTagMemory(uint64_t address, void *buf,
   auto *tag_db = db_factory_.Allocate<uint8_t>(length);
   state_->tagged_memory()->Load(address, nullptr, tag_db, nullptr, nullptr);
   std::memcpy(buf, tag_db->raw_ptr(), length);
+  tag_db->DecRef();
   return length;
 }
 

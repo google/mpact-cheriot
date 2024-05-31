@@ -1248,7 +1248,6 @@ std::string DebugCommandShell::ReadMemory(int core,
     sep = ", ";
   }
   absl::StrAppend(&tag_string, "]");
-
   // Get the result and format it.
   void *void_buffer = mem_buffer_;
   std::string output;

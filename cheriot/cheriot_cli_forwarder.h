@@ -19,11 +19,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "cheriot/cheriot_debug_interface.h"
 #include "cheriot/cheriot_renode_cli_top.h"
+#include "cheriot/cheriot_state.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/util/renode/cli_forwarder.h"
 
@@ -37,7 +40,7 @@ namespace cheriot {
 using ::mpact::sim::generic::AccessType;
 using ::mpact::sim::util::renode::CLIForwarder;
 
-class CheriotCLIForwarder : public CLIForwarder {
+class CheriotCLIForwarder : public CheriotDebugInterface {
  public:
   explicit CheriotCLIForwarder(CheriotRenodeCLITop *top);
   CheriotCLIForwarder() = delete;
@@ -45,7 +48,7 @@ class CheriotCLIForwarder : public CLIForwarder {
   CheriotCLIForwarder &operator=(const CLIForwarder &) = delete;
 
   absl::StatusOr<size_t> ReadTagMemory(uint64_t address, void *buf,
-                                       size_t length);
+                                       size_t length) override;
   // Set a data watchpoint for the given memory range. Any access matching the
   // given access type (load/store) will halt execution following the completion
   // of that access.
@@ -64,9 +67,61 @@ class CheriotCLIForwarder : public CLIForwarder {
   absl::Status DisableAction(uint64_t address, int id);
   // Enable breaking on control flow change.
   void SetBreakOnControlFlowChange(bool value);
+  // Request that core stop running.
+  absl::Status Halt() override;
+  // Step the core by num instructions.
+  absl::StatusOr<int> Step(int num) override;
+  // Allow the core to free-run. The loop to run the instructions should be
+  // in a separate thread so that this method can return. This allows a user
+  // interface built on top of this interface to handle multiple cores running
+  // at the same time.
+  absl::Status Run() override;
+  // Wait until the current core halts execution.
+  absl::Status Wait() override;
+
+  // Returns the current run status.
+  absl::StatusOr<RunStatus> GetRunStatus() override;
+  // Returns the reason for the most recent halt.
+  absl::StatusOr<HaltReasonValueType> GetLastHaltReason() override;
+
+  absl::StatusOr<uint64_t> ReadRegister(const std::string &name) override;
+  absl::Status WriteRegister(const std::string &name, uint64_t value) override;
+
+  // Some registers, including vector registers, have values that exceed the
+  // 64 bits supported in the Read/Write register API calls. This function
+  // obtains the DataBuffer structure for such registers, provided they use one.
+  // The data in the DataBuffer instance can be written as well as read.
+  // Note (1): DataBuffer instances are reference counted. If the simulator is
+  // advanced after obtaining the instance, it may become invalid if it isn't
+  // IncRef'ed appropriately (see data_buffer.h).
+  // Note (2): In some cases, a register write may replace the DataBuffer
+  // instance within a register so that any stored references to it become
+  // stale.
+  absl::StatusOr<DataBuffer *> GetRegisterDataBuffer(
+      const std::string &name) override;
+
+  // Read/write the buffers to memory.
+  absl::StatusOr<size_t> ReadMemory(uint64_t address, void *buf,
+                                    size_t length) override;
+  absl::StatusOr<size_t> WriteMemory(uint64_t address, const void *buf,
+                                     size_t length) override;
+
+  // Test to see if there's a breakpoint at the given address.
+  bool HasBreakpoint(uint64_t address) override;
+  // Set/Clear software breakpoints at the given addresses.
+  absl::Status SetSwBreakpoint(uint64_t address) override;
+  absl::Status ClearSwBreakpoint(uint64_t address) override;
+  // Remove all software breakpoints.
+  absl::Status ClearAllSwBreakpoints() override;
+
+  // Return the instruction object for the instruction at the given address.
+  absl::StatusOr<Instruction *> GetInstruction(uint64_t address) override;
+  // Return the string representation for the instruction at the given address.
+  absl::StatusOr<std::string> GetDisassembly(uint64_t address) override;
 
  private:
   CheriotRenodeCLITop *cheriot_cli_top_;
+  CLIForwarder *cli_forwarder_;
 };
 
 }  // namespace cheriot
