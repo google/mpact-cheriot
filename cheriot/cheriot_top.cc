@@ -393,7 +393,7 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
       halted_ = false;
       halt_reason_ = *HaltReason::kNone;
       need_to_step_over_ = false;
-      pc = next_pc;
+      pc = state_->pc_operand()->AsUint64(0);
       continue;
     }
     break;
@@ -501,7 +501,7 @@ absl::Status CheriotTop::Run() {
         // Reset the halt reason and continue;
         halted_ = false;
         halt_reason_ = *HaltReason::kNone;
-        pc = next_pc;
+        pc = state_->pc_operand()->AsUint64(0);
         continue;
       }
       break;
