@@ -30,15 +30,25 @@ There are three main targets in cheriot/BUILD:
     against the sail cheriot implementation. For more on that, see the TestRIG
     documentation.
 
-# Building
+## Building
 
-MPACT-Cheriot uses the [bazel](https://bazel.build) build system. This is best
-installed using [bazilisk](https://github.com/bazelbuild/bazelisk). Place a file
-named .bazeliskrc in your home directory specifying a bazel version 6.1.1 or
-later:
+### Bazel
 
-> USE_BAZEL_VERSION=6.1.1
+MPACT-Sim utilizes the [Bazel](https://bazel.build/) build system. The easiest
+way to install bazel is to use
+[Bazelisk](https://github.com/bazelbuild/bazelisk), a wrapper for Bazel that
+automates selecting and downloading the right version of bazel. Use `brew
+install bazelisk` on macOS, `choco install bazelisk` on Windows, and on linux,
+download the Bazelisk binary, add it to your `PATH`, then alias bazel to the
+bazelisk binary.
 
-Once that has been set up, you can build all targets from the top level
-directory using the command `bazel build ...:all`. To run all the tests, use the
-command `bazel test ...:all`.
+### Java
+
+MPACT-Sim depends on Java, so a reasonable JRE has to be installed. For macOS,
+run `brew install java`, on linux `sudo apt install default-jre`, and on Windows
+follow the appropriate instructions at [java.com](https://java.com).
+
+### Build and Test
+
+To build the mpact-sim libraries, use the command `bazel build ...:all` from the
+top level directory. To run the tests, use the command `bazel test ...:all`
