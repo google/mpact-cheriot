@@ -393,6 +393,7 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
       halted_ = false;
       halt_reason_ = *HaltReason::kNone;
       need_to_step_over_ = false;
+      pc = next_pc;
       continue;
     }
     break;
@@ -500,6 +501,7 @@ absl::Status CheriotTop::Run() {
         // Reset the halt reason and continue;
         halted_ = false;
         halt_reason_ = *HaltReason::kNone;
+        pc = next_pc;
         continue;
       }
       break;
@@ -745,7 +747,8 @@ absl::StatusOr<size_t> CheriotTop::ReadTagMemory(uint64_t address, void *buf,
   if (address > state_->max_physical_address()) {
     return absl::InvalidArgumentError("Invalid memory address");
   }
-  length = std::min(length, state_->max_physical_address() - address + 1);
+  uint64_t length64 = static_cast<uint64_t>(length);
+  length = std::min(length64, state_->max_physical_address() - address + 1);
   auto *tag_db = db_factory_.Allocate<uint8_t>(length);
   state_->tagged_memory()->Load(address, nullptr, tag_db, nullptr, nullptr);
   std::memcpy(buf, tag_db->raw_ptr(), length);
@@ -762,7 +765,8 @@ absl::StatusOr<size_t> CheriotTop::WriteMemory(uint64_t address,
   if (address > state_->max_physical_address()) {
     return absl::InvalidArgumentError("Invalid memory address");
   }
-  length = std::min(length, state_->max_physical_address() - address + 1);
+  uint64_t length64 = static_cast<uint64_t>(length);
+  length = std::min(length64, state_->max_physical_address() - address + 1);
   auto *db = db_factory_.Allocate(length);
   std::memcpy(db->raw_ptr(), buffer, length);
   // Store bypassing any watch points/semihosting.
