@@ -42,7 +42,8 @@ void RiscVIllegalInstruction(const Instruction *inst) {
   db->DecRef();
   // See if the instruction is interpreted as 32 or 16 bit instruction.
   if ((inst_word & 0b11) != 0b11) inst_word &= 0xffff;
-  LOG(INFO) << "RiscVIllegalInstruction: " << std::hex << inst_word;
+  LOG(INFO) << "RiscVIllegalInstruction at: [" << std::hex << inst->address()
+            << "] " << inst_word;
   state->Trap(/*is_interrupt=*/false, /*trap_value=*/inst_word,
               *EC::kIllegalInstruction,
               /*epc=*/inst->address(), inst);

@@ -193,7 +193,7 @@ void CheriotTop::Initialize() {
   rv_bp_manager_ = new riscv::RiscVBreakpointManager(
       rv_action_point_manager_,
       [this](HaltReason halt_reason) { RequestHalt(halt_reason, nullptr); });
-  // Set the software breakpoint callback.
+  // Set the software action callback.
   state_->AddEbreakHandler([this](const Instruction *inst) {
     if (rv_action_point_manager_->IsActionPointActive(inst->address())) {
       // Need to request a halt so that the action point can be stepped past
@@ -275,7 +275,6 @@ absl::Status CheriotTop::Halt() {
 
 absl::Status CheriotTop::StepPastBreakpoint() {
   uint64_t pc = state_->pc_operand()->AsUint64(0);
-  uint64_t bpt_pc = pc;
   // Disable the breakpoint.
   rv_action_point_manager_->WriteOriginalInstruction(pc);
   // Execute the real instruction.
@@ -294,11 +293,11 @@ absl::Status CheriotTop::StepPastBreakpoint() {
   real_inst->DecRef();
   // Re-enable the breakpoint.
   // Re-enable the breakpoint.
-  rv_action_point_manager_->WriteBreakpointInstruction(bpt_pc);
+  rv_action_point_manager_->WriteBreakpointInstruction(pc);
   // Get the next pc value.
-  uint64_t pcc_val = pcc_->data_buffer()->Get<uint32_t>(0);
   if (state_->branch()) {
     state_->set_branch(false);
+    uint64_t pcc_val = pcc_->data_buffer()->Get<uint32_t>(0);
     AddToBranchTrace(pc, pcc_val);
     next_pc = pcc_val;
     if (break_on_control_flow_change_) {
@@ -350,7 +349,7 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
     SetPc(pc);
     auto *inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
     // Set the next_pc to the next sequential instruction.
-    next_pc += inst->size();
+    next_pc = pc + inst->size();
     bool executed = false;
     do {
       executed = ExecuteInstruction(inst);
@@ -452,7 +451,7 @@ absl::Status CheriotTop::Run() {
       SetPc(pc);
       // Set the PC destination operand to next_seq_pc. Any branch that is
       // executed will overwrite this.
-      next_pc += inst->size();
+      next_pc = pc + inst->size();
       bool executed = false;
       do {
         // Try executing the instruction. If it fails, advance a cycle
