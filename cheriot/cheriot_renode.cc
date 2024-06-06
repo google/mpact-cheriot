@@ -183,6 +183,18 @@ CheriotRenode::~CheriotRenode() {
     }
     inst_profile_file.close();
   }
+  if (mem_profiler_ != nullptr) {
+    std::string mem_profile_file_name =
+        absl::StrCat("./mpact_cheriot_", name_, "_mem_profile.csv");
+    std::fstream mem_profile_file(mem_profile_file_name.c_str(),
+                                  std::ios_base::out);
+    if (!mem_profile_file.good()) {
+      LOG(ERROR) << "Failed to write profile to file";
+    } else {
+      mem_profiler_->WriteProfile(mem_profile_file);
+    }
+    mem_profile_file.close();
+  }
   // Export counters.
   auto component_proto = std::make_unique<ComponentData>();
   CHECK_OK(cheriot_top_->Export(component_proto.get()))

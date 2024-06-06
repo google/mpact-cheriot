@@ -89,6 +89,7 @@ class MemoryUseProfiler : public MemoryInterface {
 
   // Accessor.
   void set_is_enabled(bool is_enabled) { is_enabled_ = is_enabled; }
+  bool is_enabled() const { return is_enabled_; }
 
  private:
   bool is_enabled_ = false;
