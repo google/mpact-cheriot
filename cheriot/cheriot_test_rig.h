@@ -23,7 +23,6 @@
 #include "cheriot/cheriot_register.h"
 #include "cheriot/cheriot_state.h"
 #include "cheriot/cheriot_test_rig_decoder.h"
-#include "cheriot/riscv_cheriot_fp_state.h"
 #include "cheriot/test_rig_packets.h"
 #include "mpact/sim/generic/component.h"
 #include "mpact/sim/generic/counters.h"
@@ -73,7 +72,6 @@ class CheriotTestRig : public generic::Component {
 
   int trace_version_ = 1;
   CheriotState *state_;
-  RiscVCheriotFPState *fp_state_;
   CheriotRegister *pcc_;
   CheriotTestRigDecoder *cheriot_decoder_ = nullptr;
   util::TaggedMemoryInterface *tagged_memory_ = nullptr;

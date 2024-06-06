@@ -35,7 +35,6 @@
 #include "cheriot/cheriot_register.h"
 #include "cheriot/cheriot_state.h"
 #include "cheriot/riscv_cheriot_enums.h"
-#include "cheriot/riscv_cheriot_fp_state.h"
 #include "cheriot/riscv_cheriot_register_aliases.h"
 #include "mpact/sim/generic/component.h"
 #include "mpact/sim/generic/core_debug_interface.h"
@@ -151,7 +150,6 @@ CheriotTop::~CheriotTop() {
   delete cheriot_decode_cache_;
   delete cheriot_decoder_;
   delete state_;
-  delete fp_state_;
   delete tagged_watcher_;
   delete atomic_watcher_;
   delete atomic_memory_;
@@ -164,8 +162,6 @@ void CheriotTop::Initialize() {
   atomic_watcher_ = new util::MemoryWatcher(atomic_memory_if_);
   atomic_memory_ = new util::AtomicMemory(atomic_watcher_);
   state_ = new CheriotState(kCheriotName, tagged_watcher_, atomic_memory_);
-  fp_state_ = new RiscVCheriotFPState(state_);
-  state_->set_rv_fp(fp_state_);
   pcc_ = static_cast<CheriotRegister *>(
       state_->registers()->at(CheriotState::kPcName));
   // Set up the decoder and decode cache.

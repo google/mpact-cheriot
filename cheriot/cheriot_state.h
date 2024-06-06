@@ -69,7 +69,6 @@ using ::mpact::sim::riscv::RiscVSimpleCsr;
 
 // Forward declare the CHERIoT register type.
 class CheriotRegister;
-class RiscVCheriotFPState;
 
 // CHERIoT exception codes. These are used in addition to the ones defined for
 // vanilla RiscV.
@@ -308,9 +307,6 @@ class CheriotState : public generic::ArchState {
   const CheriotRegister *executable_root() const { return executable_root_; }
   const CheriotRegister *sealing_root() const { return sealing_root_; }
   const CheriotRegister *memory_root() const { return memory_root_; }
-  // Floating point state.
-  RiscVCheriotFPState *rv_fp() const { return rv_fp_; }
-  void set_rv_fp(RiscVCheriotFPState *value) { rv_fp_ = value; }
   // Special capability registers. Pcc replaces the pc. Cgp is a global pointer
   // capability that is aliased with c3.
   CheriotRegister *pcc() const { return pcc_; }
@@ -390,7 +386,6 @@ class CheriotState : public generic::ArchState {
   bool branch_ = false;
   uint64_t max_physical_address_;
   uint64_t min_physical_address_ = 0;
-  RiscVCheriotFPState *rv_fp_ = nullptr;
   int num_tags_per_load_;
   util::TaggedMemoryInterface *owned_tagged_memory_ = nullptr;
   util::TaggedMemoryInterface *tagged_memory_;

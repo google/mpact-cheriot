@@ -121,26 +121,6 @@ cc_test(
 )
 
 cc_test(
-    name = "riscv_cheriot_f_instructions_test",
-    size = "small",
-    srcs = [
-        "riscv_cheriot_f_instructions_test.cc",
-    ],
-    copts = [
-        "-ffp-model=strict",
-        "-fprotect-parens",
-    ],
-    tags = ["not_run:arm"],
-    deps = [
-        ":riscv_cheriot_fp_test_base",
-        "//cheriot:riscv_cheriot",
-        "@com_google_googletest//:gtest_main",
-        "@com_google_mpact-riscv//riscv:riscv_state",
-        "@com_google_mpact-sim//mpact/sim/generic:instruction",
-    ],
-)
-
-cc_test(
     name = "riscv_cheriot_zicsr_instructions_test",
     size = "small",
     srcs = [

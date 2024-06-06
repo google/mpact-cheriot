@@ -60,8 +60,6 @@ CheriotTestRig::CheriotTestRig()
       absl::bind_front(&CheriotTestRig::OnStore, this)));
   // Set up sim state.
   state_ = new CheriotState(kCheriotTestRigName, tagged_memory_watcher_);
-  fp_state_ = new RiscVCheriotFPState(state_);
-  state_->set_rv_fp(fp_state_);
   // Initialize pcc to 0x8000'0000.
   pcc_ = static_cast<CheriotRegister *>(
       state_->registers()->at(CheriotState::kPcName));
@@ -123,7 +121,6 @@ CheriotTestRig::CheriotTestRig()
 CheriotTestRig::~CheriotTestRig() {
   delete cheriot_decoder_;
   delete state_;
-  delete fp_state_;
   delete tagged_memory_;
   delete tagged_memory_watcher_;
   // Deallocate data buffers.

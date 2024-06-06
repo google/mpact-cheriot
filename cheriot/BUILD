@@ -54,8 +54,6 @@ cc_library(
         "cheriot_register.cc",
         "cheriot_state.cc",
         "riscv_cheriot_a_instructions.cc",
-        "riscv_cheriot_f_instructions.cc",
-        "riscv_cheriot_fp_state.cc",
         "riscv_cheriot_i_instructions.cc",
         "riscv_cheriot_instructions.cc",
         "riscv_cheriot_m_instructions.cc",
@@ -68,8 +66,6 @@ cc_library(
         "cheriot_state.h",
         "riscv_cheriot_a_instructions.h",
         "riscv_cheriot_csr_enum.h",
-        "riscv_cheriot_f_instructions.h",
-        "riscv_cheriot_fp_state.h",
         "riscv_cheriot_i_instructions.h",
         "riscv_cheriot_instruction_helpers.h",
         "riscv_cheriot_instructions.h",
@@ -77,10 +73,6 @@ cc_library(
         "riscv_cheriot_minstret.h",
         "riscv_cheriot_priv_instructions.h",
         "riscv_cheriot_zicsr_instructions.h",
-    ],
-    copts = [
-        "-ffp-model=strict",
-        "-fprotect-parens",
     ],
     tags = ["not_run:arm"],
     deps = [
@@ -317,20 +309,20 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "cheriot_renode",
+cc_binary(
+    name = "renode_mpact_cheriot",
     srcs = [
         "cheriot_cli_forwarder.cc",
-        "cheriot_renode.cc",
-        "cheriot_renode_cli_top.cc",
-        "cheriot_renode_register_info.cc",
-    ],
-    hdrs = [
         "cheriot_cli_forwarder.h",
+        "cheriot_renode.cc",
         "cheriot_renode.h",
+        "cheriot_renode_cli_top.cc",
         "cheriot_renode_cli_top.h",
+        "cheriot_renode_register_info.cc",
         "cheriot_renode_register_info.h",
     ],
+    linkshared = True,
+    linkstatic = True,
     deps = [
         ":cheriot_debug_info",
         ":cheriot_debug_interface",
@@ -359,16 +351,6 @@ cc_library(
         "@com_google_mpact-sim//mpact/sim/util/renode:renode_debug_interface",
         "@com_google_mpact-sim//mpact/sim/util/renode:socket_cli",
         "@com_google_protobuf//:protobuf",
-    ],
-)
-
-cc_binary(
-    name = "renode_mpact_cheriot",
-    linkshared = True,
-    linkstatic = True,
-    deps = [
-        ":cheriot_renode",
-        "@com_google_mpact-sim//mpact/sim/util/renode",
     ],
 )
 

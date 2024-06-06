@@ -30,7 +30,6 @@
 #include "cheriot/cheriot_register.h"
 #include "cheriot/cheriot_state.h"
 #include "cheriot/riscv_cheriot_enums.h"
-#include "cheriot/riscv_cheriot_fp_state.h"
 #include "mpact/sim/generic/component.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/counters.h"
@@ -179,7 +178,6 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   absl::Notification *run_halted_ = nullptr;
   // The local CherIoT state.
   CheriotState *state_;
-  RiscVCheriotFPState *fp_state_;
   // Flag that indicates an instruction needs to be stepped over.
   bool need_to_step_over_ = false;
   // Action point manager.
