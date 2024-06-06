@@ -292,7 +292,6 @@ absl::Status CheriotTop::StepPastBreakpoint() {
   counter_num_instructions_.Increment(1);
   real_inst->DecRef();
   // Re-enable the breakpoint.
-  // Re-enable the breakpoint.
   rv_action_point_manager_->WriteBreakpointInstruction(pc);
   // Get the next pc value.
   if (state_->branch()) {
