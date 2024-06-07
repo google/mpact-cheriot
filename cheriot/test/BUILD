@@ -30,6 +30,7 @@ cc_library(
         "@com_google_absl//absl/random",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_for_library_testonly",
         "@com_google_mpact-riscv//riscv:riscv_state",
         "@com_google_mpact-sim//mpact/sim/generic:instruction",
         "@com_google_mpact-sim//mpact/sim/util/memory",
@@ -212,5 +213,19 @@ cc_test(
         "@com_google_absl//absl/strings:str_format",
         "@com_google_googletest//:gtest_main",
         "@com_google_mpact-sim//mpact/sim/generic:core",
+    ],
+)
+
+cc_test(
+    name = "librenode_mpact_cheriot.so_test",
+    size = "small",
+    srcs = ["librenode_mpact_cheriot_so_test.cc"],
+    data = [
+        "//cheriot:renode_mpact_cheriot",
+    ],
+    deps = [
+        "@com_google_absl//absl/debugging:leak_check",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest_main",
     ],
 )

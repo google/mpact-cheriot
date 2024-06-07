@@ -291,7 +291,7 @@ cc_library(
     deps = [
         ":cheriot_top",
         ":debug_command_shell",
-        "@com_github_serge1_elfio//:elfio",
+        "//third_party/elfio",
         "@com_google_absl//absl/container:btree",
         "@com_google_absl//absl/functional:any_invocable",
         "@com_google_absl//absl/log",

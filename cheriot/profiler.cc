@@ -23,7 +23,7 @@
 #include "absl/numeric/bits.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "elfio/elf_types.hpp"
+#include "third_party/elfio/elfio/elf_types.hpp"
 
 namespace mpact::sim::cheriot {
 
