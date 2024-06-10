@@ -41,8 +41,6 @@
 #include "cheriot/cheriot_state.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
-#include "cheriot/memory_use_profiler.h"
-#include "cheriot/profiler.h"
 #include "cheriot/riscv_cheriot_minstret.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/type_helpers.h"
@@ -275,7 +273,7 @@ absl::StatusOr<uint64_t> CheriotRenode::LoadExecutable(
   }
   // Add instruction profiler it hasn't already been added.
   if (inst_profiler_ == nullptr) {
-    inst_profiler_ = new Profiler(*program_loader_, 2);
+    inst_profiler_ = new InstructionProfiler(*program_loader_, 2);
     cheriot_top_->counter_pc()->AddListener(inst_profiler_);
     cheriot_top_->counter_pc()->SetIsEnabled(false);
   } else {
@@ -455,10 +453,10 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
       if (program_loader_ == nullptr) {
         // If the program loader is null, assume that it will be added later,
         // but don't enable the trace until it is.
-        inst_profiler_ = new Profiler(2);
+        inst_profiler_ = new InstructionProfiler(2);
         cheriot_top_->counter_pc()->SetIsEnabled(false);
       } else {
-        inst_profiler_ = new Profiler(*program_loader_, 2);
+        inst_profiler_ = new InstructionProfiler(*program_loader_, 2);
         cheriot_top_->counter_pc()->SetIsEnabled(true);
       }
       cheriot_top_->counter_pc()->AddListener(inst_profiler_);

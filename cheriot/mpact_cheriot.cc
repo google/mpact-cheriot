@@ -42,8 +42,6 @@
 #include "cheriot/cheriot_instrumentation_control.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
-#include "cheriot/memory_use_profiler.h"
-#include "cheriot/profiler.h"
 #include "cheriot/riscv_cheriot_minstret.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/counters.h"
@@ -51,11 +49,13 @@
 #include "mpact/sim/proto/component_data.pb.h"
 #include "mpact/sim/util/memory/atomic_memory.h"
 #include "mpact/sim/util/memory/memory_interface.h"
+#include "mpact/sim/util/memory/memory_use_profiler.h"
 #include "mpact/sim/util/memory/memory_watcher.h"
 #include "mpact/sim/util/memory/single_initiator_router.h"
 #include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 #include "mpact/sim/util/memory/tagged_memory_interface.h"
 #include "mpact/sim/util/memory/tagged_memory_watcher.h"
+#include "mpact/sim/util/other/instruction_profiler.h"
 #include "mpact/sim/util/other/simple_uart.h"
 #include "mpact/sim/util/program_loader/elf_program_loader.h"
 #include "re2/re2.h"
@@ -66,8 +66,8 @@
 using ::mpact::sim::proto::ComponentData;
 using AddressRange = mpact::sim::util::MemoryWatcher::AddressRange;
 using ::mpact::sim::cheriot::CheriotInstrumentationControl;
-using ::mpact::sim::cheriot::Profiler;
-using ::mpact::sim::cheriot::TaggedMemoryUseProfiler;
+using ::mpact::sim::util::InstructionProfiler;
+using ::mpact::sim::util::TaggedMemoryUseProfiler;
 
 // Flags for specifying interactive mode.
 ABSL_FLAG(bool, i, false, "Interactive mode");
@@ -255,9 +255,9 @@ int main(int argc, char **argv) {
                          data_memory, static_cast<MemoryInterface *>(router));
 
   // Enable instruction profiling if the flag is set.
-  Profiler *inst_profiler = nullptr;
+  InstructionProfiler *inst_profiler = nullptr;
   if (absl::GetFlag(FLAGS_inst_profile)) {
-    inst_profiler = new Profiler(elf_loader, 2);
+    inst_profiler = new InstructionProfiler(elf_loader, 2);
     cheriot_top.counter_pc()->AddListener(inst_profiler);
   } else {
     cheriot_top.counter_pc()->SetIsEnabled(false);

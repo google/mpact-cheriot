@@ -204,19 +204,6 @@ cc_test(
 )
 
 cc_test(
-    name = "memory_use_profiler_test",
-    size = "small",
-    srcs = ["memory_use_profiler_test.cc"],
-    deps = [
-        "//cheriot:instrumentation",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:str_format",
-        "@com_google_googletest//:gtest_main",
-        "@com_google_mpact-sim//mpact/sim/generic:core",
-    ],
-)
-
-cc_test(
     name = "librenode_mpact_cheriot.so_test",
     size = "small",
     srcs = ["librenode_mpact_cheriot_so_test.cc"],

@@ -28,15 +28,15 @@
 #include "cheriot/cheriot_renode_cli_top.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
-#include "cheriot/memory_use_profiler.h"
-#include "cheriot/profiler.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/data_buffer.h"
 #include "mpact/sim/util/memory/atomic_memory.h"
 #include "mpact/sim/util/memory/memory_interface.h"
+#include "mpact/sim/util/memory/memory_use_profiler.h"
 #include "mpact/sim/util/memory/single_initiator_router.h"
 #include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 #include "mpact/sim/util/memory/tagged_memory_interface.h"
+#include "mpact/sim/util/other/instruction_profiler.h"
 #include "mpact/sim/util/program_loader/elf_program_loader.h"
 #include "mpact/sim/util/renode/renode_debug_interface.h"
 #include "mpact/sim/util/renode/socket_cli.h"
@@ -67,10 +67,12 @@ using ::mpact::sim::riscv::RiscVArmSemihost;
 using ::mpact::sim::riscv::RiscVClint;
 using ::mpact::sim::util::AtomicMemory;
 using ::mpact::sim::util::ElfProgramLoader;
+using ::mpact::sim::util::InstructionProfiler;
 using ::mpact::sim::util::MemoryInterface;
 using ::mpact::sim::util::SingleInitiatorRouter;
 using ::mpact::sim::util::TaggedFlatDemandMemory;
 using ::mpact::sim::util::TaggedMemoryInterface;
+using ::mpact::sim::util::TaggedMemoryUseProfiler;
 using ::mpact::sim::util::renode::SocketCLI;
 
 class CheriotRenode : public util::renode::RenodeDebugInterface {
@@ -149,7 +151,7 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
   CheriotCLIForwarder *cheriot_cli_forwarder_ = nullptr;
   ElfProgramLoader *program_loader_ = nullptr;
   DebugCommandShell *cmd_shell_ = nullptr;
-  Profiler *inst_profiler_ = nullptr;
+  InstructionProfiler *inst_profiler_ = nullptr;
   TaggedMemoryUseProfiler *mem_profiler_ = nullptr;
   CheriotInstrumentationControl *instrumentation_control_ = nullptr;
 };

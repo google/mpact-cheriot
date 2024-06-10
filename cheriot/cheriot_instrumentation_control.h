@@ -22,10 +22,12 @@
 #include "absl/strings/string_view.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
-#include "cheriot/memory_use_profiler.h"
+#include "mpact/sim/util/memory/memory_use_profiler.h"
 #include "re2/re2.h"
 
 namespace mpact::sim::cheriot {
+
+using ::mpact::sim::util::TaggedMemoryUseProfiler;
 
 class CheriotInstrumentationControl {
  public:
