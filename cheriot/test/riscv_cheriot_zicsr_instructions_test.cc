@@ -28,6 +28,7 @@
 #include "googlemock/include/gmock/gmock.h"
 #include "mpact/sim/generic/immediate_operand.h"
 #include "mpact/sim/generic/instruction.h"
+#include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 #include "riscv//riscv_csr.h"
 
 // This file contains tests for individual Zicsr instructions.
@@ -42,6 +43,7 @@ using ::mpact::sim::cheriot::RiscVCheriotCsrEnum;
 using ::mpact::sim::generic::ImmediateOperand;
 using ::mpact::sim::generic::Instruction;
 using ::mpact::sim::riscv::RiscV32SimpleCsr;
+using ::mpact::sim::util::TaggedFlatDemandMemory;
 
 constexpr uint32_t kInstAddress = 0x2468;
 
@@ -59,7 +61,8 @@ constexpr uint32_t kCycleValue =
 class ZicsrInstructionsTest : public testing::Test {
  protected:
   ZicsrInstructionsTest() {
-    state_ = new CheriotState("test");
+    mem_ = new TaggedFlatDemandMemory(8);
+    state_ = new CheriotState("test", mem_, nullptr);
     instruction_ = new Instruction(kInstAddress, state_);
     instruction_->set_size(4);
     state_->set_on_trap([this](bool is_interrupt, uint64_t trap_value,
@@ -71,6 +74,7 @@ class ZicsrInstructionsTest : public testing::Test {
 
   ~ZicsrInstructionsTest() override {
     delete instruction_;
+    delete mem_;
     delete state_;
   }
 
@@ -130,6 +134,7 @@ class ZicsrInstructionsTest : public testing::Test {
                    uint64_t exception_code, uint64_t epc,
                    const Instruction *inst);
 
+  TaggedFlatDemandMemory *mem_;
   RiscV32SimpleCsr *csr_;
   CheriotState *state_;
   Instruction *instruction_;

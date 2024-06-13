@@ -28,6 +28,7 @@
 #include "mpact/sim/generic/immediate_operand.h"
 #include "mpact/sim/generic/instruction.h"
 #include "mpact/sim/generic/type_helpers.h"
+#include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 
 // This file contains tests for individual RiscV32I instructions.
 
@@ -38,6 +39,7 @@ using ::mpact::sim::cheriot::CheriotRegister;
 using ::mpact::sim::cheriot::CheriotState;
 using ::mpact::sim::generic::ImmediateOperand;
 using ::mpact::sim::generic::Instruction;
+using ::mpact::sim::util::TaggedFlatDemandMemory;
 using CH_EC = ::mpact::sim::cheriot::ExceptionCode;
 using PB = CheriotRegister::PermissionBits;
 
@@ -62,7 +64,8 @@ constexpr uint32_t kShift = 6;
 class RVCheriotIInstructionTest : public testing::Test {
  public:
   RVCheriotIInstructionTest() {
-    state_ = new CheriotState("test");
+    mem_ = new TaggedFlatDemandMemory(8);
+    state_ = new CheriotState("test", mem_, nullptr);
     instruction_ = new Instruction(kInstAddress, state_);
     instruction_->set_size(4);
     creg_1_ = state_->GetRegister<CheriotRegister>(kC1).first;
@@ -76,6 +79,7 @@ class RVCheriotIInstructionTest : public testing::Test {
   }
 
   ~RVCheriotIInstructionTest() override {
+    delete mem_;
     delete state_;
     delete instruction_;
   }
@@ -135,6 +139,7 @@ class RVCheriotIInstructionTest : public testing::Test {
                    uint64_t exception_code, uint64_t epc,
                    const Instruction *inst);
 
+  TaggedFlatDemandMemory *mem_;
   CheriotState *state_;
   Instruction *instruction_;
   CheriotRegister *creg_1_;

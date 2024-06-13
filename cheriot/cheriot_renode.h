@@ -24,8 +24,10 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "cheriot/cheriot_cli_forwarder.h"
+#include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_instrumentation_control.h"
 #include "cheriot/cheriot_renode_cli_top.h"
+#include "cheriot/cheriot_state.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
 #include "mpact/sim/generic/core_debug_interface.h"
@@ -138,6 +140,8 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
   std::string name_;
   MemoryInterface *renode_sysbus_ = nullptr;
   TaggedMemoryInterface *tagged_sysbus_ = nullptr;
+  CheriotState *cheriot_state_ = nullptr;
+  CheriotDecoder *cheriot_decoder_ = nullptr;
   CheriotTop *cheriot_top_ = nullptr;
   RiscVArmSemihost *semihost_ = nullptr;
   SingleInitiatorRouter *router_ = nullptr;

@@ -16,27 +16,6 @@
 
 package(default_applicable_licenses = ["//:license"])
 
-cc_library(
-    name = "riscv_cheriot_fp_test_base",
-    testonly = True,
-    hdrs = ["riscv_cheriot_fp_test_base.h"],
-    copts = [
-        "-ffp-model=strict",
-        "-fprotect-parens",
-    ],
-    tags = ["not_run:arm"],
-    deps = [
-        "//cheriot:riscv_cheriot",
-        "@com_google_absl//absl/random",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:span",
-        "@com_google_googletest//:gtest_for_library_testonly",
-        "@com_google_mpact-riscv//riscv:riscv_state",
-        "@com_google_mpact-sim//mpact/sim/generic:instruction",
-        "@com_google_mpact-sim//mpact/sim/util/memory",
-    ],
-)
-
 cc_test(
     name = "cheriot_register_test",
     size = "small",
@@ -102,6 +81,7 @@ cc_test(
         "@com_google_mpact-sim//mpact/sim/generic:core",
         "@com_google_mpact-sim//mpact/sim/generic:instruction",
         "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
     ],
 )
 
@@ -118,6 +98,7 @@ cc_test(
         "@com_google_mpact-sim//mpact/sim/generic:core",
         "@com_google_mpact-sim//mpact/sim/generic:instruction",
         "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
     ],
 )
 
@@ -137,6 +118,7 @@ cc_test(
         "@com_google_mpact-riscv//riscv:riscv_state",
         "@com_google_mpact-sim//mpact/sim/generic:core",
         "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
     ],
 )
 
@@ -152,6 +134,7 @@ cc_test(
         "//cheriot:riscv_cheriot_isa",
         "@com_google_googletest//:gtest_main",
         "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
     ],
 )
 

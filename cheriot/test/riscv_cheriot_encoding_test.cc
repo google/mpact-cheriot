@@ -20,15 +20,17 @@
 #include "cheriot/riscv_cheriot_enums.h"
 #include "googlemock/include/gmock/gmock.h"
 #include "mpact/sim/generic/type_helpers.h"
+#include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 
 namespace {
 
 using ::mpact::sim::cheriot::CheriotState;
 using ::mpact::sim::cheriot::isa32::kOpcodeNames;
 using ::mpact::sim::cheriot::isa32::RiscVCheriotEncoding;
+using ::mpact::sim::generic::operator*;  // NOLINT: is used below (clang error).
+using ::mpact::sim::util::TaggedFlatDemandMemory;
 using SlotEnum = mpact::sim::cheriot::isa32::SlotEnum;
 using OpcodeEnum = mpact::sim::cheriot::isa32::OpcodeEnum;
-using ::mpact::sim::generic::operator*;  // NOLINT: is used below (clang error).
 
 // Constexpr for opcodes for RV32 CHERIoT instructions grouped by isa group.
 
@@ -186,14 +188,17 @@ constexpr uint32_t kCebreak = 0b100'1'00000'00000'10;
 class RiscVCheriotEncodingTest : public testing::Test {
  protected:
   RiscVCheriotEncodingTest() {
-    state_ = new CheriotState("test");
+    mem_ = new TaggedFlatDemandMemory(8);
+    state_ = new CheriotState("test", mem_, nullptr);
     enc_ = new RiscVCheriotEncoding(state_);
   }
   ~RiscVCheriotEncodingTest() override {
     delete enc_;
+    delete mem_;
     delete state_;
   }
 
+  TaggedFlatDemandMemory *mem_;
   CheriotState *state_;
   RiscVCheriotEncoding *enc_;
 };

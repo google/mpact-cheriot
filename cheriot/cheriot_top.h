@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
@@ -27,6 +28,7 @@
 #include "absl/status/statusor.h"
 #include "absl/synchronization/notification.h"
 #include "cheriot/cheriot_debug_interface.h"
+#include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_register.h"
 #include "cheriot/cheriot_state.h"
 #include "cheriot/riscv_cheriot_enums.h"
@@ -63,22 +65,7 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   using RunStatus = generic::CoreDebugInterface::RunStatus;
   using HaltReason = generic::CoreDebugInterface::HaltReason;
 
-  // Simple constructor, the memories are created and owned by the CheriotTop
-  // instance.
-  explicit CheriotTop(std::string name);
-  // Constructors without the atomic memory interface. Either one (unified),
-  // or two (inst and data) interfaces are passed in.
-  CheriotTop(std::string name, util::TaggedMemoryInterface *memory);
-  CheriotTop(std::string name, util::MemoryInterface *inst_memory,
-             util::TaggedMemoryInterface *data_memory);
-  // Constructors with the memory interface to be used with atomic memory
-  // operations. Either one (unified), or two (inst and data) interfaces are
-  // passed in.
-  CheriotTop(std::string name, util::TaggedMemoryInterface *memory,
-             util::MemoryInterface *atomic_memory_if);
-  CheriotTop(std::string name, util::MemoryInterface *inst_memory,
-             util::TaggedMemoryInterface *data_memory,
-             util::MemoryInterface *atomic_memory_if);
+  CheriotTop(std::string name, CheriotState *state, CheriotDecoder *decoder);
   ~CheriotTop() override;
 
   // Methods inherited from CoreDebugInterface.
@@ -138,8 +125,6 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
 
   // Accessors.
   CheriotState *state() const { return state_; }
-  util::TaggedMemoryInterface *data_memory() const { return data_memory_; }
-  util::MemoryInterface *inst_memory() const { return inst_memory_; }
   // The following are not const as callers may need to call non-const methods
   // of the counter.
   generic::SimpleCounter<uint64_t> *counter_num_instructions() {
@@ -151,7 +136,7 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   generic::SimpleCounter<uint64_t> *counter_pc() { return &counter_pc_; }
   // Memory watchers used for data watch points.
   util::TaggedMemoryWatcher *tagged_watcher() { return tagged_watcher_; }
-  util::MemoryWatcher *atomic_watcher() { return atomic_watcher_; }
+  util::MemoryWatcher *memory_watcher() { return memory_watcher_; }
 
   const std::string &halt_string() const { return halt_string_; }
   void set_halt_string(std::string halt_string) { halt_string_ = halt_string; }
@@ -192,13 +177,9 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   generic::DecoderInterface *cheriot_decoder_ = nullptr;
   // Decode cache, memory and memory watcher.
   generic::DecodeCache *cheriot_decode_cache_ = nullptr;
-  util::MemoryInterface *inst_memory_ = nullptr;
-  util::TaggedMemoryInterface *data_memory_ = nullptr;
-  util::MemoryInterface *atomic_memory_if_ = nullptr;
   util::AtomicMemoryOpInterface *atomic_memory_ = nullptr;
-  bool owns_memory_ = false;
   util::TaggedMemoryWatcher *tagged_watcher_ = nullptr;
-  util::MemoryWatcher *atomic_watcher_ = nullptr;
+  util::MemoryWatcher *memory_watcher_ = nullptr;
   // Branch trace info - uses a circular buffer. The size is defined by the
   // constant kBranchTraceSize in the .cc file.
   BranchTraceEntry *branch_trace_;
@@ -211,8 +192,7 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   int branch_trace_mask_ = kBranchTraceSize - 1;
   int branch_trace_size_ = kBranchTraceSize;
   // Counter for the number of instructions simulated.
-  generic::SimpleCounter<uint64_t>
-      counter_opcode_[*isa32::OpcodeEnum::kPastMaxValue];
+  std::vector<generic::SimpleCounter<uint64_t>> counter_opcode_;
   generic::SimpleCounter<uint64_t> counter_num_instructions_;
   generic::SimpleCounter<uint64_t> counter_num_cycles_;
   // Counter used for profiling by connecting it to a profiler. This allows

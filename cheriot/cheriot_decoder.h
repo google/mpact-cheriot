@@ -64,6 +64,15 @@ class CheriotDecoder : public generic::DecoderInterface {
   // instance will raise an internal simulator error when executed.
   generic::Instruction *DecodeInstruction(uint64_t address) override;
 
+  // Return the number of opcodes supported by this decoder.
+  int GetNumOpcodes() const override {
+    return static_cast<int>(OpcodeEnum::kPastMaxValue);
+  }
+  // Return the name of the opcode at the given index.
+  const char *GetOpcodeName(int index) const override {
+    return isa32::kOpcodeNames[index];
+  }
+
   // Getter.
   isa32::RiscVCheriotEncoding *cheriot_encoding() const {
     return cheriot_encoding_;
@@ -73,6 +82,7 @@ class CheriotDecoder : public generic::DecoderInterface {
   CheriotState *state_;
   util::MemoryInterface *memory_;
   std::unique_ptr<generic::ProgramError> decode_error_;
+  generic::DataBufferFactory db_factory_;
   generic::DataBuffer *inst_db_;
   isa32::RiscVCheriotEncoding *cheriot_encoding_;
   isa32::RiscVCheriotInstructionSetFactory *cheriot_isa_factory_;

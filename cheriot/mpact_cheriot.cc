@@ -39,6 +39,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_instrumentation_control.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
@@ -63,9 +64,11 @@
 #include "riscv//riscv_clint.h"
 #include "src/google/protobuf/text_format.h"
 
-using ::mpact::sim::proto::ComponentData;
 using AddressRange = mpact::sim::util::MemoryWatcher::AddressRange;
+using ::mpact::sim::cheriot::CheriotDecoder;
 using ::mpact::sim::cheriot::CheriotInstrumentationControl;
+using ::mpact::sim::cheriot::CheriotState;
+using ::mpact::sim::proto::ComponentData;
 using ::mpact::sim::util::InstructionProfiler;
 using ::mpact::sim::util::TaggedMemoryUseProfiler;
 
@@ -251,8 +254,12 @@ int main(int argc, char **argv) {
     memory_use_profiler->set_is_enabled(false);
     data_memory = memory_use_profiler;
   }
-  CheriotTop cheriot_top("Cheriot", static_cast<MemoryInterface *>(router),
-                         data_memory, static_cast<MemoryInterface *>(router));
+  CheriotState cheriot_state("CherIoT", data_memory,
+                             static_cast<AtomicMemoryOpInterface *>(router));
+  CheriotDecoder cheriot_decoder(&cheriot_state,
+                                 static_cast<MemoryInterface *>(router));
+
+  CheriotTop cheriot_top("Cheriot", &cheriot_state, &cheriot_decoder);
 
   // Enable instruction profiling if the flag is set.
   InstructionProfiler *inst_profiler = nullptr;
@@ -343,9 +350,10 @@ int main(int argc, char **argv) {
   }
 
   // Set up semihosting.
-  auto *semihost = new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32,
-                                        cheriot_top.inst_memory(),
-                                        cheriot_top.data_memory());
+  auto *memory = static_cast<MemoryInterface *>(router);
+  auto *semihost =
+      new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32, memory, memory);
+
   cheriot_top.state()->AddEbreakHandler([semihost](const Instruction *inst) {
     if (semihost->IsSemihostingCall(inst)) {
       semihost->OnEBreak(inst);

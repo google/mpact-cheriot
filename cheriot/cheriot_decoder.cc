@@ -44,7 +44,7 @@ CheriotDecoder::CheriotDecoder(CheriotState *state,
 
   // Need a data buffer to load instructions from memory. Allocate a single
   // buffer that can be reused for each instruction word.
-  inst_db_ = state_->db_factory()->Allocate<uint32_t>(1);
+  inst_db_ = db_factory_.Allocate<uint32_t>(1);
   // Allocate the isa factory class, the top level isa decoder instance, and
   // the encoding parser.
   cheriot_isa_factory_ = new CheriotIsaFactory();

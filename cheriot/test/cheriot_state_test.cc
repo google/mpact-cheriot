@@ -30,6 +30,7 @@ namespace {
 
 using ::mpact::sim::cheriot::CheriotRegister;
 using ::mpact::sim::cheriot::CheriotState;
+using ::mpact::sim::util::TaggedFlatDemandMemory;
 using RVEC = ::mpact::sim::riscv::ExceptionCode;
 
 constexpr int kPcValue = 0x1000;
@@ -40,7 +41,9 @@ constexpr uint32_t kMemValue = 0xdeadbeef;
 // additional functionality over the ArchState class.
 
 TEST(CheriotStateTest, Basic) {
-  auto *state = new CheriotState("test");
+  TaggedFlatDemandMemory mem(8);
+
+  auto *state = new CheriotState("test", &mem, nullptr);
   // Make sure pc has been created.
   auto iter = state->registers()->find("pcc");
   auto *ptr = (iter != state->registers()->end()) ? iter->second : nullptr;
@@ -56,7 +59,9 @@ TEST(CheriotStateTest, Basic) {
 }
 
 TEST(CheriotStateTest, Memory) {
-  auto *state = new CheriotState("test");
+  TaggedFlatDemandMemory mem(8);
+
+  auto *state = new CheriotState("test", &mem, nullptr);
   auto *db = state->db_factory()->Allocate<uint32_t>(1);
   state->LoadMemory(nullptr, kMemAddr, db, nullptr, nullptr);
   EXPECT_EQ(db->Get<uint32_t>(0), 0);
@@ -70,7 +75,9 @@ TEST(CheriotStateTest, Memory) {
 }
 
 TEST(CheriotStateTest, OutOfBoundLoad) {
-  auto *state = new CheriotState("test");
+  TaggedFlatDemandMemory mem(8);
+
+  auto *state = new CheriotState("test", &mem, nullptr);
   state->set_max_physical_address(kMemAddr - 4);
   state->set_on_trap([](bool is_interrupt, uint64_t trap_value,
                         uint64_t exception_code, uint64_t epc,

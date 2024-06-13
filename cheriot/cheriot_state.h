@@ -168,8 +168,6 @@ class CheriotState : public generic::ArchState {
                util::AtomicMemoryOpInterface *atomic_memory);
   CheriotState(std::string_view id, util::TaggedMemoryInterface *memory)
       : CheriotState(id, memory, nullptr) {}
-  explicit CheriotState(std::string_view id)
-      : CheriotState(id, nullptr, nullptr) {}
   ~CheriotState() override;
 
   // Deleted constructors and operators.
@@ -283,7 +281,7 @@ class CheriotState : public generic::ArchState {
   inline void reset_is_interrupt_available() {
     is_interrupt_available_ = false;
   }
-  void set_memory(util::TaggedMemoryInterface *tagged_memory) {
+  void set_tagged_memory(util::TaggedMemoryInterface *tagged_memory) {
     tagged_memory_ = tagged_memory;
   }
   util::TaggedMemoryInterface *tagged_memory() const { return tagged_memory_; }
@@ -387,7 +385,6 @@ class CheriotState : public generic::ArchState {
   uint64_t max_physical_address_;
   uint64_t min_physical_address_ = 0;
   int num_tags_per_load_;
-  util::TaggedMemoryInterface *owned_tagged_memory_ = nullptr;
   util::TaggedMemoryInterface *tagged_memory_;
   util::AtomicMemoryOpInterface *atomic_tagged_memory_;
   RiscVCsrSet *csr_set_;

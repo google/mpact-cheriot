@@ -289,11 +289,6 @@ CheriotState::CheriotState(std::string_view id,
   // Create the other CSRs.
   csr_set_ = new RiscVCsrSet();
   CreateCsrs<uint32_t>(this, csr_vec_);
-  if (tagged_memory_ == nullptr) {
-    owned_tagged_memory_ = new util::TaggedFlatDemandMemory(
-        CheriotRegister::kCapabilitySizeInBytes);
-    tagged_memory_ = owned_tagged_memory_;
-  }
   pc_src_operand_ = new RiscVCheri32PcSourceOperand(this);
   set_pc_operand(pc_src_operand_);
   // Create the revocation data buffer.
@@ -308,7 +303,6 @@ CheriotState::~CheriotState() {
   delete executable_root_;
   delete sealing_root_;
   delete memory_root_;
-  delete owned_tagged_memory_;
   delete pc_src_operand_;
   for (auto *csr : csr_vec_) delete csr;
   delete csr_set_;

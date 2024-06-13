@@ -38,6 +38,7 @@
 #include "cheriot/riscv_cheriot_register_aliases.h"
 #include "mpact/sim/generic/component.h"
 #include "mpact/sim/generic/core_debug_interface.h"
+#include "mpact/sim/generic/counters.h"
 #include "mpact/sim/generic/data_buffer.h"
 #include "mpact/sim/generic/decode_cache.h"
 #include "mpact/sim/generic/type_helpers.h"
@@ -62,71 +63,11 @@ constexpr char kCheriotName[] = "CherIoT";
 using EC = ::mpact::sim::cheriot::ExceptionCode;
 using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 
-CheriotTop::CheriotTop(std::string name)
+CheriotTop::CheriotTop(std::string name, CheriotState *state,
+                       CheriotDecoder *decoder)
     : Component(name),
-      owns_memory_(true),
-      counter_num_instructions_("num_instructions", 0),
-      counter_num_cycles_("num_cycles", 0),
-      counter_pc_("pc", 0),
-      cap_reg_re_{
-          R"((\w+)\.(top|base|length|tag|permissions|object_type|reserved))"} {
-  data_memory_ = new util::TaggedFlatDemandMemory(8);
-  inst_memory_ = data_memory_;
-  Initialize();
-}
-
-CheriotTop::CheriotTop(std::string name, util::TaggedMemoryInterface *memory)
-    : Component(name),
-      inst_memory_(memory),
-      data_memory_(memory),
-      atomic_memory_(nullptr),
-      owns_memory_(false),
-      counter_num_instructions_("num_instructions", 0),
-      counter_num_cycles_("num_cycles", 0),
-      counter_pc_("pc", 0),
-      cap_reg_re_{
-          R"((\w+)\.(top|base|length|tag|permissions|object_type|reserved))"} {
-  Initialize();
-}
-
-CheriotTop::CheriotTop(std::string name, util::MemoryInterface *inst_memory,
-                       util::TaggedMemoryInterface *data_memory)
-    : Component(name),
-      inst_memory_(inst_memory),
-      data_memory_(data_memory),
-      atomic_memory_(nullptr),
-      owns_memory_(false),
-      counter_num_instructions_("num_instructions", 0),
-      counter_num_cycles_("num_cycles", 0),
-      counter_pc_("pc", 0),
-      cap_reg_re_{
-          R"((\w+)\.(top|base|length|tag|permissions|object_type|reserved))"} {
-  Initialize();
-}
-
-CheriotTop::CheriotTop(std::string name, util::TaggedMemoryInterface *memory,
-                       util::MemoryInterface *atomic_memory_if)
-    : Component(name),
-      inst_memory_(memory),
-      data_memory_(memory),
-      atomic_memory_if_(atomic_memory_if),
-      owns_memory_(false),
-      counter_num_instructions_("num_instructions", 0),
-      counter_num_cycles_("num_cycles", 0),
-      counter_pc_("pc", 0),
-      cap_reg_re_{
-          R"((\w+)\.(top|base|length|tag|permissions|object_type|reserved))"} {
-  Initialize();
-}
-
-CheriotTop::CheriotTop(std::string name, util::MemoryInterface *inst_memory,
-                       util::TaggedMemoryInterface *data_memory,
-                       util::MemoryInterface *atomic_memory_if)
-    : Component(name),
-      inst_memory_(inst_memory),
-      data_memory_(data_memory),
-      atomic_memory_if_(atomic_memory_if),
-      owns_memory_(false),
+      state_(state),
+      cheriot_decoder_(decoder),
       counter_num_instructions_("num_instructions", 0),
       counter_num_cycles_("num_cycles", 0),
       counter_pc_("pc", 0),
@@ -148,32 +89,35 @@ CheriotTop::~CheriotTop() {
 
   delete rv_bp_manager_;
   delete cheriot_decode_cache_;
-  delete cheriot_decoder_;
-  delete state_;
-  delete tagged_watcher_;
-  delete atomic_watcher_;
   delete atomic_memory_;
-  if (owns_memory_) delete inst_memory_;
+  delete tagged_watcher_;
+  delete memory_watcher_;
 }
 
 void CheriotTop::Initialize() {
-  // Create the simulation state.
-  tagged_watcher_ = new util::TaggedMemoryWatcher(data_memory_);
-  atomic_watcher_ = new util::MemoryWatcher(atomic_memory_if_);
-  atomic_memory_ = new util::AtomicMemory(atomic_watcher_);
-  state_ = new CheriotState(kCheriotName, tagged_watcher_, atomic_memory_);
+  // Create the watchers.
+  auto *memory = static_cast<util::MemoryInterface *>(state_->tagged_memory());
+  tagged_watcher_ = new util::TaggedMemoryWatcher(state_->tagged_memory());
+  memory_watcher_ = new util::MemoryWatcher(memory);
+
+  atomic_memory_ = new util::AtomicMemory(memory_watcher_);
+  state_->set_tagged_memory(tagged_watcher_);
+  state_->set_atomic_tagged_memory(atomic_memory_);
+
   pcc_ = static_cast<CheriotRegister *>(
       state_->registers()->at(CheriotState::kPcName));
-  // Set up the decoder and decode cache.
-  cheriot_decoder_ = new CheriotDecoder(state_, inst_memory_);
-  // Register instruction opcode counters.
-  for (int i = 0; i < static_cast<int>(isa32::OpcodeEnum::kPastMaxValue); i++) {
-    counter_opcode_[i].Initialize(absl::StrCat("num_", isa32::kOpcodeNames[i]),
-                                  0);
+
+  // Register opcode counters.
+  int num_opcodes = cheriot_decoder_->GetNumOpcodes();
+  counter_opcode_.resize(num_opcodes);
+  for (int i = 0; i < num_opcodes; i++) {
+    counter_opcode_.push_back(generic::SimpleCounter<uint64_t>());
+    counter_opcode_[i].Initialize(
+        absl::StrCat("num_", cheriot_decoder_->GetOpcodeName(i)), 0);
     CHECK_OK(AddCounter(&counter_opcode_[i]))
-        << absl::StrCat("Failed to register opcode counter for :'",
-                        isa32::kOpcodeNames[i], "'");
+        << "Failed to register opcode counter";
   }
+
   cheriot_decode_cache_ =
       generic::DecodeCache::Create({16 * 1024, 2}, cheriot_decoder_);
   // Register instruction counter.
@@ -184,8 +128,8 @@ void CheriotTop::Initialize() {
 
   // Breakpoints.
   rv_action_point_manager_ = new riscv::RiscVActionPointManager(
-      inst_memory_, absl::bind_front(&generic::DecodeCache::Invalidate,
-                                     cheriot_decode_cache_));
+      memory, absl::bind_front(&generic::DecodeCache::Invalidate,
+                               cheriot_decode_cache_));
   rv_bp_manager_ = new riscv::RiscVBreakpointManager(
       rv_action_point_manager_,
       [this](HaltReason halt_reason) { RequestHalt(halt_reason, nullptr); });
@@ -231,21 +175,25 @@ void CheriotTop::Initialize() {
 }
 
 bool CheriotTop::ExecuteInstruction(Instruction *inst) {
+  // Check that pcc has tag set.
   if (!pcc_->tag()) {
     state_->HandleCheriRegException(inst, inst->address(),
                                     EC::kCapExTagViolation, pcc_);
     return true;
   }
+  // Check that pcc has execute permission.
   if (!pcc_->HasPermission(PB::kPermitExecute)) {
     state_->HandleCheriRegException(inst, inst->address(),
                                     EC::kCapExPermitExecuteViolation, pcc_);
     return true;
   }
+  // Check that pcc is within bounds.
   if (!pcc_->IsInBounds(inst->address(), inst->size())) {
     state_->HandleCheriRegException(inst, inst->address(),
                                     EC::kCapExBoundsViolation, pcc_);
     return true;
   }
+  // Execute the instruction.
   inst->Execute(nullptr);
   counter_pc_.SetValue(inst->address());
   // Comment out instruction logging during execution.
@@ -859,7 +807,7 @@ absl::Status CheriotTop::SetDataWatchpoint(uint64_t address, size_t length,
         });
     if (!rd_tagged_status.ok()) return rd_tagged_status;
 
-    auto rd_atomic_status = atomic_watcher_->SetLoadWatchCallback(
+    auto rd_atomic_status = memory_watcher_->SetLoadWatchCallback(
         util::MemoryWatcher::AddressRange(address, address + length - 1),
         [this](uint64_t address, int size) {
           set_halt_string(absl::StrFormat(
@@ -885,12 +833,12 @@ absl::Status CheriotTop::SetDataWatchpoint(uint64_t address, size_t length,
       if (access_type == AccessType::kLoadStore) {
         // Error recovery - ignore return value.
         (void)tagged_watcher_->ClearLoadWatchCallback(address);
-        (void)atomic_watcher_->ClearLoadWatchCallback(address);
+        (void)memory_watcher_->ClearLoadWatchCallback(address);
       }
       return wr_tagged_status;
     }
 
-    auto wr_atomic_status = atomic_watcher_->SetStoreWatchCallback(
+    auto wr_atomic_status = memory_watcher_->SetStoreWatchCallback(
         util::MemoryWatcher::AddressRange(address, address + length - 1),
         [this](uint64_t address, int size) {
           set_halt_string(absl::StrFormat(
@@ -902,7 +850,7 @@ absl::Status CheriotTop::SetDataWatchpoint(uint64_t address, size_t length,
       (void)tagged_watcher_->ClearStoreWatchCallback(address);
       if (access_type == AccessType::kLoadStore) {
         (void)tagged_watcher_->ClearLoadWatchCallback(address);
-        (void)atomic_watcher_->ClearLoadWatchCallback(address);
+        (void)memory_watcher_->ClearLoadWatchCallback(address);
       }
       return wr_atomic_status;
     }
@@ -917,7 +865,7 @@ absl::Status CheriotTop::ClearDataWatchpoint(uint64_t address,
     auto rd_tagged_status = tagged_watcher_->ClearLoadWatchCallback(address);
     if (!rd_tagged_status.ok()) return rd_tagged_status;
 
-    auto rd_atomic_status = atomic_watcher_->ClearLoadWatchCallback(address);
+    auto rd_atomic_status = memory_watcher_->ClearLoadWatchCallback(address);
     if (!rd_atomic_status.ok()) return rd_atomic_status;
   }
   if ((access_type == AccessType::kStore) ||
@@ -925,7 +873,7 @@ absl::Status CheriotTop::ClearDataWatchpoint(uint64_t address,
     auto wr_tagged_status = tagged_watcher_->ClearStoreWatchCallback(address);
     if (!wr_tagged_status.ok()) return wr_tagged_status;
 
-    auto wr_atomic_status = atomic_watcher_->ClearStoreWatchCallback(address);
+    auto wr_atomic_status = memory_watcher_->ClearStoreWatchCallback(address);
     if (!wr_atomic_status.ok()) return wr_atomic_status;
   }
   return absl::OkStatus();

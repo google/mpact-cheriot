@@ -35,6 +35,7 @@
 #include "cheriot/cheriot_cli_forwarder.h"
 #include "cheriot/cheriot_debug_info.h"
 #include "cheriot/cheriot_debug_interface.h"
+#include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_instrumentation_control.h"
 #include "cheriot/cheriot_renode_cli_top.h"
 #include "cheriot/cheriot_renode_register_info.h"
@@ -104,10 +105,13 @@ CheriotRenode::CheriotRenode(std::string name, MemoryInterface *renode_sysbus)
   mem_profiler_ = new TaggedMemoryUseProfiler(data_memory);
   data_memory = mem_profiler_;
   mem_profiler_->set_is_enabled(false);
+  cheriot_state_ = new CheriotState(
+      "CherIoT", data_memory, static_cast<AtomicMemoryOpInterface *>(router_));
+  cheriot_decoder_ = new CheriotDecoder(
+      cheriot_state_, static_cast<MemoryInterface *>(router_));
+
   // Instantiate cheriot_top.
-  cheriot_top_ =
-      new CheriotTop(name, static_cast<MemoryInterface *>(router_), data_memory,
-                     static_cast<MemoryInterface *>(router_));
+  cheriot_top_ = new CheriotTop("Cheriot", cheriot_state_, cheriot_decoder_);
   // Initialize minstret/minstreth. Bind the instruction counter to those
   // registers.
   auto minstret_res = cheriot_top_->state()->csr_set()->GetCsr("minstret");
@@ -142,9 +146,10 @@ CheriotRenode::CheriotRenode(std::string name, MemoryInterface *renode_sysbus)
   CHECK_OK(renode_router_->AddDefaultTarget<MemoryInterface>(tagged_memory_));
 
   // Set up semihosting.
-  semihost_ = new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32,
-                                   cheriot_top_->inst_memory(),
-                                   cheriot_top_->data_memory());
+  semihost_ =
+      new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32,
+                           static_cast<MemoryInterface *>(router_),
+                           static_cast<MemoryInterface *>(renode_router_));
   // Set up special handlers (ebreak, wfi, ecall).
   cheriot_top_->state()->AddEbreakHandler([this](const Instruction *inst) {
     if (this->semihost_->IsSemihostingCall(inst)) {
@@ -217,6 +222,8 @@ CheriotRenode::~CheriotRenode() {
   delete socket_cli_;
   delete cheriot_renode_cli_top_;
   delete cheriot_cli_forwarder_;
+  delete cheriot_decoder_;
+  delete cheriot_state_;
   delete cheriot_top_;
   delete semihost_;
   delete router_;
