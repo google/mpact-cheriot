@@ -31,7 +31,8 @@
 #include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_register.h"
 #include "cheriot/cheriot_state.h"
-#include "cheriot/riscv_cheriot_enums.h"
+#include "mpact/sim/generic/action_point_manager_base.h"
+#include "mpact/sim/generic/breakpoint_manager.h"
 #include "mpact/sim/generic/component.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/counters.h"
@@ -40,15 +41,17 @@
 #include "mpact/sim/generic/decoder_interface.h"
 #include "mpact/sim/util/memory/memory_interface.h"
 #include "mpact/sim/util/memory/memory_watcher.h"
-#include "mpact/sim/util/memory/tagged_memory_interface.h"
 #include "mpact/sim/util/memory/tagged_memory_watcher.h"
 #include "re2/re2.h"
-#include "riscv//riscv_action_point.h"
-#include "riscv//riscv_breakpoint.h"
+#include "riscv//riscv_action_point_memory_interface.h"
 
 namespace mpact {
 namespace sim {
 namespace cheriot {
+
+using ::mpact::sim::generic::ActionPointManagerBase;
+using ::mpact::sim::generic::BreakpointManager;
+using ::mpact::sim::riscv::RiscVActionPointMemoryInterface;
 
 struct BranchTraceEntry {
   uint32_t from;
@@ -165,10 +168,12 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   CheriotState *state_;
   // Flag that indicates an instruction needs to be stepped over.
   bool need_to_step_over_ = false;
+  // Action point memory interface.
+  RiscVActionPointMemoryInterface *rv_ap_memory_if_ = nullptr;
   // Action point manager.
-  riscv::RiscVActionPointManager *rv_action_point_manager_ = nullptr;
+  ActionPointManagerBase *rv_ap_manager_ = nullptr;
   // Breakpoint manager.
-  riscv::RiscVBreakpointManager *rv_bp_manager_ = nullptr;
+  BreakpointManager *rv_bp_manager_ = nullptr;
   // Textual description of halt reason.
   std::string halt_string_;
   // The pc register instance.

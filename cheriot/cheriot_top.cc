@@ -36,6 +36,8 @@
 #include "cheriot/cheriot_state.h"
 #include "cheriot/riscv_cheriot_enums.h"
 #include "cheriot/riscv_cheriot_register_aliases.h"
+#include "mpact/sim/generic/action_point_manager_base.h"
+#include "mpact/sim/generic/breakpoint_manager.h"
 #include "mpact/sim/generic/component.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/counters.h"
@@ -49,8 +51,7 @@
 #include "mpact/sim/util/memory/tagged_memory_interface.h"
 #include "mpact/sim/util/memory/tagged_memory_watcher.h"
 #include "re2/re2.h"
-#include "riscv//riscv_action_point.h"
-#include "riscv//riscv_breakpoint.h"
+#include "riscv//riscv_action_point_memory_interface.h"
 #include "riscv//riscv_csr.h"
 #include "riscv//riscv_register.h"
 
@@ -60,6 +61,9 @@ namespace cheriot {
 
 constexpr char kCheriotName[] = "CherIoT";
 
+using ::mpact::sim::generic::ActionPointManagerBase;
+using ::mpact::sim::generic::BreakpointManager;
+using ::mpact::sim::riscv::RiscVActionPointMemoryInterface;
 using EC = ::mpact::sim::cheriot::ExceptionCode;
 using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 
@@ -127,20 +131,21 @@ void CheriotTop::Initialize() {
   CHECK_OK(AddCounter(&counter_pc_)) << "Failed to register pc counter";
 
   // Breakpoints.
-  rv_action_point_manager_ = new riscv::RiscVActionPointManager(
+  rv_ap_memory_if_ = new RiscVActionPointMemoryInterface(
       memory, absl::bind_front(&generic::DecodeCache::Invalidate,
                                cheriot_decode_cache_));
-  rv_bp_manager_ = new riscv::RiscVBreakpointManager(
-      rv_action_point_manager_,
-      [this](HaltReason halt_reason) { RequestHalt(halt_reason, nullptr); });
+  rv_ap_manager_ = new ActionPointManagerBase(rv_ap_memory_if_);
+  rv_bp_manager_ = new BreakpointManager(rv_ap_manager_, [this]() {
+    RequestHalt(HaltReason::kSoftwareBreakpoint, nullptr);
+  });
   // Set the software action callback.
   state_->AddEbreakHandler([this](const Instruction *inst) {
-    if (rv_action_point_manager_->IsActionPointActive(inst->address())) {
+    if (rv_ap_manager_->IsActionPointActive(inst->address())) {
       // Need to request a halt so that the action point can be stepped past
       // after executing the actions. However, an action may override the
       // particular halt reason (e.g., breakpoints).
       RequestHalt(HaltReason::kActionPoint, inst);
-      rv_action_point_manager_->PerformActions(inst->address());
+      rv_ap_manager_->PerformActions(inst->address());
       return true;
     }
     return false;
@@ -220,7 +225,7 @@ absl::Status CheriotTop::Halt() {
 absl::Status CheriotTop::StepPastBreakpoint() {
   uint64_t pc = state_->pc_operand()->AsUint64(0);
   // Disable the breakpoint.
-  rv_action_point_manager_->WriteOriginalInstruction(pc);
+  (void)rv_ap_manager_->ap_memory_interface()->WriteOriginalInstruction(pc);
   // Execute the real instruction.
   auto real_inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
   real_inst->IncRef();
@@ -236,7 +241,7 @@ absl::Status CheriotTop::StepPastBreakpoint() {
   counter_num_instructions_.Increment(1);
   real_inst->DecRef();
   // Re-enable the breakpoint.
-  rv_action_point_manager_->WriteBreakpointInstruction(pc);
+  (void)rv_ap_manager_->ap_memory_interface()->WriteBreakpointInstruction(pc);
   // Get the next pc value.
   if (state_->branch()) {
     state_->set_branch(false);
@@ -760,37 +765,37 @@ absl::Status CheriotTop::ClearAllSwBreakpoints() {
   return absl::OkStatus();
 }
 
-// Methods for Action points forward to the rv_action_point_manager_ methods.
+// Methods for Action points forward to the rv_ap_manager_ methods.
 
 absl::StatusOr<int> CheriotTop::SetActionPoint(
     uint64_t address, absl::AnyInvocable<void(uint64_t, int)> action) {
-  if (rv_action_point_manager_ == nullptr) {
+  if (rv_ap_manager_ == nullptr) {
     return absl::InternalError("Action points are not enabled");
   }
-  auto res = rv_action_point_manager_->SetAction(address, std::move(action));
+  auto res = rv_ap_manager_->SetAction(address, std::move(action));
   if (!res.ok()) return res;
   return res.value();
 }
 
 absl::Status CheriotTop::ClearActionPoint(uint64_t address, int id) {
-  if (rv_action_point_manager_ == nullptr) {
+  if (rv_ap_manager_ == nullptr) {
     return absl::InternalError("Action points are not enabled");
   }
-  return rv_action_point_manager_->ClearAction(address, id);
+  return rv_ap_manager_->ClearAction(address, id);
 }
 
 absl::Status CheriotTop::EnableAction(uint64_t address, int id) {
-  if (rv_action_point_manager_ == nullptr) {
+  if (rv_ap_manager_ == nullptr) {
     return absl::InternalError("Action points are not enabled");
   }
-  return rv_action_point_manager_->EnableAction(address, id);
+  return rv_ap_manager_->EnableAction(address, id);
 }
 
 absl::Status CheriotTop::DisableAction(uint64_t address, int id) {
-  if (rv_action_point_manager_ == nullptr) {
+  if (rv_ap_manager_ == nullptr) {
     return absl::InternalError("Action points are not enabled");
   }
-  return rv_action_point_manager_->DisableAction(address, id);
+  return rv_ap_manager_->DisableAction(address, id);
 }
 
 // Set a data watchpoint for the given address range and access type.
@@ -898,16 +903,18 @@ absl::StatusOr<std::string> CheriotTop::GetDisassembly(uint64_t address) {
   // If requesting the disassembly for an instruction at an action point, we
   // need to write the original instruction back to memory before getting the
   // disassembly.
-  bool inst_swap = rv_action_point_manager_->IsActionPointActive(address);
+  bool inst_swap = rv_ap_manager_->IsActionPointActive(address);
   if (inst_swap) {
-    rv_action_point_manager_->WriteOriginalInstruction(address);
+    (void)rv_ap_manager_->ap_memory_interface()->WriteOriginalInstruction(
+        address);
   }
   // Get the decoded instruction.
   inst = cheriot_decode_cache_->GetDecodedInstruction(address);
   auto disasm = inst != nullptr ? inst->AsString() : "Invalid instruction";
   // Swap back if required.
   if (inst_swap) {
-    rv_action_point_manager_->WriteBreakpointInstruction(address);
+    (void)rv_ap_manager_->ap_memory_interface()->WriteBreakpointInstruction(
+        address);
   }
   return disasm;
 }
