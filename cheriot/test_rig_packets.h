@@ -153,7 +153,8 @@ struct ExecutionPacketExtInteger {
   uint8_t rvfi_rs2_addr;
   // Padding to make the size a multiple of 8 bytes.
   uint8_t padding[5];
-  ExecutionPacketExtInteger() : magic{'i', 'n', 't', '-', 'd', 'a', 't', 'a'} {}
+  ExecutionPacketExtInteger()
+      : magic{'i', 'n', 't', '-', 'd', 'a', 't', 'a'}, padding{0, 0, 0, 0, 0} {}
 };
 
 struct ExecutionPacketExtMemAccess {

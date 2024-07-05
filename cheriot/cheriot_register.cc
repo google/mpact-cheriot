@@ -197,7 +197,8 @@ std::pair<uint32_t, uint64_t> CheriotRegister::ComputeBounds() {
   uint64_t t_hi = top_bits < base_bits ? 1 : 0;
   uint64_t c_b = 0 - a_hi;
   uint64_t c_t = t_hi - a_hi;
-  uint64_t a_top = address() >> (exponent_ + 9);
+  uint64_t address64 = address();
+  uint64_t a_top = address64 >> (exponent_ + 9);
   uint64_t base = ((a_top + c_b) << (exponent_ + 9)) | (base_bits << exponent_);
   base &= 0xffff'ffff;
   uint64_t top = ((a_top + c_t) << (exponent_ + 9)) | (top_bits << exponent_);

@@ -341,6 +341,8 @@ absl::Status CheriotTestRig::ExecuteV2(
   ep_pc.rvfi_pc_wdata = next_pc;
   ep_metadata.rvfi_order = counter_num_instructions_.GetValue();
   ep_metadata.rvfi_valid = 1;
+  ep_metadata.rvfi_padding[0] = 0;
+  ep_metadata.rvfi_padding[1] = 0;
   pcc_->set_address(next_pc);
   inst->DecRef();
   ep_v2.trace_size = sizeof(ep_v2);

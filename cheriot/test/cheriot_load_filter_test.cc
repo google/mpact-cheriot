@@ -60,7 +60,7 @@ constexpr int kCapRegionSize = 0x1000;
 // Test fixture to provide convenience methods and objects for the test.
 class CheriotLoadFilterTest : public ::testing::Test {
  public:
-  CheriotLoadFilterTest() : cap_reg_(nullptr, "dummy") {
+  CheriotLoadFilterTest() : counter_("dummy", 0), cap_reg_(nullptr, "dummy") {
     db_ = db_factory_.Allocate<uint32_t>(1);
     cap_reg_.SetDataBuffer(db_);
     cap_reg_.ResetNull();
@@ -82,7 +82,12 @@ class CheriotLoadFilterTest : public ::testing::Test {
           revoke_loads_.push_back(address);
         }));
     db_ = db_factory_.Allocate<uint32_t>(2);
+    db_->Set<uint32_t>(0, 0);
+    db_->Set<uint32_t>(1, 0);
+    db_->set_latency(0);
     tag_db_ = db_factory_.Allocate<uint8_t>(1);
+    tag_db_->Set<uint8_t>(0, 0);
+    tag_db_->set_latency(0);
     counter_.SetIsEnabled(/*is_enabled=*/true);
   }
 

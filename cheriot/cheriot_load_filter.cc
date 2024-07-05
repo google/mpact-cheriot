@@ -33,11 +33,15 @@ CheriotLoadFilter::CheriotLoadFilter(TaggedMemoryInterface *tagged_memory,
       revocation_base_(revocation_base) {
   cap_reg_ = new CheriotRegister(nullptr, "filter_cap");
   db_ = db_factory_.Allocate<uint32_t>(1);
+  db_->Set<uint32_t>(0, 0);
+  db_->set_latency(0);
   cap_reg_->SetDataBuffer(db_);
   db_->DecRef();
   // Allocate data buffers used in loads/stores.
   db_ = db_factory_.Allocate<uint8_t>(CheriotRegister::kCapabilitySizeInBytes);
+  db_->set_latency(0);
   tag_db_ = db_factory_.Allocate<uint8_t>(1);
+  tag_db_->set_latency(0);
   cap_address_ = base_;
 }
 
