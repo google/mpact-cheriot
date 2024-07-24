@@ -89,6 +89,7 @@ constexpr std::string_view kTaggedMemoryBase = "memoryBase";
 constexpr std::string_view kTaggedMemorySize = "memorySize";
 constexpr std::string_view kRevocationMemoryBase = "revocationMemoryBase";
 constexpr std::string_view kClintMMRBase = "clintMMRBase";
+constexpr std::string_view kClintPeriod = "clintPeriod";
 constexpr std::string_view kCLIPort = "cliPort";
 constexpr std::string_view kWaitForCLI = "waitForCLI";
 constexpr std::string_view kInstProfile = "instProfile";
@@ -388,7 +389,7 @@ static absl::StatusOr<uint64_t> ParseNumber(const std::string &number) {
   } else if (number[0] == '0') {
     res = riscv::internal::stoull(number.substr(1), nullptr, 8);
   } else {
-    res = riscv::internal::stoull(number.substr(2), nullptr, 16);
+    res = riscv::internal::stoull(number, nullptr, 16);
   }
   if (!res.ok()) {
     LOG(ERROR) << "Invalid number: " << number;
@@ -403,6 +404,7 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
   uint64_t tagged_memory_size = 0;
   uint64_t revocation_memory_base = 0;
   uint64_t clint_mmr_base = 0;
+  uint64_t clint_period = 100;  // 100 by default.
   bool do_inst_profile = false;
   int cli_port = 0;
   int wait_for_cli = 0;
@@ -421,6 +423,8 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
       revocation_memory_base = value;
     } else if (name == kClintMMRBase) {
       clint_mmr_base = value;
+    } else if (name == kClintPeriod) {
+      clint_period = value;
     } else if (name == kCLIPort) {
       cli_port = value;
     } else if (name == kWaitForCLI) {
@@ -448,7 +452,7 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
       tagged_memory_base + tagged_memory_size - 1));
   // Memory mapped devices.
   if (clint_mmr_base != 0) {
-    clint_ = new RiscVClint(/*period=*/100, cheriot_top_->state()->mip());
+    clint_ = new RiscVClint(clint_period, cheriot_top_->state()->mip());
     cheriot_top_->counter_num_cycles()->AddListener(clint_);
     // Core local interrupt controller - clint.
     CHECK_OK(router_->AddTarget<MemoryInterface>(clint_, clint_mmr_base,
