@@ -889,7 +889,21 @@ void CheriotTop::SetBreakOnControlFlowChange(bool value) {
 }
 
 absl::StatusOr<Instruction *> CheriotTop::GetInstruction(uint64_t address) {
-  auto inst = cheriot_decode_cache_->GetDecodedInstruction(address);
+  // If requesting the instruction at an action point, we need to write the
+  // original instruction back to memory before getting the disassembly.
+  bool inst_swap = rv_ap_manager_->IsActionPointActive(address);
+  if (inst_swap) {
+    (void)rv_ap_manager_->ap_memory_interface()->WriteOriginalInstruction(
+        address);
+  }
+  // Get the decoded instruction.
+  Instruction *inst = cheriot_decode_cache_->GetDecodedInstruction(address);
+  inst->IncRef();
+  // Swap back if required.
+  if (inst_swap) {
+    (void)rv_ap_manager_->ap_memory_interface()->WriteBreakpointInstruction(
+        address);
+  }
   return inst;
 }
 
@@ -899,23 +913,11 @@ absl::StatusOr<std::string> CheriotTop::GetDisassembly(uint64_t address) {
     return absl::FailedPreconditionError("GetDissasembly: Core must be halted");
   }
 
-  Instruction *inst = nullptr;
-  // If requesting the disassembly for an instruction at an action point, we
-  // need to write the original instruction back to memory before getting the
-  // disassembly.
-  bool inst_swap = rv_ap_manager_->IsActionPointActive(address);
-  if (inst_swap) {
-    (void)rv_ap_manager_->ap_memory_interface()->WriteOriginalInstruction(
-        address);
-  }
-  // Get the decoded instruction.
-  inst = cheriot_decode_cache_->GetDecodedInstruction(address);
+  auto res = GetInstruction(address);
+  if (!res.ok()) return res.status();
+  Instruction *inst = res.value();
   auto disasm = inst != nullptr ? inst->AsString() : "Invalid instruction";
-  // Swap back if required.
-  if (inst_swap) {
-    (void)rv_ap_manager_->ap_memory_interface()->WriteBreakpointInstruction(
-        address);
-  }
+  inst->DecRef();
   return disasm;
 }
 

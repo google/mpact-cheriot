@@ -1441,12 +1441,14 @@ absl::Status DebugCommandShell::StepOverCall(int core, std::ostream &os) {
     return absl::UnavailableError(inst_res.status().message());
   }
   auto *inst = inst_res.value();
+  auto opcode = inst->opcode();
   // If it's not a jump-and-link, it's a single step.
-  if ((inst->opcode() != *isa32::OpcodeEnum::kCheriotJal) &&
-      (inst->opcode() != *isa32::OpcodeEnum::kCheriotJalr) &&
-      (inst->opcode() != *isa32::OpcodeEnum::kCheriotJalrCra) &&
-      (inst->opcode() != *isa32::OpcodeEnum::kCheriotCjal) &&
-      (inst->opcode() != *isa32::OpcodeEnum::kCheriotCjalrCra)) {
+  if ((opcode != *isa32::OpcodeEnum::kCheriotJal) &&
+      (opcode != *isa32::OpcodeEnum::kCheriotJalr) &&
+      (opcode != *isa32::OpcodeEnum::kCheriotJalrCra) &&
+      (opcode != *isa32::OpcodeEnum::kCheriotCjal) &&
+      (opcode != *isa32::OpcodeEnum::kCheriotCjalrCra)) {
+    inst->DecRef();
     return core_access_[current_core_].debug_interface->Step(1).status();
   }
   // If it is a jump-and-link, we have to set a breakpoint on the instruction
@@ -1454,6 +1456,7 @@ absl::Status DebugCommandShell::StepOverCall(int core, std::ostream &os) {
   // on another breakpoint. Either way, we then remove the breakpoint we
   // inserted and return.
   uint64_t bp_address = pcc + inst->size();
+  inst->DecRef();
   bool bp_set = false;
   // See if there is a bp on that address already, if so, don't try to set
   // another one.

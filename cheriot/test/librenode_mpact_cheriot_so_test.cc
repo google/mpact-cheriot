@@ -10,7 +10,7 @@ namespace {
 
 constexpr char kFileName[] = "librenode_mpact_cheriot.so";
 
-constexpr char kDepotPath[] = "cheriot/";
+constexpr char kDepotPath[] = "third_party/mpact_cheriot/";
 
 class LibRenodeMpactCheriotSoTest : public ::testing::Test {
  protected:
