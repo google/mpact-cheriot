@@ -24,6 +24,7 @@
 #include "cheriot/cheriot_state.h"
 #include "cheriot/riscv_cheriot_bin_decoder.h"
 #include "cheriot/riscv_cheriot_decoder.h"
+#include "cheriot/riscv_cheriot_encoding_common.h"
 #include "cheriot/riscv_cheriot_enums.h"
 
 namespace mpact {
@@ -38,7 +39,8 @@ using ::mpact::sim::cheriot::encoding::FormatEnum;
 // instructions) and the instruction representation. This class provides methods
 // to return the opcode, source operands, and destination operands for
 // instructions according to the operand fields in the encoding.
-class RiscVCheriotEncoding : public RiscVCheriotEncodingBase {
+class RiscVCheriotEncoding : public RiscVCheriotEncodingCommon,
+                             public RiscVCheriotEncodingBase {
  public:
   explicit RiscVCheriotEncoding(CheriotState *state);
 
@@ -96,15 +98,8 @@ class RiscVCheriotEncoding : public RiscVCheriotEncodingBase {
   using DestOpGetterMap = absl::flat_hash_map<
       int, absl::AnyInvocable<DestinationOperandInterface *(int)>>;
 
-  // These two methods initialize the source and destination operand getter
-  // arrays.
-  void InitializeSourceOperandGetters();
-  void InitializeDestinationOperandGetters();
-
   SourceOpGetterMap source_op_getters_;
   DestOpGetterMap dest_op_getters_;
-  CheriotState *state_;
-  uint32_t inst_word_;
   OpcodeEnum opcode_;
   FormatEnum format_;
 };

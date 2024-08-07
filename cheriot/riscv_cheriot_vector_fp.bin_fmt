@@ -1,0 +1,133 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Cheriot RiscV vector floating point instruction encodings.
+
+instruction group RiscVVFPInst32[32] : Inst32Format {
+  // FP: OPFVV, OPFVF
+  //opfvv : VArith : func6 == 0bxxx'xxx, func3 == 0b001, opcode == 0b101'0111;
+  //opfvf : VArith : func6 == 0bxxx'xxx, func3 == 0b101, opcode == 0b101'0111;
+
+  vfadd_vv : VArith : func6 == 0b000'000, func3 == 0b001, opcode == 0b101'0111;
+  vfadd_vf : VArith : func6 == 0b000'000, func3 == 0b101, opcode == 0b101'0111;
+  vfredusum_vv : VArith : func6 == 0b000'001, func3 == 0b001, opcode == 0b101'0111;
+  vfsub_vv : VArith : func6 == 0b000'010, func3 == 0b001, opcode == 0b101'0111;
+  vfsub_vf : VArith : func6 == 0b000'010, func3 == 0b101, opcode == 0b101'0111;
+  vfredosum_vv : VArith : func6 == 0b000'011, func3 == 0b001, opcode == 0b101'0111;
+  vfmin_vv : VArith : func6 == 0b000'100, func3 == 0b001, opcode == 0b101'0111;
+  vfmin_vf : VArith : func6 == 0b000'100, func3 == 0b101, opcode == 0b101'0111;
+  vfredmin_vv : VArith : func6 == 0b000'101, func3 == 0b001, opcode == 0b101'0111;
+  vfmax_vv : VArith : func6 == 0b000'110, func3 == 0b001, opcode == 0b101'0111;
+  vfmax_vf : VArith : func6 == 0b000'110, func3 == 0b101, opcode == 0b101'0111;
+  vfredmax_vv : VArith : func6 == 0b000'111, func3 == 0b001, opcode == 0b101'0111;
+  vfsgnj_vv  : VArith : func6 == 0b001'000, func3 == 0b001, opcode == 0b101'0111;
+  vfsgnj_vf  : VArith : func6 == 0b001'000, func3 == 0b101, opcode == 0b101'0111;
+  vfsgnjn_vv : VArith : func6 == 0b001'001, func3 == 0b001, opcode == 0b101'0111;
+  vfsgnjn_vf : VArith : func6 == 0b001'001, func3 == 0b101, opcode == 0b101'0111;
+  vfsgnjx_vv : VArith : func6 == 0b001'010, func3 == 0b001, opcode == 0b101'0111;
+  vfsgnjx_vf : VArith : func6 == 0b001'010, func3 == 0b101, opcode == 0b101'0111;
+  vfslide1up_vf :   VArith : func6 == 0b001'110, func3 == 0b101, opcode == 0b101'0111;
+  vfslide1down_vf : VArith : func6 == 0b001'111, func3 == 0b101, opcode == 0b101'0111;
+  vfmv_vf : VArith : func6 == 0b010'111, vm == 1, vs2 == 0, func3 == 0b101, opcode == 0b101'0111;
+  vfmerge_vf : VArith : func6 == 0b010'111, vm == 0, func3 == 0b101, opcode == 0b101'0111;
+  vmfeq_vv : VArith : func6 == 0b011'000, func3 == 0b001, opcode == 0b101'0111;
+  vmfeq_vf : VArith : func6 == 0b011'000, func3 == 0b101, opcode == 0b101'0111;
+  vmfle_vv : VArith : func6 == 0b011'001, func3 == 0b001, opcode == 0b101'0111;
+  vmfle_vf : VArith : func6 == 0b011'001, func3 == 0b101, opcode == 0b101'0111;
+  vmflt_vv : VArith : func6 == 0b011'011, func3 == 0b001, opcode == 0b101'0111;
+  vmflt_vf : VArith : func6 == 0b011'011, func3 == 0b101, opcode == 0b101'0111;
+  vmfne_vv : VArith : func6 == 0b011'100, func3 == 0b001, opcode == 0b101'0111;
+  vmfne_vf : VArith : func6 == 0b011'100, func3 == 0b101, opcode == 0b101'0111;
+  vmfgt_vf : VArith : func6 == 0b011'101, func3 == 0b101, opcode == 0b101'0111;
+  vmfge_vf : VArith : func6 == 0b011'111, func3 == 0b101, opcode == 0b101'0111;
+  vfdiv_vv  : VArith : func6 == 0b100'000, func3 == 0b001, opcode == 0b101'0111;
+  vfdiv_vf  : VArith : func6 == 0b100'000, func3 == 0b101, opcode == 0b101'0111;
+  vfrdiv_vf : VArith : func6 == 0b100'001, func3 == 0b101, opcode == 0b101'0111;
+  vfmul_vv : VArith : func6 == 0b100'100, func3 == 0b001, opcode == 0b101'0111;
+  vfmul_vf : VArith : func6 == 0b100'100, func3 == 0b101, opcode == 0b101'0111;
+  vfrsub_vf : VArith : func6 == 0b100'111, func3 == 0b101, opcode == 0b101'0111;
+  vfmadd_vv : VArith : func6 == 0b101'000, func3 == 0b001, opcode == 0b101'0111;
+  vfmadd_vf : VArith : func6 == 0b101'000, func3 == 0b101, opcode == 0b101'0111;
+  vfnmadd_vv : VArith : func6 == 0b101'001, func3 == 0b001, opcode == 0b101'0111;
+  vfnmadd_vf : VArith : func6 == 0b101'001, func3 == 0b101, opcode == 0b101'0111;
+  vfmsub_vv  : VArith : func6 == 0b101'010, func3 == 0b001, opcode == 0b101'0111;
+  vfmsub_vf  : VArith : func6 == 0b101'010, func3 == 0b101, opcode == 0b101'0111;
+  vfnmsub_vv : VArith : func6 == 0b101'011, func3 == 0b001, opcode == 0b101'0111;
+  vfnmsub_vf : VArith : func6 == 0b101'011, func3 == 0b101, opcode == 0b101'0111;
+  vfmacc_vv  : VArith : func6 == 0b101'100, func3 == 0b001, opcode == 0b101'0111;
+  vfmacc_vf  : VArith : func6 == 0b101'100, func3 == 0b101, opcode == 0b101'0111;
+  vfnmacc_vv : VArith : func6 == 0b101'101, func3 == 0b001, opcode == 0b101'0111;
+  vfnmacc_vf : VArith : func6 == 0b101'101, func3 == 0b101, opcode == 0b101'0111;
+  vfmsac_vv  : VArith : func6 == 0b101'110, func3 == 0b001, opcode == 0b101'0111;
+  vfmsac_vf  : VArith : func6 == 0b101'110, func3 == 0b101, opcode == 0b101'0111;
+  vfnmsac_vv : VArith : func6 == 0b101'111, func3 == 0b001, opcode == 0b101'0111;
+  vfnmsac_vf : VArith : func6 == 0b101'111, func3 == 0b101, opcode == 0b101'0111;
+  vfwadd_vv  : VArith : func6 == 0b110'000, func3 == 0b001, opcode == 0b101'0111;
+  vfwadd_vf  : VArith : func6 == 0b110'000, func3 == 0b101, opcode == 0b101'0111;
+  vfwredusum_vv : VArith : func6 == 0b110'001, func3 == 0b001, opcode == 0b101'0111;
+  vfwsub_vv  : VArith : func6 == 0b110'010, func3 == 0b001, opcode == 0b101'0111;
+  vfwsub_vf  : VArith : func6 == 0b110'010, func3 == 0b101, opcode == 0b101'0111;
+  vfwredosum_vv : VArith : func6 == 0b110'011, func3 == 0b001, opcode == 0b101'0111;
+  vfwadd_w_vv : VArith : func6 == 0b110'100, func3 == 0b001, opcode == 0b101'0111;
+  vfwadd_w_vf : VArith : func6 == 0b110'100, func3 == 0b101, opcode == 0b101'0111;
+  vfwsub_w_vv : VArith : func6 == 0b110'110, func3 == 0b001, opcode == 0b101'0111;
+  vfwsub_w_vf : VArith : func6 == 0b110'110, func3 == 0b101, opcode == 0b101'0111;
+  vfwmul_vv   : VArith : func6 == 0b111'000, func3 == 0b001, opcode == 0b101'0111;
+  vfwmul_vf   : VArith : func6 == 0b111'000, func3 == 0b101, opcode == 0b101'0111;
+  vfwmacc_vv  : VArith : func6 == 0b111'100, func3 == 0b001, opcode == 0b101'0111;
+  vfwmacc_vf  : VArith : func6 == 0b111'100, func3 == 0b101, opcode == 0b101'0111;
+  vfwnmacc_vv : VArith : func6 == 0b111'101, func3 == 0b001, opcode == 0b101'0111;
+  vfwnmacc_vf : VArith : func6 == 0b111'101, func3 == 0b101, opcode == 0b101'0111;
+  vfwmsac_vv  : VArith : func6 == 0b111'110, func3 == 0b001, opcode == 0b101'0111;
+  vfwmsac_vf  : VArith : func6 == 0b111'110, func3 == 0b101, opcode == 0b101'0111;
+  vfwnmsac_vv : VArith : func6 == 0b111'111, func3 == 0b001, opcode == 0b101'0111;
+  vfwnmsac_vf : VArith : func6 == 0b111'111, func3 == 0b101, opcode == 0b101'0111;
+
+  // VWFUNARY0 vv: VArith : func6 == 0b010'000, func3 == 0b001, opcode == 0b101'0111;
+  vfmv_f_s : VArith : func6 == 0b010'000, vs1 == 0, func3 == 0b001, opcode == 0b101'0111;
+
+  // VRFUNARY0 vf: VArith : func6 == 0b010'000, func3 == 0b101, opcode == 0b101'0111;
+  vfmv_s_f : VArith : func6 == 0b010'000, vs2 == 0, func3 == 0b101, opcode == 0b101'0111;
+
+  // VFUNARY0  vv: VArith : func6 == 0b010'010, func3 == 0b001, opcode == 0b101'0111;
+  vfcvt_xu_f_v     : VArith : func6 == 0b010'010, vs1 == 0b00000, func3 == 0b001, opcode == 0b101'0111;
+  vfcvt_x_f_v      : VArith : func6 == 0b010'010, vs1 == 0b00001, func3 == 0b001, opcode == 0b101'0111;
+  vfcvt_f_xu_v     : VArith : func6 == 0b010'010, vs1 == 0b00010, func3 == 0b001, opcode == 0b101'0111;
+  vfcvt_f_x_v      : VArith : func6 == 0b010'010, vs1 == 0b00011, func3 == 0b001, opcode == 0b101'0111;
+  vfcvt_rtz_xu_f_v : VArith : func6 == 0b010'010, vs1 == 0b00110, func3 == 0b001, opcode == 0b101'0111;
+  vfcvt_rtz_x_f_v  : VArith : func6 == 0b010'010, vs1 == 0b00111, func3 == 0b001, opcode == 0b101'0111;
+
+  vfwcvt_xu_f_v    : VArith : func6 == 0b010'010, vs1 == 0b01000, func3 == 0b001, opcode == 0b101'0111;
+  vfwcvt_x_f_v     : VArith : func6 == 0b010'010, vs1 == 0b01001, func3 == 0b001, opcode == 0b101'0111;
+  vfwcvt_f_xu_v    : VArith : func6 == 0b010'010, vs1 == 0b01010, func3 == 0b001, opcode == 0b101'0111;
+  vfwcvt_f_x_v     : VArith : func6 == 0b010'010, vs1 == 0b01011, func3 == 0b001, opcode == 0b101'0111;
+  vfwcvt_f_f_v     : VArith : func6 == 0b010'010, vs1 == 0b01100, func3 == 0b001, opcode == 0b101'0111;
+  vfwcvt_rtz_xu_f_v: VArith : func6 == 0b010'010, vs1 == 0b01110, func3 == 0b001, opcode == 0b101'0111;
+  vfwcvt_rtz_x_f_v : VArith : func6 == 0b010'010, vs1 == 0b01111, func3 == 0b001, opcode == 0b101'0111;
+
+  vfncvt_xu_f_w    : VArith : func6 == 0b010'010, vs1 == 0b10000, func3 == 0b001, opcode == 0b101'0111;
+  vfncvt_x_f_w     : VArith : func6 == 0b010'010, vs1 == 0b10001, func3 == 0b001, opcode == 0b101'0111;
+  vfncvt_f_xu_w    : VArith : func6 == 0b010'010, vs1 == 0b10010, func3 == 0b001, opcode == 0b101'0111;
+  vfncvt_f_x_w     : VArith : func6 == 0b010'010, vs1 == 0b10011, func3 == 0b001, opcode == 0b101'0111;
+  vfncvt_f_f_w     : VArith : func6 == 0b010'010, vs1 == 0b10100, func3 == 0b001, opcode == 0b101'0111;
+  vfncvt_rod_f_f_w : VArith : func6 == 0b010'010, vs1 == 0b10101, func3 == 0b001, opcode == 0b101'0111;
+  vfncvt_rtz_xu_f_w: VArith : func6 == 0b010'010, vs1 == 0b10110, func3 == 0b001, opcode == 0b101'0111;
+  vfncvt_rtz_x_f_w : VArith : func6 == 0b010'010, vs1 == 0b10111, func3 == 0b001, opcode == 0b101'0111;
+
+  // VFUNARY1  vv: VArith : func6 == 0b010'011, func3 == 0b001, opcode == 0b101'0111;
+  vfsqrt_v  : VArith : func6 == 0b010'011, vs1 == 0b00000, func3 == 0b001, opcode == 0b101'0111;
+  vfrsqrt7_v : VArith : func6 == 0b010'011, vs1 == 0b00100, func3 == 0b001, opcode == 0b101'0111;
+  vfrec7_v  : VArith : func6 == 0b010'011, vs1 == 0b00101, func3 == 0b001, opcode == 0b101'0111;
+  vfclass_v : VArith : func6 == 0b010'011, vs1 == 0b10000, func3 == 0b001, opcode == 0b101'0111;
+};

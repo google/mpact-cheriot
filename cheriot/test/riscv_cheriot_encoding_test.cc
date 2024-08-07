@@ -36,8 +36,6 @@ using OpcodeEnum = mpact::sim::cheriot::isa32::OpcodeEnum;
 
 // RV32I
 constexpr uint32_t kLui = 0b0000000000000000000000000'0110111;
-constexpr uint32_t kJal = 0b00000000000000000000'00000'1101111;
-constexpr uint32_t kJalr = 0b00000000000'00000'000'00000'1100111;
 constexpr uint32_t kBeq = 0b0000000'00000'00000'000'00000'1100011;
 constexpr uint32_t kBne = 0b0000000'00000'00000'001'00000'1100011;
 constexpr uint32_t kBlt = 0b0000000'00000'00000'100'00000'1100011;
@@ -204,8 +202,6 @@ class RiscVCheriotEncodingTest : public testing::Test {
 };
 
 constexpr int kRdValue = 1;
-constexpr int kSuccValue = 0xf;
-constexpr int kPredValue = 0xf;
 
 static uint32_t SetRd(uint32_t iword, uint32_t rdval) {
   return (iword | ((rdval & 0x1f) << 7));
@@ -217,14 +213,6 @@ static uint32_t SetRs1(uint32_t iword, uint32_t rsval) {
 
 static uint32_t SetRs2(uint32_t iword, uint32_t rsval) {
   return (iword | ((rsval & 0x1f) << 20));
-}
-
-static uint32_t SetPred(uint32_t iword, uint32_t pred) {
-  return (iword | ((pred & 0xf) << 24));
-}
-
-static uint32_t SetSucc(uint32_t iword, uint32_t succ) {
-  return (iword | ((succ & 0xf) << 20));
 }
 
 static uint32_t Set16Rd(uint32_t iword, uint32_t val) {
@@ -412,25 +400,25 @@ TEST_F(RiscVCheriotEncodingTest, RV32COpcodes) {
   enc_->ParseInstruction(Set16Rd(kClwsp, 1));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kClwsp);
   enc_->ParseInstruction(Set16Rd(kCldsp, 1));
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCldsp);
+  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kClcsp);
   //  enc_->ParseInstruction(kCdldsp);
   //  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
   //  OpcodeEnum::kCfldsp);
   enc_->ParseInstruction(kCswsp);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCswsp);
   enc_->ParseInstruction(kCsdsp);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCsdsp);
+  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCscsp);
   //  enc_->ParseInstruction(kCdsdsp);
   //  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
   //  OpcodeEnum::kCfsdsp);
   enc_->ParseInstruction(kClw);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kClw);
   enc_->ParseInstruction(kCld);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCld);
+  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kClc);
   enc_->ParseInstruction(kCsw);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCsw);
   enc_->ParseInstruction(kCsd);
-  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCsd);
+  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCsc);
   //  enc_->ParseInstruction(kCdsd);
   //  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
   //  OpcodeEnum::kCdsd);

@@ -1,0 +1,44 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Cheriot RVV FP binary decoder.
+decoder RiscVCheriotRVVFp {
+  namespace mpact::sim::cheriot::encoding_rvv_fp;
+  opcode_enum = "cheriot::isa32_rvv_fp::OpcodeEnum";
+  includes {
+    #include "cheriot/riscv_cheriot_rvv_fp_decoder.h"
+  }
+  // Group these instruction groups in the same decoder function.
+  RiscVCheriotRVVFPInst32 = {RiscVFInst32, RiscVVInst32, RiscVVFPInst32, RiscVCheriotInst32};
+  // Keep this separate (different base format).
+  RiscVCheriotRVVFPInst16 = {RiscVCheriotInst16};
+};
+
+// Cheriot RVV binary decoder.
+decoder RiscVCheriotRVV {
+  namespace mpact::sim::cheriot::encoding_rvv;
+  opcode_enum = "cheriot::isa32_rvv::OpcodeEnum";
+  includes {
+    #include "cheriot/riscv_cheriot_rvv_decoder.h"
+  }
+  // Group these instruction groups in the same decoder function.
+  RiscVCheriotRVVInst32 = {RiscVVInst32, RiscVCheriotInst32};
+  // Keep this separate (different base format).
+  RiscVCheriotRVVInst16 = {RiscVCheriotInst16};
+};
+
+#include "cheriot/riscv_cheriot.bin_fmt"
+#include "cheriot/riscv_cheriot_f.bin_fmt"
+#include "cheriot/riscv_cheriot_vector.bin_fmt"
+#include "cheriot/riscv_cheriot_vector_fp.bin_fmt"

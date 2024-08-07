@@ -28,7 +28,6 @@
 #include "absl/status/statusor.h"
 #include "absl/synchronization/notification.h"
 #include "cheriot/cheriot_debug_interface.h"
-#include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_register.h"
 #include "cheriot/cheriot_state.h"
 #include "mpact/sim/generic/action_point_manager_base.h"
@@ -51,6 +50,7 @@ namespace cheriot {
 
 using ::mpact::sim::generic::ActionPointManagerBase;
 using ::mpact::sim::generic::BreakpointManager;
+using ::mpact::sim::generic::DecoderInterface;
 using ::mpact::sim::riscv::RiscVActionPointMemoryInterface;
 
 struct BranchTraceEntry {
@@ -68,7 +68,7 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   using RunStatus = generic::CoreDebugInterface::RunStatus;
   using HaltReason = generic::CoreDebugInterface::HaltReason;
 
-  CheriotTop(std::string name, CheriotState *state, CheriotDecoder *decoder);
+  CheriotTop(std::string name, CheriotState *state, DecoderInterface *decoder);
   ~CheriotTop() override;
 
   // Methods inherited from CoreDebugInterface.

@@ -24,7 +24,23 @@ package(
 exports_files([
     "riscv_cheriot.bin_fmt",
     "riscv_cheriot.isa",
+    "riscv_cheriot_f.bin_fmt",
+    "riscv_cheriot_f.isa",
+    "riscv_cheriot_rvv.isa",
+    "riscv_cheriot_vector.bin_fmt",
+    "riscv_cheriot_vector_fp.bin_fmt",
+    "riscv_cheriot_vector.isa",
 ])
+
+config_setting(
+    name = "arm_cpu",
+    values = {"cpu": "arm"},
+)
+
+config_setting(
+    name = "darwin_arm64_cpu",
+    values = {"cpu": "darwin_arm64"},
+)
 
 mpact_isa_decoder(
     name = "riscv_cheriot_isa",
@@ -32,7 +48,45 @@ mpact_isa_decoder(
     includes = [],
     isa_name = "RiscVCheriot",
     deps = [
-        ":riscv_cheriot",
+        ":riscv_cheriot_instructions",
+        "@com_google_absl//absl/functional:bind_front",
+    ],
+)
+
+mpact_isa_decoder(
+    name = "riscv_cheriot_rvv_isa",
+    src = "riscv_cheriot_rvv.isa",
+    includes = [
+        "riscv_cheriot.isa",
+        "riscv_cheriot_f.isa",
+        "riscv_cheriot_vector.isa",
+        "riscv_cheriot_vector_fp.isa",
+    ],
+    isa_name = "RiscVCheriotRVV",
+    prefix = "riscv_cheriot_rvv",
+    deps = [
+        ":riscv_cheriot_instructions",
+        ":riscv_cheriot_vector",
+        "@com_google_absl//absl/functional:bind_front",
+    ],
+)
+
+mpact_isa_decoder(
+    name = "riscv_cheriot_rvv_fp_isa",
+    src = "riscv_cheriot_rvv.isa",
+    includes = [
+        "riscv_cheriot.isa",
+        "riscv_cheriot_f.isa",
+        "riscv_cheriot_vector.isa",
+        "riscv_cheriot_vector_fp.isa",
+    ],
+    isa_name = "RiscVCheriotRVVFp",
+    prefix = "riscv_cheriot_rvv_fp",
+    deps = [
+        ":riscv_cheriot_f",
+        ":riscv_cheriot_instructions",
+        ":riscv_cheriot_vector",
+        ":riscv_cheriot_vector_fp",
         "@com_google_absl//absl/functional:bind_front",
     ],
 )
@@ -48,31 +102,88 @@ mpact_bin_fmt_decoder(
     ],
 )
 
+mpact_bin_fmt_decoder(
+    name = "riscv_cheriot_rvv_bin_fmt",
+    src = "riscv_cheriot_rvv.bin_fmt",
+    decoder_name = "RiscVCheriotRVV",
+    includes = [
+        "riscv_cheriot.bin_fmt",
+        "riscv_cheriot_f.bin_fmt",
+        "riscv_cheriot_vector.bin_fmt",
+        "riscv_cheriot_vector_fp.bin_fmt",
+    ],
+    deps = [
+        ":riscv_cheriot_rvv_isa",
+    ],
+)
+
+mpact_bin_fmt_decoder(
+    name = "riscv_cheriot_rvv_fp_bin_fmt",
+    src = "riscv_cheriot_rvv.bin_fmt",
+    decoder_name = "RiscVCheriotRVVFp",
+    includes = [
+        "riscv_cheriot.bin_fmt",
+        "riscv_cheriot_f.bin_fmt",
+        "riscv_cheriot_vector.bin_fmt",
+        "riscv_cheriot_vector_fp.bin_fmt",
+    ],
+    prefix = "riscv_cheriot_rvv_fp",
+    deps = [
+        ":riscv_cheriot_rvv_fp_isa",
+    ],
+)
+
 cc_library(
-    name = "riscv_cheriot",
+    name = "riscv_cheriot_instructions",
     srcs = [
-        "cheriot_register.cc",
-        "cheriot_state.cc",
         "riscv_cheriot_a_instructions.cc",
         "riscv_cheriot_i_instructions.cc",
         "riscv_cheriot_instructions.cc",
         "riscv_cheriot_m_instructions.cc",
-        "riscv_cheriot_minstret.cc",
         "riscv_cheriot_priv_instructions.cc",
         "riscv_cheriot_zicsr_instructions.cc",
     ],
     hdrs = [
-        "cheriot_register.h",
-        "cheriot_state.h",
         "riscv_cheriot_a_instructions.h",
-        "riscv_cheriot_csr_enum.h",
         "riscv_cheriot_i_instructions.h",
-        "riscv_cheriot_instruction_helpers.h",
         "riscv_cheriot_instructions.h",
         "riscv_cheriot_m_instructions.h",
-        "riscv_cheriot_minstret.h",
         "riscv_cheriot_priv_instructions.h",
         "riscv_cheriot_zicsr_instructions.h",
+    ],
+    tags = ["not_run:arm"],
+    deps = [
+        ":cheriot_state",
+        ":instruction_helpers",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/numeric:bits",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-riscv//riscv:stoull_wrapper",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_library(
+    name = "cheriot_state",
+    srcs = [
+        "cheriot_register.cc",
+        "cheriot_state.cc",
+        "cheriot_vector_true_operand.cc",
+        "riscv_cheriot_minstret.cc",
+    ],
+    hdrs = [
+        "cheriot_register.h",
+        "cheriot_state.h",
+        "cheriot_vector_true_operand.h",
+        "riscv_cheriot_csr_enum.h",
+        "riscv_cheriot_minstret.h",
+        "riscv_cheriot_register_aliases.h",
     ],
     tags = ["not_run:arm"],
     deps = [
@@ -86,14 +197,191 @@ cc_library(
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
         "@com_google_mpact-riscv//riscv:riscv_state",
-        "@com_google_mpact-riscv//riscv:stoull_wrapper",
         "@com_google_mpact-sim//mpact/sim/generic:arch_state",
         "@com_google_mpact-sim//mpact/sim/generic:core",
         "@com_google_mpact-sim//mpact/sim/generic:counters",
         "@com_google_mpact-sim//mpact/sim/generic:instruction",
         "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
         "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_library(
+    name = "riscv_cheriot_f",
+    srcs = [
+        "riscv_cheriot_f_instructions.cc",
+    ],
+    hdrs = [
+        "riscv_cheriot_f_instructions.h",
+    ],
+    tags = ["not_run:arm"],
+    deps = [
+        ":cheriot_state",
+        ":instruction_helpers",
+        "@com_google_absl//absl/functional:bind_front",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_library(
+    name = "cheriot_vector_state",
+    srcs = [
+        "cheriot_vector_state.cc",
+    ],
+    hdrs = [
+        "cheriot_vector_state.h",
+    ],
+    tags = ["not_run:arm"],
+    deps = [
+        ":cheriot_state",
+        "@com_google_absl//absl/log",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+    ],
+)
+
+cc_library(
+    name = "riscv_cheriot_vector",
+    srcs = [
+        "riscv_cheriot_vector_memory_instructions.cc",
+        "riscv_cheriot_vector_opi_instructions.cc",
+        "riscv_cheriot_vector_opm_instructions.cc",
+        "riscv_cheriot_vector_permute_instructions.cc",
+        "riscv_cheriot_vector_reduction_instructions.cc",
+        "riscv_cheriot_vector_unary_instructions.cc",
+    ],
+    hdrs = [
+        "riscv_cheriot_vector_memory_instructions.h",
+        "riscv_cheriot_vector_opi_instructions.h",
+        "riscv_cheriot_vector_opm_instructions.h",
+        "riscv_cheriot_vector_permute_instructions.h",
+        "riscv_cheriot_vector_reduction_instructions.h",
+        "riscv_cheriot_vector_unary_instructions.h",
+    ],
+    copts = [
+        "-O3",
+        "-ffp-model=strict",
+    ] + select({
+        "darwin_arm64_cpu": [],
+        "//conditions:default": ["-fprotect-parens"],
+    }),
+    deps = [
+        ":cheriot_state",
+        ":cheriot_vector_state",
+        ":instruction_helpers",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/types:span",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_library(
+    name = "riscv_cheriot_vector_fp",
+    srcs = [
+        "riscv_cheriot_vector_fp_compare_instructions.cc",
+        "riscv_cheriot_vector_fp_instructions.cc",
+        "riscv_cheriot_vector_fp_reduction_instructions.cc",
+        "riscv_cheriot_vector_fp_unary_instructions.cc",
+    ],
+    hdrs = [
+        "riscv_cheriot_vector_fp_compare_instructions.h",
+        "riscv_cheriot_vector_fp_instructions.h",
+        "riscv_cheriot_vector_fp_reduction_instructions.h",
+        "riscv_cheriot_vector_fp_unary_instructions.h",
+    ],
+    copts = [
+        "-O3",
+        "-ffp-model=strict",
+    ] + select({
+        "darwin_arm64_cpu": [],
+        "//conditions:default": ["-fprotect-parens"],
+    }),
+    deps = [
+        ":cheriot_state",
+        ":cheriot_vector_state",
+        ":instruction_helpers",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_library(
+    name = "instruction_helpers",
+    hdrs = [
+        "riscv_cheriot_instruction_helpers.h",
+        "riscv_cheriot_vector_instruction_helpers.h",
+    ],
+    deps = [
+        ":cheriot_state",
+        ":cheriot_vector_state",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/strings",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_library(
+    name = "cheriot_getter_helpers",
+    hdrs = [
+        "cheriot_getter_helpers.h",
+    ],
+    deps = [
+        ":cheriot_state",
+        "@com_google_absl//absl/functional:any_invocable",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+    ],
+)
+
+cc_library(
+    name = "cheriot_getters",
+    hdrs = [
+        "cheriot_f_getters.h",
+        "cheriot_getters.h",
+        "cheriot_rvv_fp_getters.h",
+        "cheriot_rvv_getters.h",
+        "riscv_cheriot_encoding_common.h",
+    ],
+    deps = [
+        ":cheriot_getter_helpers",
+        ":cheriot_state",
+        ":riscv_cheriot_bin_fmt",
+        ":riscv_cheriot_isa",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/functional:any_invocable",
+        "@com_google_absl//absl/strings",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
     ],
 )
 
@@ -106,12 +394,72 @@ cc_library(
     hdrs = [
         "cheriot_decoder.h",
         "riscv_cheriot_encoding.h",
-        "riscv_cheriot_register_aliases.h",
     ],
     deps = [
-        ":riscv_cheriot",
+        ":cheriot_getters",
+        ":cheriot_state",
         ":riscv_cheriot_bin_fmt",
         ":riscv_cheriot_isa",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/functional:any_invocable",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/strings",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:program_error",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_library(
+    name = "riscv_cheriot_rvv_decoder",
+    srcs = [
+        "cheriot_rvv_decoder.cc",
+        "riscv_cheriot_rvv_encoding.cc",
+    ],
+    hdrs = [
+        "cheriot_rvv_decoder.h",
+        "riscv_cheriot_register_aliases.h",
+        "riscv_cheriot_rvv_encoding.h",
+    ],
+    deps = [
+        ":cheriot_getters",
+        ":cheriot_state",
+        ":riscv_cheriot_rvv_bin_fmt",
+        ":riscv_cheriot_rvv_isa",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/functional:any_invocable",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/strings",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:program_error",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_library(
+    name = "riscv_cheriot_rvv_fp_decoder",
+    srcs = [
+        "cheriot_rvv_fp_decoder.cc",
+        "riscv_cheriot_rvv_fp_encoding.cc",
+    ],
+    hdrs = [
+        "cheriot_rvv_fp_decoder.h",
+        "riscv_cheriot_register_aliases.h",
+        "riscv_cheriot_rvv_fp_encoding.h",
+    ],
+    deps = [
+        ":cheriot_getters",
+        ":cheriot_state",
+        ":riscv_cheriot_rvv_fp_bin_fmt",
+        ":riscv_cheriot_rvv_fp_isa",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/functional:any_invocable",
         "@com_google_absl//absl/log",
@@ -137,8 +485,7 @@ cc_library(
     copts = ["-O3"],
     deps = [
         ":cheriot_debug_interface",
-        ":riscv_cheriot",
-        ":riscv_cheriot_decoder",
+        ":cheriot_state",
         ":riscv_cheriot_isa",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/functional:any_invocable",
@@ -189,8 +536,8 @@ cc_library(
     copts = ["-O3"],
     deps = [
         ":cheriot_debug_interface",
+        ":cheriot_state",
         ":cheriot_top",
-        ":riscv_cheriot",
         ":riscv_cheriot_decoder",
         ":riscv_cheriot_isa",
         "@com_google_absl//absl/container:btree",
@@ -217,11 +564,14 @@ cc_binary(
     ],
     copts = ["-O3"],
     deps = [
+        ":cheriot_state",
         ":cheriot_top",
         ":debug_command_shell",
         ":instrumentation",
-        ":riscv_cheriot",
         ":riscv_cheriot_decoder",
+        ":riscv_cheriot_instructions",
+        ":riscv_cheriot_rvv_decoder",
+        ":riscv_cheriot_rvv_fp_decoder",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/flags:usage",
@@ -236,6 +586,7 @@ cc_binary(
         "@com_google_mpact-riscv//riscv:riscv_arm_semihost",
         "@com_google_mpact-riscv//riscv:riscv_clint",
         "@com_google_mpact-riscv//riscv:stoull_wrapper",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
         "@com_google_mpact-sim//mpact/sim/generic:core_debug_interface",
         "@com_google_mpact-sim//mpact/sim/generic:counters",
         "@com_google_mpact-sim//mpact/sim/generic:instruction",
@@ -258,7 +609,7 @@ cc_library(
         "cheriot_load_filter.h",
     ],
     deps = [
-        ":riscv_cheriot",
+        ":cheriot_state",
         "@com_google_mpact-sim//mpact/sim/generic:core",
         "@com_google_mpact-sim//mpact/sim/generic:counters",
         "@com_google_mpact-sim//mpact/sim/util/memory",
@@ -335,10 +686,10 @@ cc_binary(
     deps = [
         ":cheriot_debug_info",
         ":cheriot_debug_interface",
+        ":cheriot_state",
         ":cheriot_top",
         ":debug_command_shell",
         ":instrumentation",
-        ":riscv_cheriot",
         ":riscv_cheriot_decoder",
         "@com_google_absl//absl/functional:any_invocable",
         "@com_google_absl//absl/functional:bind_front",
@@ -377,7 +728,7 @@ cc_library(
         "test_rig_packets.h",
     ],
     deps = [
-        ":riscv_cheriot",
+        ":cheriot_state",
         ":riscv_cheriot_bin_fmt",
         ":riscv_cheriot_decoder",
         ":riscv_cheriot_isa",

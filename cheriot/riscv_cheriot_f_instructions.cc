@@ -17,9 +17,7 @@
 #include <cmath>
 #include <cstdint>
 #include <functional>
-#include <iostream>
 #include <limits>
-#include <tuple>
 #include <type_traits>
 
 #include "cheriot/cheriot_register.h"
@@ -27,6 +25,7 @@
 #include "cheriot/riscv_cheriot_instruction_helpers.h"
 #include "mpact/sim/generic/register.h"
 #include "mpact/sim/generic/type_helpers.h"
+#include "riscv//riscv_fp_info.h"
 #include "riscv//riscv_register.h"
 #include "riscv//riscv_state.h"
 
@@ -34,6 +33,8 @@ namespace mpact {
 namespace sim {
 namespace cheriot {
 
+using ::mpact::sim::generic::FPTypeInfo;
+using ::mpact::sim::riscv::FPExceptions;
 using ::mpact::sim::riscv::LoadContext;
 
 // The following instruction semantic functions implement the single precision
@@ -63,22 +64,20 @@ namespace internal {
 // Convert float to signed 32 bit integer.
 template <typename XInt>
 static inline void RVFCvtWs(const Instruction *instruction) {
-  RiscVConvertFloatWithFflagsOp<CheriotRegister, XInt, float, int32_t>(
-      instruction);
+  RVCheriotConvertFloatWithFflagsOp<XInt, float, int32_t>(instruction);
 }
 
 // Convert float to unsigned 32 bit integer.
 template <typename XInt>
 static inline void RVFCvtWus(const Instruction *instruction) {
-  RiscVConvertFloatWithFflagsOp<CheriotRegister, XInt, float, uint32_t>(
-      instruction);
+  RVCheriotConvertFloatWithFflagsOp<XInt, float, uint32_t>(instruction);
 }
 
 // Single precision compare equal.
 template <typename XRegister>
 static inline void RVFCmpeq(const Instruction *instruction) {
-  RVCheriotBinaryNaNBoxOp<typename XRegister::ValueType,
-                          typename XRegister::ValueType, float>(
+  RVCheriotBinaryOp<typename XRegister::ValueType,
+                    typename XRegister::ValueType, float>(
       instruction,
       [instruction](float a, float b) -> typename XRegister::ValueType {
         if (FPTypeInfo<float>::IsSNaN(a) || FPTypeInfo<float>::IsSNaN(b)) {
@@ -93,8 +92,8 @@ static inline void RVFCmpeq(const Instruction *instruction) {
 // Single precicion compare less than.
 template <typename XRegister>
 static inline void RVFCmplt(const Instruction *instruction) {
-  RVCheriotBinaryNaNBoxOp<typename XRegister::ValueType,
-                          typename XRegister::ValueType, float>(
+  RVCheriotBinaryOp<typename XRegister::ValueType,
+                    typename XRegister::ValueType, float>(
       instruction,
       [instruction](float a, float b) -> typename XRegister::ValueType {
         if (FPTypeInfo<float>::IsNaN(a) || FPTypeInfo<float>::IsNaN(b)) {
@@ -109,8 +108,8 @@ static inline void RVFCmplt(const Instruction *instruction) {
 // Single precision compare less than or equal.
 template <typename XRegister>
 static inline void RVFCmple(const Instruction *instruction) {
-  RVCheriotBinaryNaNBoxOp<typename XRegister::ValueType,
-                          typename XRegister::ValueType, float>(
+  RVCheriotBinaryOp<typename XRegister::ValueType,
+                    typename XRegister::ValueType, float>(
       instruction,
       [instruction](float a, float b) -> typename XRegister::ValueType {
         if (FPTypeInfo<float>::IsNaN(a) || FPTypeInfo<float>::IsNaN(b)) {
@@ -152,29 +151,29 @@ void RiscVIFlwChild(const Instruction *instruction) {
 
 // Basic arithmetic instructions.
 void RiscVFAdd(const Instruction *instruction) {
-  RiscVBinaryFloatNaNBoxOp<FPRegister::ValueType, float, float>(
+  RVCheriotBinaryFloatNaNBoxOp<FPRegister::ValueType, float, float>(
       instruction, [](float a, float b) { return a + b; });
 }
 
 void RiscVFSub(const Instruction *instruction) {
-  RiscVBinaryFloatNaNBoxOp<FPRegister::ValueType, float, float>(
+  RVCheriotBinaryFloatNaNBoxOp<FPRegister::ValueType, float, float>(
       instruction, [](float a, float b) { return a - b; });
 }
 
 void RiscVFMul(const Instruction *instruction) {
-  RiscVBinaryFloatNaNBoxOp<FPRegister::ValueType, float, float>(
+  RVCheriotBinaryFloatNaNBoxOp<FPRegister::ValueType, float, float>(
       instruction, [](float a, float b) { return a * b; });
 }
 
 void RiscVFDiv(const Instruction *instruction) {
-  RiscVBinaryFloatNaNBoxOp<FPRegister::ValueType, float, float>(
+  RVCheriotBinaryFloatNaNBoxOp<FPRegister::ValueType, float, float>(
       instruction, [](float a, float b) { return a / b; });
 }
 
 // Square root uses the library square root.
 void RiscVFSqrt(const Instruction *instruction) {
-  RiscVUnaryFloatNaNBoxOp<FPRegister::ValueType, FPRegister::ValueType, float,
-                          float>(instruction, [](float a) -> float {
+  RVCheriotUnaryFloatNaNBoxOp<FPRegister::ValueType, FPRegister::ValueType,
+                              float, float>(instruction, [](float a) -> float {
     float res = sqrt(a);
     if (std::isnan(res))
       return *reinterpret_cast<const float *>(
@@ -239,131 +238,66 @@ void RiscVFMax(const Instruction *instruction) {
 
 void RiscVFMadd(const Instruction *instruction) {
   using T = float;
-  RiscVTernaryFloatNaNBoxOp<FPRegister::ValueType, T, T>(
+  RVCheriotTernaryFloatNaNBoxOp<FPRegister::ValueType, T, T>(
       instruction, [instruction](T a, T b, T c) -> T {
-        // Propagate any NaNs.
-        if (FPTypeInfo<T>::IsNaN(a)) return internal::CanonicalizeNaN(a);
-        if (FPTypeInfo<T>::IsNaN(b)) return internal::CanonicalizeNaN(b);
         if ((std::isinf(a) && (b == 0.0)) || ((std::isinf(b) && (a == 0.0)))) {
           auto *flag_db = instruction->Destination(1)->AllocateDataBuffer();
           flag_db->Set<uint32_t>(0, *FPExceptions::kInvalidOp);
           flag_db->Submit();
         }
-        if (FPTypeInfo<T>::IsNaN(c)) return internal::CanonicalizeNaN(c);
-        if (std::isinf(c) && !std::isinf(a) && !std::isinf(b)) return c;
-        if (c == 0.0) {
-          if ((a == 0.0 && !std::isinf(b)) || (b == 0.0 && !std::isinf(a))) {
-            FPUInt c_sign = *reinterpret_cast<FPUInt *>(&c) >>
-                            (FPTypeInfo<T>::kBitSize - 1);
-            FPUInt ua = *reinterpret_cast<FPUInt *>(&a);
-            FPUInt ub = *reinterpret_cast<FPUInt *>(&b);
-            FPUInt prod_sign = (ua ^ ub) >> (FPTypeInfo<T>::kBitSize - 1);
-            if (prod_sign != c_sign) return 0.0;
-            return c;
-          }
-          return internal::CanonicalizeNaN(a * b);
-        }
-        return internal::CanonicalizeNaN((a * b) + c);
+        return internal::CanonicalizeNaN(fma(a, b, c));
       });
 }
 
 void RiscVFMsub(const Instruction *instruction) {
   using T = float;
-  RiscVTernaryFloatNaNBoxOp<FPRegister::ValueType, T, T>(
+  RVCheriotTernaryFloatNaNBoxOp<FPRegister::ValueType, T, T>(
       instruction, [instruction](T a, T b, T c) -> T {
-        if (FPTypeInfo<T>::IsNaN(a)) return internal::CanonicalizeNaN(a);
-        if (FPTypeInfo<T>::IsNaN(b)) return internal::CanonicalizeNaN(b);
         if ((std::isinf(a) && (b == 0.0)) || ((std::isinf(b) && (a == 0.0)))) {
           auto *flag_db = instruction->Destination(1)->AllocateDataBuffer();
           flag_db->Set<uint32_t>(0, *FPExceptions::kInvalidOp);
           flag_db->Submit();
         }
-        if (FPTypeInfo<T>::IsNaN(c)) return internal::CanonicalizeNaN(c);
-        if (std::isinf(c) && !std::isinf(a) && !std::isinf(b)) return -c;
-        if (c == 0.0) {
-          if ((a == 0.0 && !std::isinf(b)) || (b == 0.0 && !std::isinf(a))) {
-            FPUInt c_sign = -*reinterpret_cast<FPUInt *>(&c) >>
-                            (FPTypeInfo<T>::kBitSize - 1);
-            FPUInt ua = *reinterpret_cast<FPUInt *>(&a);
-            FPUInt ub = *reinterpret_cast<FPUInt *>(&b);
-            FPUInt prod_sign = (ua ^ ub) >> (FPTypeInfo<T>::kBitSize - 1);
-            if (prod_sign == c_sign) return 0.0;
-            return -c;
-          }
-          return internal::CanonicalizeNaN(a * b);
-        }
-        return internal::CanonicalizeNaN((a * b) - c);
+        return internal::CanonicalizeNaN(fma(a, b, -c));
       });
 }
 
 void RiscVFNmadd(const Instruction *instruction) {
   using T = float;
-  RiscVTernaryFloatNaNBoxOp<FPRegister::ValueType, T, T>(
+  RVCheriotTernaryFloatNaNBoxOp<FPRegister::ValueType, T, T>(
       instruction, [instruction](T a, T b, T c) -> T {
-        if (FPTypeInfo<T>::IsNaN(a)) return internal::CanonicalizeNaN(a);
-        if (FPTypeInfo<T>::IsNaN(b)) return internal::CanonicalizeNaN(b);
         if ((std::isinf(a) && (b == 0.0)) || ((std::isinf(b) && (a == 0.0)))) {
           auto *flag_db = instruction->Destination(1)->AllocateDataBuffer();
           flag_db->Set<uint32_t>(0, *FPExceptions::kInvalidOp);
           flag_db->Submit();
         }
-        if (FPTypeInfo<T>::IsNaN(c)) return internal::CanonicalizeNaN(c);
-        if (std::isinf(c) && !std::isinf(a) && !std::isinf(b)) return -c;
-        if (c == 0.0) {
-          if ((a == 0.0 && !std::isinf(b)) || (b == 0.0 && !std::isinf(a))) {
-            FPUInt c_sign = *reinterpret_cast<FPUInt *>(&c) >>
-                            (FPTypeInfo<T>::kBitSize - 1);
-            FPUInt ua = *reinterpret_cast<FPUInt *>(&a);
-            FPUInt ub = *reinterpret_cast<FPUInt *>(&b);
-            FPUInt prod_sign = (ua ^ ub) >> (FPTypeInfo<T>::kBitSize - 1);
-            if (prod_sign != c_sign) return 0.0;
-            return -c;
-          }
-          return internal::CanonicalizeNaN(-a * b);
-        }
-        return internal::CanonicalizeNaN(-((a * b) + c));
+        return internal::CanonicalizeNaN(fma(-a, b, -c));
       });
 }
 
 void RiscVFNmsub(const Instruction *instruction) {
   using T = float;
-  RiscVTernaryFloatNaNBoxOp<FPRegister::ValueType, T, T>(
+  RVCheriotTernaryFloatNaNBoxOp<FPRegister::ValueType, T, T>(
       instruction, [instruction](T a, T b, T c) -> T {
-        if (FPTypeInfo<T>::IsNaN(a)) return internal::CanonicalizeNaN(a);
-        if (FPTypeInfo<T>::IsNaN(b)) return internal::CanonicalizeNaN(b);
         if ((std::isinf(a) && (b == 0.0)) || ((std::isinf(b) && (a == 0.0)))) {
           auto *flag_db = instruction->Destination(1)->AllocateDataBuffer();
           flag_db->Set<uint32_t>(0, *FPExceptions::kInvalidOp);
           flag_db->Submit();
         }
-        if (FPTypeInfo<T>::IsNaN(c)) return internal::CanonicalizeNaN(c);
-        if (std::isinf(c) && !std::isinf(a) && !std::isinf(b)) return c;
-        if (c == 0.0) {
-          if ((a == 0.0 && !std::isinf(b)) || (b == 0.0 && !std::isinf(a))) {
-            FPUInt c_sign = -*reinterpret_cast<FPUInt *>(&c) >>
-                            (FPTypeInfo<T>::kBitSize - 1);
-            FPUInt ua = *reinterpret_cast<FPUInt *>(&a);
-            FPUInt ub = *reinterpret_cast<FPUInt *>(&b);
-            FPUInt prod_sign = (ua ^ ub) >> (FPTypeInfo<T>::kBitSize - 1);
-            if (prod_sign != c_sign) return 0.0;
-            return c;
-          }
-          return internal::CanonicalizeNaN(-a * b);
-        }
-        return internal::CanonicalizeNaN(-((a * b) - c));
+        return internal::CanonicalizeNaN(fma(-a, b, c));
       });
 }
 
 // Set sign of the first operand to that of the second.
 void RiscVFSgnj(const Instruction *instruction) {
-  RiscVBinaryNaNBoxOp<FPRegister::ValueType, FPUInt, FPUInt>(
+  RVCheriotBinaryNaNBoxOp<FPRegister::ValueType, FPUInt, FPUInt>(
       instruction,
       [](FPUInt a, FPUInt b) { return (a & 0x7fff'ffff) | (b & 0x8000'0000); });
 }
 
 // Set the sign of the first operand to the opposite of the second.
 void RiscVFSgnjn(const Instruction *instruction) {
-  RiscVBinaryNaNBoxOp<FPRegister::ValueType, FPUInt, FPUInt>(
+  RVCheriotBinaryNaNBoxOp<FPRegister::ValueType, FPUInt, FPUInt>(
       instruction, [](FPUInt a, FPUInt b) {
         return (a & 0x7fff'ffff) | (~b & 0x8000'0000);
       });
@@ -372,7 +306,7 @@ void RiscVFSgnjn(const Instruction *instruction) {
 // Set the sign of the first operand to the xor of the signs of the two
 // operands.
 void RiscVFSgnjx(const Instruction *instruction) {
-  RiscVBinaryNaNBoxOp<FPRegister::ValueType, FPUInt, FPUInt>(
+  RVCheriotBinaryNaNBoxOp<FPRegister::ValueType, FPUInt, FPUInt>(
       instruction, [](FPUInt a, FPUInt b) {
         return (a & 0x7fff'ffff) | ((a ^ b) & 0x8000'0000);
       });
@@ -380,21 +314,23 @@ void RiscVFSgnjx(const Instruction *instruction) {
 
 // Convert signed 32 bit integer to float.
 void RiscVFCvtSw(const Instruction *instruction) {
-  RiscVUnaryFloatNaNBoxOp<FPRegister::ValueType, uint32_t, float, int32_t>(
+  RVCheriotUnaryFloatNaNBoxOp<FPRegister::ValueType, uint32_t, float, int32_t>(
       instruction, [](int32_t a) -> float { return static_cast<float>(a); });
 }
 
 // Convert unsigned 32 bit integer to float.
 void RiscVFCvtSwu(const Instruction *instruction) {
-  RiscVUnaryFloatNaNBoxOp<FPRegister::ValueType, uint32_t, float, uint32_t>(
+  RVCheriotUnaryFloatNaNBoxOp<FPRegister::ValueType, uint32_t, float, uint32_t>(
       instruction, [](uint32_t a) -> float { return static_cast<float>(a); });
 }
 
 // Single precision move instruction from integer to fp register file.
 void RiscVFMvwx(const Instruction *instruction) {
-  RiscVUnaryNaNBoxOp<FPRegister::ValueType, uint32_t, uint32_t, uint32_t>(
+  RVCheriotUnaryNaNBoxOp<FPRegister::ValueType, uint32_t, uint32_t, uint32_t>(
       instruction, [](uint32_t a) -> uint32_t { return a; });
 }
+
+namespace RV32 {
 
 using XRegister = CheriotRegister;
 using XUint = typename std::make_unsigned<XRegister::ValueType>::type;
@@ -446,6 +382,8 @@ void RiscVFClass(const Instruction *instruction) {
       instruction,
       [](float a) -> uint32_t { return static_cast<uint32_t>(ClassifyFP(a)); });
 }
+
+}  // namespace RV32
 
 }  // namespace cheriot
 }  // namespace sim

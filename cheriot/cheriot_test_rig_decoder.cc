@@ -17,9 +17,6 @@
 #include <cstdint>
 #include <string>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "cheriot/cheriot_state.h"
 #include "cheriot/riscv_cheriot_bin_decoder.h"
 #include "cheriot/riscv_cheriot_decoder.h"
@@ -171,9 +168,9 @@ generic::Instruction *CheriotTestRigDecoder::DecodeInstruction(
       rs2 = 0;
       break;
     case FormatEnum::kCI:  // 2 reg operands: rd, rs1.
-      // cnop, caddi, cli, caddi16sp, clui, cslli, clwsp, cldsp.
+      // cnop, caddi, cli, caddi16sp, clui, cslli, clwsp, clcsp.
       rd = encoding::c_i::ExtractRd(inst_word16);
-      if ((opcode == OpcodeEnum::kClwsp) || (opcode == OpcodeEnum::kCldsp)) {
+      if ((opcode == OpcodeEnum::kClwsp) || (opcode == OpcodeEnum::kClcsp)) {
         rs1 = 2;
       } else {
         rs1 = encoding::c_i::ExtractRs1(inst_word16);

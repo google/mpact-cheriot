@@ -1,0 +1,48 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "cheriot/riscv_cheriot_vector.isa"
+#include "cheriot/riscv_cheriot_vector_fp.isa"
+#include "cheriot/riscv_cheriot_f.isa"
+#include "cheriot/riscv_cheriot.isa"
+
+includes {
+  #include "absl/functional/bind_front.h"
+}
+
+disasm widths = {-18};
+
+isa RiscVCheriotRVV {
+  namespace mpact::sim::cheriot::isa32_rvv;
+  slots { riscv_cheriot_rvv; }
+}
+
+isa RiscVCheriotRVVFp {
+  namespace mpact::sim::cheriot::isa32_rvv_fp;
+  slots { riscv_cheriot_rvv_fp; }
+}
+
+slot riscv_cheriot_rvv : riscv32_cheriot, riscv_cheriot_vector {
+  default size = 4;
+  default opcode =
+    disasm: "Illegal instruction at 0x%(@:08x)",
+    semfunc: "&RiscVIllegalInstruction";
+}
+
+slot riscv_cheriot_rvv_fp : riscv32_cheriot, riscv_cheriot_vector, riscv_cheriot_vector_fp, riscv_cheriot_f {
+  default size = 4;
+  default opcode =
+    disasm: "Illegal instruction at 0x%(@:08x)",
+    semfunc: "&RiscVIllegalInstruction";
+}

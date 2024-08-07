@@ -1,0 +1,342 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Definitions of RiscV vector floating point instructions.
+
+// First disasm field is 18 char wide and left justified.
+disasm widths = {-18};
+
+slot riscv_cheriot_vector_fp {
+  includes {
+    #include "cheriot/riscv_cheriot_vector_fp_compare_instructions.h"
+    #include "cheriot/riscv_cheriot_vector_fp_instructions.h"
+    #include "cheriot/riscv_cheriot_vector_fp_reduction_instructions.h"
+    #include "cheriot/riscv_cheriot_vector_fp_unary_instructions.h"
+    #include "absl/functional/bind_front.h"
+  }
+  default size = 4;
+  default latency = 0;
+  default opcode =
+    disasm: "Unimplemented instruction at 0x%(@:08x)",
+    semfunc: "&RV32VUnimplementedInstruction";
+  opcodes {
+    // Floating point, OPFVV, OPFVF.
+    vfadd_vv{: vs2, vs1, vmask : vd},
+      disasm: "vfadd.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfadd";
+    vfadd_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfadd.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfadd";
+    vfredusum_vv{: vs2, vs1, vmask : vd},
+      disasm: "vfredusum.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfredosum";
+    vfsub_vv{: vs2, vs1, vmask : vd},
+      disasm: "vfsub.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfsub";
+    vfsub_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfsub.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfsub";
+    vfredosum_vv{: vs2, vs1, vmask : vd},
+      disasm: "vfredosum.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfredosum";
+    vfmin_vv{: vs2, vs1, vmask: vd, fflags},
+      disasm: "vfmin.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfmin";
+    vfmin_vf{: vs2, fs1, vmask : vd, fflags},
+      disasm: "vfmin.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfmin";
+    vfredmin_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfredmin.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfredmin";
+    vfmax_vv{: vs2, vs1, vmask: vd, fflags},
+      disasm: "vfmax.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfmax";
+    vfmax_vf{: vs2, fs1, vmask : vd, fflags},
+      disasm: "vfmax.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfmax";
+    vfredmax_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfredmax.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfredmax";
+    vfsgnj_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfsgnj.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfsgnj";
+    vfsgnj_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfsgnj.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfsgnj";
+    vfsgnjn_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfsgnjn.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfsgnjn";
+    vfsgnjn_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfsgnjn.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfsgnjn";
+    vfsgnjx_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfsgnjx.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfsgnjx";
+    vfsgnjx_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfsgnjx.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfsgnjx";
+    vfslide1up_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfslide1up.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfslide1up";
+    vfslide1down_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfslide1down.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfslide1down";
+    vfmv_vf{: fs1, vmask : vd},
+      disasm: "vfmv.vf", "%vd, %fs1, %vmask",
+      semfunc: "&Vfmvvf";
+    vfmerge_vf{: vs2, vs1, vmask : vd},
+      disasm: "vfmerge.vf", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfmerge";
+    vmfeq_vv{: vs2, vs1, vmask : vd},
+      disasm: "vmfeq.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vmfeq";
+    vmfeq_vf{: vs2, fs1, vmask : vd},
+      disasm: "vmfeq.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vmfeq";
+    vmfle_vv{: vs2, vs1, vmask : vd},
+      disasm: "vmfle.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vmfle";
+    vmfle_vf{: vs2, fs1, vmask : vd},
+      disasm: "vmfle.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vmfle";
+    vmflt_vv{: vs2, vs1, vmask : vd},
+      disasm: "vmflt.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vmflt";
+    vmflt_vf{: vs2, fs1, vmask : vd},
+      disasm: "vmflt.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vmflt";
+    vmfne_vv{: vs2, vs1, vmask : vd},
+      disasm: "vmfne.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vmfne";
+    vmfne_vf{: vs2, fs1, vmask : vd},
+      disasm: "vmfne.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vmfne";
+    vmfgt_vf{: vs2, fs1, vmask : vd},
+      disasm: "vmfgt.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vmfgt";
+    vmfge_vf{: vs2, fs1, vmask : vd},
+      disasm: "vmfge.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vmfge";
+    vfdiv_vv{: vs2, vs1, vmask : vd},
+      disasm: "vfdiv.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfdiv";
+    vfdiv_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfdiv.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfdiv";
+    vfrdiv_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfrdiv.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfrdiv";
+    vfmul_vv{: vs2, vs1, vmask : vd},
+      disasm: "vfmul.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfmul";
+    vfmul_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfmul.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfmul";
+    vfrsub_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfrsub.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfrsub";
+    vfmadd_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfmadd.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfmadd";
+    vfmadd_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfmadd.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfmadd";
+    vfnmadd_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfnmadd.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfnmadd";
+    vfnmadd_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfnmadd.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfnmadd";
+    vfmsub_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfmsub.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfmsub";
+    vfmsub_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfmsub.v", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfmsub";
+    vfnmsub_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfnmsub.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfnmsub";
+    vfnmsub_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfnmsub.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfnmsub";
+    vfmacc_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfmacc.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfmacc";
+    vfmacc_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfmacc.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfmacc";
+    vfnmacc_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfnmacc.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfnmacc";
+    vfnmacc_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfnmacc.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfnmacc";
+    vfmsac_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfmsac.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfmsac";
+    vfmsac_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfmsac.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfmsac";
+    vfnmsac_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfnmsac.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfnmsac";
+    vfnmsac_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfnmsac.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfnmsac";
+    vfwadd_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfwadd.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwadd";
+    vfwadd_vf{: vs2, fs1, vmask: vd},
+      disasm: "vfwadd.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwadd";
+    vfwredusum_vv{: vs2, vs1, vmask : vd},
+      disasm: "vfwredusum.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwredosum";
+    vfwsub_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfwsub.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwsub";
+    vfwsub_vf{: vs2, fs1, vmask: vd},
+      disasm: "vfwsub.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwsub";
+    vfwredosum_vv{: vs2, vs1, vmask : vd},
+      disasm: "vfwredosum.vv", "%vd, %vs2, %vs1, %vmask";
+    vfwadd_w_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfwadd.w.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwadd";
+    vfwadd_w_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfwadd.w.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwadd";
+    vfwsub_w_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfwsub.w.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwsub";
+    vfwsub_w_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfwsub.w.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwsub";
+    vfwmul_vv{: vs2, vs1, vmask: vd},
+      disasm: "vfwmul.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwmul";
+    vfwmul_vf{: vs2, fs1, vmask : vd},
+      disasm: "vfwmul.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwmul";
+    vfwmacc_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfwmacc.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwmacc";
+    vfwmacc_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfwmacc.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwmacc";
+    vfwnmacc_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfwnmacc.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwnmacc";
+    vfwnmacc_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfwnmacc.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwnmacc";
+    vfwmsac_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfwmsac.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwmsac";
+    vfwmsac_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfwmsac.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwmsac";
+    vfwnmsac_vv{: vs2, vs1, vd, vmask: vd},
+      disasm: "vfwnmsac.vv", "%vd, %vs2, %vs1, %vmask",
+      semfunc: "&Vfwnmsac";
+    vfwnmsac_vf{: vs2, fs1, vd, vmask: vd},
+      disasm: "vfwnmsac.vf", "%vd, %vs2, %fs1, %vmask",
+      semfunc: "&Vfwnmsac";
+    // VWFUNARY0
+    vfmv_f_s{: vs2 : fd},
+      disasm: "vfmv.f.s", "%fd, %vs2",
+      semfunc: "&Vfmvfs";
+    // VRFUNARY0
+    vfmv_s_f{: fs1 : vd},
+      disasm: "vfmv.s.f", "%vd, %fs1",
+      semfunc: "&Vfmvsf";
+    // VFUNARY0
+    vfcvt_xu_f_v{: vs2, vmask: vd, fflags},
+      disasm: "vfcvt.xu.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfcvtxufv";
+    vfcvt_x_f_v{: vs2, vmask: vd, fflags},
+      disasm: "vfcvt.x.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfcvtxfv";
+    vfcvt_f_xu_v{: vs2, vmask: vd},
+      disasm: "vfcvt.xu.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfcvtfxuv";
+    vfcvt_f_x_v{: vs2, vmask: vd},
+      disasm: "vfcvt.x.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfcvtfxv";
+    vfcvt_rtz_xu_f_v{: vs2, vmask: vd, fflags},
+      disasm: "vfcvt.rtz.xu.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfcvtrtzxufv";
+    vfcvt_rtz_x_f_v{: vs2, vmask: vd, fflags},
+      disasm: "vfcvt.rtz.x.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfcvtrtzxfv";
+    vfwcvt_xu_f_v{: vs2, vmask: vd, fflags},
+      disasm: "vfwcvt.xu.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfwcvtxufv";
+    vfwcvt_x_f_v{: vs2, vmask: vd, fflags},
+      disasm: "vfwcvt.x.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfwcvtxfv";
+    vfwcvt_f_xu_v{: vs2, vmask: vd},
+      disasm: "vfwcvt.f.xu.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfwcvtfxuv";
+    vfwcvt_f_x_v{: vs2, vmask: vd},
+      disasm: "vfwcvt.f.x.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfwcvtfxv";
+    vfwcvt_f_f_v{: vs2, vmask: vd},
+      disasm: "vfwcvt.f.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfwcvtffv";
+    vfwcvt_rtz_xu_f_v{: vs2, vmask: vd, fflags},
+      disasm: "vfwcvt.rtz.xu.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfwcvtrtzxufv";
+    vfwcvt_rtz_x_f_v{: vs2, vmask: vd, fflags},
+      disasm: "vfwcvt.rtz.x.f.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfwcvtrtzxfv";
+    vfncvt_xu_f_w{: vs2, vmask: vd, fflags},
+      disasm: "vfncvt.xu.f.w", "%vd, %vs2, %vmask",
+      semfunc: "&Vfncvtxufw";
+    vfncvt_x_f_w{: vs2, vmask: vd, fflags},
+      disasm: "vfncvt.x.f.w", "%vd, %vs2, %vmask",
+      semfunc: "&Vfncvtxfw";
+    vfncvt_f_xu_w{: vs2, vmask: vd},
+      disasm: "vfncvt.f.xu.w", "%vd, %vs2, %vmask",
+      semfunc: "&Vfncvtfxuw";
+    vfncvt_f_x_w{: vs2, vmask: vd},
+      disasm: "vfncvt.f.x.w", "%vd, %vs2, %vmask",
+      semfunc: "&Vfncvtfxw";
+    vfncvt_f_f_w{: vs2, vmask: vd},
+      disasm: "vfncvt.f.f.w", "%vd, %vs2, %vmask",
+      semfunc: "&Vfncvtffw";
+    vfncvt_rod_f_f_w{: vs2, vmask: vd},
+      disasm: "vfncvt.rod.f.f.w", "%vd, %vs2, %vmask",
+      semfunc: "&Vfncvtrodffw";
+    vfncvt_rtz_xu_f_w{: vs2, vmask: vd, fflags},
+      disasm: "vfncvt.rtz.xu.f.w", "%vd, %vs2, %vmask",
+      semfunc: "&Vfncvtrtzxufw";
+    vfncvt_rtz_x_f_w{: vs2, vmask: vd, fflags},
+      disasm: "vfncvt.rtz.x.f.w", "%vd, %vs2, %vmask",
+      semfunc: "&Vfncvtrtzxfw";
+    // VFUNARY1
+    vfsqrt_v{: vs2, vmask: vd, fflags},
+      disasm: "vfsqrt.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfsqrtv";
+    vfrsqrt7_v{: vs2, vmask: vd, fflags},
+      disasm: "vfrsqrt7.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfrsqrt7v";
+    vfrec7_v{: vs2, vmask: vd},
+      disasm: "vfrec7.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfrec7v";
+    vfclass_v{: vs2, vmask: vd},
+      disasm: "vfclass.v", "%vd, %vs2, %vmask",
+      semfunc: "&Vfclassv";
+  }
+}

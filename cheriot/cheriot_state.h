@@ -38,8 +38,11 @@
 #include "mpact/sim/util/memory/memory_interface.h"
 #include "mpact/sim/util/memory/tagged_memory_interface.h"
 #include "riscv//riscv_csr.h"
+#include "riscv//riscv_fp_state.h"
 #include "riscv//riscv_misa.h"
+#include "riscv//riscv_register.h"
 #include "riscv//riscv_state.h"
+#include "riscv//riscv_vector_state.h"
 #include "riscv//riscv_xip_xie.h"
 #include "riscv//riscv_xstatus.h"
 
@@ -61,14 +64,17 @@ using ::mpact::sim::riscv::IsaExtension;
 using ::mpact::sim::riscv::PrivilegeMode;
 using ::mpact::sim::riscv::RiscVCsrInterface;
 using ::mpact::sim::riscv::RiscVCsrSet;
+using ::mpact::sim::riscv::RiscVFPState;
 using ::mpact::sim::riscv::RiscVMIe;
 using ::mpact::sim::riscv::RiscVMIp;
 using ::mpact::sim::riscv::RiscVMIsa;
 using ::mpact::sim::riscv::RiscVMStatus;
 using ::mpact::sim::riscv::RiscVSimpleCsr;
+using ::mpact::sim::riscv::RVVectorRegister;
 
 // Forward declare the CHERIoT register type.
 class CheriotRegister;
+class CheriotVectorState;
 
 // CHERIoT exception codes. These are used in addition to the ones defined for
 // vanilla RiscV.
@@ -159,6 +165,9 @@ class CheriotState : public generic::ArchState {
                                    std::vector<RiscVCsrInterface *> &);
   friend void CreateCsrs<uint64_t>(CheriotState *,
                                    std::vector<RiscVCsrInterface *> &);
+  auto static constexpr kVregPrefix =
+      ::mpact::sim::riscv::RiscVState::kVregPrefix;
+
   // Memory footprint of a capability register.
   static constexpr int kCapabilitySizeInBytes = 8;
   // Pc name.
@@ -189,6 +198,21 @@ class CheriotState : public generic::ArchState {
       return std::make_pair(static_cast<RegisterType *>(ptr->second), false);
     // Create a new register and return a pointer to the object.
     return std::make_pair(AddRegister<RegisterType>(name), true);
+  }
+
+  // Specialization for RiscV vector registers.
+  template <>
+  std::pair<RVVectorRegister *, bool> GetRegister<RVVectorRegister>(
+      absl::string_view name) {
+    int vector_byte_width = vector_register_width();
+    if (vector_byte_width == 0) return std::make_pair(nullptr, false);
+    auto ptr = registers()->find(std::string(name));
+    if (ptr != registers()->end())
+      return std::make_pair(static_cast<RVVectorRegister *>(ptr->second),
+                            false);
+    // Create a new register and return a pointer to the object.
+    return std::make_pair(
+        AddRegister<RVVectorRegister>(name, vector_byte_width), true);
   }
 
   // Add register alias.
@@ -228,6 +252,7 @@ class CheriotState : public generic::ArchState {
 
   // Debug memory methods.
   void DbgLoadMemory(uint64_t address, DataBuffer *db);
+  void DbgStoreMemory(uint64_t address, DataBuffer *db);
   // Called by the fence instruction semantic function to signal a fence
   // operation.
   void Fence(const Instruction *inst, int fm, int predecessor, int successor);
@@ -341,6 +366,12 @@ class CheriotState : public generic::ArchState {
     on_trap_ = std::move(callback);
   }
 
+  RiscVFPState *rv_fp() { return rv_fp_; }
+  void set_rv_fp(RiscVFPState *rv_fp) { rv_fp_ = rv_fp; }
+  CheriotVectorState *rv_vector() { return rv_vector_; }
+  void set_rv_vector(CheriotVectorState *rv_vector) { rv_vector_ = rv_vector; }
+  void set_vector_register_width(int value) { vector_register_width_ = value; }
+  int vector_register_width() const { return vector_register_width_; }
   RiscVMStatus *mstatus() { return mstatus_; }
   RiscVMIsa *misa() { return misa_; }
   RiscVMIp *mip() { return mip_; }
@@ -382,6 +413,7 @@ class CheriotState : public generic::ArchState {
   CheriotRegister *pcc_ = nullptr;
   CheriotRegister *cgp_ = nullptr;
   bool branch_ = false;
+  int vector_register_width_ = 0;
   uint64_t max_physical_address_;
   uint64_t min_physical_address_ = 0;
   int num_tags_per_load_;
@@ -396,6 +428,8 @@ class CheriotState : public generic::ArchState {
   absl::AnyInvocable<bool(const Instruction *)> on_wfi_;
   absl::AnyInvocable<bool(const Instruction *)> on_cease_;
   std::vector<RiscVCsrInterface *> csr_vec_;
+  RiscVFPState *rv_fp_ = nullptr;
+  CheriotVectorState *rv_vector_ = nullptr;
   // For interrupt handling.
   bool is_interrupt_available_ = false;
   int interrupt_handler_depth_ = 0;

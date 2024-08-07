@@ -22,7 +22,6 @@
 #include "cheriot/riscv_cheriot_encoding.h"
 #include "cheriot/riscv_cheriot_enums.h"
 #include "mpact/sim/generic/instruction.h"
-#include "mpact/sim/generic/program_error.h"
 #include "mpact/sim/generic/type_helpers.h"
 #include "mpact/sim/util/memory/memory_interface.h"
 #include "riscv//riscv_state.h"
@@ -38,10 +37,6 @@ using ::mpact::sim::generic::operator*;  // NOLINT: is used below (clang error).
 CheriotDecoder::CheriotDecoder(CheriotState *state,
                                util::MemoryInterface *memory)
     : state_(state), memory_(memory) {
-  // Get a handle to the internal error in the program error controller.
-  decode_error_ = state->program_error_controller()->GetProgramError(
-      generic::ProgramErrorController::kInternalErrorName);
-
   // Need a data buffer to load instructions from memory. Allocate a single
   // buffer that can be reused for each instruction word.
   inst_db_ = db_factory_.Allocate<uint32_t>(1);

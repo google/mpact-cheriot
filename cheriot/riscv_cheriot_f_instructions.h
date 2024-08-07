@@ -65,6 +65,8 @@ void RiscVFCvtSlu(const Instruction *instruction);
 // The move instruction takes a single register source operand and a single
 void RiscVFMvwx(const Instruction *instruction);
 
+namespace RV32 {
+
 // Store float instruction semantic function, source operand 0 is the base
 // register, source operand 1 is the offset, while source operand 2 is the value
 // to be stored referred to by rs2.
@@ -85,6 +87,8 @@ void RiscVFCmple(const Instruction *instruction);
 // The single precision class instruction takes a single source register operand
 // and a single destination register operand.
 void RiscVFClass(const Instruction *instruction);
+
+}  // namespace RV32
 
 }  // namespace cheriot
 }  // namespace sim

@@ -1,3 +1,17 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // RiscV 32 bit CHERIoT instruction decoder.
 decoder RiscVCheriot {
   namespace mpact::sim::cheriot::encoding;
@@ -435,9 +449,9 @@ format CA[16] : Inst16Format {
 instruction group RiscVCheriotInst16[16] : Inst16Format {
   caddi4spn : CIW: func3 == 0b000, op == 0b00, imm8 != 0;
   clw       : CL : func3 == 0b010, op == 0b00;
-  cld       : CL : func3 == 0b011, op == 0b00;
+  clc       : CL : func3 == 0b011, op == 0b00;
   csw       : CS : func3 == 0b110, op == 0b00;
-  csd       : CS : func3 == 0b111, op == 0b00;
+  csc       : CS : func3 == 0b111, op == 0b00;
   cnop      : CI : func3 == 0b000, imm1 == 0, rs1 == 0, imm5 == 0, op == 0b01;
   chint     : CI : func3 == 0b000, imm6 != 0, rs1 == 0, op == 0b01;
   caddi     : CI : func3 == 0b000, imm6 != 0, rd != 0, op == 0b01;
@@ -465,13 +479,13 @@ instruction group RiscVCheriotInst16[16] : Inst16Format {
   chint     : CI : func3 == 0b000, imm1 == 0, rs1 == 0, imm5 != 0, op == 0b10;
   chint     : CI : func3 == 0b000, imm6 == 0, op == 0b10;
   clwsp     : CI : func3 == 0b010, rd != 0, op == 0b10;
-  cldsp     : CI : func3 == 0b011, rd != 0, op == 0b10;
+  clcsp     : CI : func3 == 0b011, rd != 0, op == 0b10;
   cmv       : CR : func4 == 0b1000, rs1 != 0, rs2 != 0, op == 0b10;
   cebreak   : Inst16Format : func3 == 0b100, bits == 0b1'00000'00000, op == 0b10;
   cadd      : CR : func4 == 0b1001, rs1 != 0, rs2 != 0, op == 0b10;
   chint     : CR : func4 == 0b1001, rs1 == 0, rs2 != 0, op == 0b10;
   cswsp     : CSS: func3 == 0b110, op == 0b10;
-  csdsp     : CSS: func3 == 0b111, op == 0b10;
+  cscsp     : CSS: func3 == 0b111, op == 0b10;
   cheriot_cj        : CJ : func3 == 0b101, op == 0b01;
   cheriot_cjal      : CJ : func3 == 0b001, op == 0b01;
   cheriot_cjr       : CR : func4 == 0b1000, rs1 > 1, rs2 == 0, op == 0b10;

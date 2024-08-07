@@ -16,12 +16,17 @@
 
 package(default_applicable_licenses = ["//:license"])
 
+config_setting(
+    name = "darwin_arm64_cpu",
+    values = {"cpu": "darwin_arm64"},
+)
+
 cc_test(
     name = "cheriot_register_test",
     size = "small",
     srcs = ["cheriot_register_test.cc"],
     deps = [
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/random",
         "@com_google_absl//absl/status",
@@ -37,7 +42,7 @@ cc_test(
     size = "small",
     srcs = ["cheriot_state_test.cc"],
     deps = [
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_googletest//:gtest_main",
@@ -54,7 +59,8 @@ cc_test(
         "riscv_cheriot_instructions_test.cc",
     ],
     deps = [
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_instructions",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/random",
         "@com_google_absl//absl/strings:str_format",
@@ -75,7 +81,8 @@ cc_test(
         "riscv_cheriot_i_instructions_test.cc",
     ],
     deps = [
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_instructions",
         "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest_main",
         "@com_google_mpact-sim//mpact/sim/generic:core",
@@ -92,7 +99,8 @@ cc_test(
         "riscv_cheriot_m_instructions_test.cc",
     ],
     deps = [
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_instructions",
         "@com_google_absl//absl/random",
         "@com_google_googletest//:gtest_main",
         "@com_google_mpact-sim//mpact/sim/generic:core",
@@ -110,7 +118,8 @@ cc_test(
     ],
     tags = ["not_run:arm"],
     deps = [
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_instructions",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
@@ -129,7 +138,7 @@ cc_test(
         "riscv_cheriot_encoding_test.cc",
     ],
     deps = [
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
         "//cheriot:riscv_cheriot_decoder",
         "//cheriot:riscv_cheriot_isa",
         "@com_google_googletest//:gtest_main",
@@ -145,7 +154,8 @@ cc_test(
         "riscv_cheriot_a_instructions_test.cc",
     ],
     deps = [
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_instructions",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings:string_view",
         "@com_google_googletest//:gtest_main",
@@ -163,7 +173,7 @@ cc_test(
     ],
     deps = [
         "//cheriot:cheriot_load_filter",
-        "//cheriot:riscv_cheriot",
+        "//cheriot:cheriot_state",
         "@com_google_absl//absl/log:check",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
@@ -197,5 +207,316 @@ cc_test(
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "cheriot_rvv_fp_decoder_test",
+    size = "small",
+    srcs = ["cheriot_rvv_fp_decoder_test.cc"],
+    deps = [
+        "//cheriot:riscv_cheriot_rvv_fp_decoder",
+        "@com_google_absl//absl/log:log_sink_registry",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-sim//mpact/sim/util/other:log_sink",
+    ],
+)
+
+cc_test(
+    name = "cheriot_rvv_decoder_test",
+    size = "small",
+    srcs = ["cheriot_rvv_decoder_test.cc"],
+    deps = [
+        "//cheriot:riscv_cheriot_rvv_decoder",
+        "@com_google_absl//absl/log:log_sink_registry",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-sim//mpact/sim/util/other:log_sink",
+    ],
+)
+
+cc_library(
+    name = "riscv_cheriot_vector_instructions_test_base",
+    testonly = True,
+    hdrs = ["riscv_cheriot_vector_instructions_test_base.h"],
+    deps = [
+        "//cheriot:cheriot_state",
+        "//cheriot:cheriot_vector_state",
+        "//cheriot:riscv_cheriot_vector",
+        "@com_google_absl//absl/functional:bind_front",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_library(
+    name = "riscv_vector_fp_test_utilities",
+    testonly = True,
+    hdrs = ["riscv_cheriot_vector_fp_test_utilities.h"],
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        "//cheriot:cheriot_state",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_for_library_testonly",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_true_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_true_test.cc",
+    ],
+    deps = [
+        "//cheriot:cheriot_state",
+        "//cheriot:cheriot_vector_state",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_memory_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_memory_instructions_test.cc",
+    ],
+    deps = [
+        "//cheriot:cheriot_state",
+        "//cheriot:cheriot_vector_state",
+        "//cheriot:riscv_cheriot_vector",
+        "@com_google_absl//absl/functional:bind_front",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/numeric:bits",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:arch_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_opi_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_opi_instructions_test.cc",
+    ],
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        "//cheriot:cheriot_state",
+        "//cheriot:cheriot_vector_state",
+        "//cheriot:riscv_cheriot_vector",
+        "@com_google_absl//absl/functional:bind_front",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_opm_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_opm_instructions_test.cc",
+    ],
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        "//cheriot:cheriot_state",
+        "//cheriot:cheriot_vector_state",
+        "//cheriot:riscv_cheriot_vector",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/numeric:int128",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_reduction_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_reduction_instructions_test.cc",
+    ],
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        "//cheriot:cheriot_state",
+        "//cheriot:cheriot_vector_state",
+        "//cheriot:riscv_cheriot_vector",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_unary_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_unary_instructions_test.cc",
+    ],
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_vector",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_fp_unary_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_fp_unary_instructions_test.cc",
+    ],
+    copts = [
+        "-ffp-model=strict",
+    ] + select({
+        "darwin_arm64_cpu": [],
+        "//conditions:default": ["-fprotect-parens"],
+    }),
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        ":riscv_vector_fp_test_utilities",
+        "//cheriot:cheriot_state",
+        "//cheriot:cheriot_vector_state",
+        "//cheriot:riscv_cheriot_vector_fp",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_fp_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_fp_instructions_test.cc",
+    ],
+    copts = [
+        "-ffp-model=strict",
+    ] + select({
+        "darwin_arm64_cpu": [],
+        "//conditions:default": ["-fprotect-parens"],
+    }),
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        ":riscv_vector_fp_test_utilities",
+        "//cheriot:cheriot_state",
+        "//cheriot:cheriot_vector_state",
+        "//cheriot:riscv_cheriot_vector_fp",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_fp_compare_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_fp_compare_instructions_test.cc",
+    ],
+    copts = [
+        "-ffp-model=strict",
+    ] + select({
+        "darwin_arm64_cpu": [],
+        "//conditions:default": ["-fprotect-parens"],
+    }),
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        ":riscv_vector_fp_test_utilities",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_vector_fp",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_fp_reduction_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_fp_reduction_instructions_test.cc",
+    ],
+    copts = [
+        "-ffp-model=strict",
+    ] + select({
+        "darwin_arm64_cpu": [],
+        "//conditions:default": ["-fprotect-parens"],
+    }),
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        ":riscv_vector_fp_test_utilities",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_vector_fp",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_fp_state",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+    ],
+)
+
+cc_test(
+    name = "riscv_cheriot_vector_permute_instructions_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_vector_permute_instructions_test.cc",
+    ],
+    deps = [
+        ":riscv_cheriot_vector_instructions_test_base",
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_vector",
+        "@com_google_absl//absl/random",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_state",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
     ],
 )

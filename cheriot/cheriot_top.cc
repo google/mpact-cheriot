@@ -31,10 +31,8 @@
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 #include "cheriot/cheriot_debug_interface.h"
-#include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_register.h"
 #include "cheriot/cheriot_state.h"
-#include "cheriot/riscv_cheriot_enums.h"
 #include "cheriot/riscv_cheriot_register_aliases.h"
 #include "mpact/sim/generic/action_point_manager_base.h"
 #include "mpact/sim/generic/breakpoint_manager.h"
@@ -59,8 +57,6 @@ namespace mpact {
 namespace sim {
 namespace cheriot {
 
-constexpr char kCheriotName[] = "CherIoT";
-
 using ::mpact::sim::generic::ActionPointManagerBase;
 using ::mpact::sim::generic::BreakpointManager;
 using ::mpact::sim::riscv::RiscVActionPointMemoryInterface;
@@ -68,7 +64,7 @@ using EC = ::mpact::sim::cheriot::ExceptionCode;
 using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 
 CheriotTop::CheriotTop(std::string name, CheriotState *state,
-                       CheriotDecoder *decoder)
+                       DecoderInterface *decoder)
     : Component(name),
       state_(state),
       cheriot_decoder_(decoder),

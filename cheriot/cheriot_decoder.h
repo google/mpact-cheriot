@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef MPACT_CHERIOT__CHERIOT_DECODER_H_
-#define MPACT_CHERIOT__CHERIOT_DECODER_H_
+#ifndef MPACT_CHERIOT_CHERIOT_DECODER_H_
+#define MPACT_CHERIOT_CHERIOT_DECODER_H_
 
 #include <cstdint>
 #include <memory>
@@ -28,7 +28,6 @@
 #include "mpact/sim/generic/data_buffer.h"
 #include "mpact/sim/generic/decoder_interface.h"
 #include "mpact/sim/generic/instruction.h"
-#include "mpact/sim/generic/program_error.h"
 #include "mpact/sim/util/memory/memory_interface.h"
 
 namespace mpact {
@@ -81,7 +80,6 @@ class CheriotDecoder : public generic::DecoderInterface {
  private:
   CheriotState *state_;
   util::MemoryInterface *memory_;
-  std::unique_ptr<generic::ProgramError> decode_error_;
   generic::DataBufferFactory db_factory_;
   generic::DataBuffer *inst_db_;
   isa32::RiscVCheriotEncoding *cheriot_encoding_;
@@ -93,4 +91,4 @@ class CheriotDecoder : public generic::DecoderInterface {
 }  // namespace sim
 }  // namespace mpact
 
-#endif  // MPACT_CHERIOT__CHERIOT_DECODER_H_
+#endif  // MPACT_CHERIOT_CHERIOT_DECODER_H_

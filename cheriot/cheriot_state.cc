@@ -442,15 +442,8 @@ void CheriotState::LoadMemory(const Instruction *inst, DataBuffer *address_db,
                               DataBuffer *mask_db, int el_size, DataBuffer *db,
                               Instruction *child_inst,
                               ReferenceCount *context) {
-  // Check for alignment.
-  uint64_t mask = el_size - 1;
-  for (auto address : address_db->Get<uint64_t>()) {
-    if ((address & mask) != 0) {
-      Trap(/*is_interrupt*/ false, address, *EC::kLoadAddressMisaligned,
-           inst == nullptr ? 0 : inst->address(), inst);
-      return;
-    }
-  }
+  // For now, we don't check for alignment on vector memory accesses.
+
   // Check for physical address violation.
   for (auto address : address_db->Get<uint64_t>()) {
     if (address < min_physical_address_ || address > max_physical_address_) {
@@ -496,15 +489,8 @@ void CheriotState::StoreMemory(const Instruction *inst, uint64_t address,
 void CheriotState::StoreMemory(const Instruction *inst, DataBuffer *address_db,
                                DataBuffer *mask_db, int el_size,
                                DataBuffer *db) {
-  // Check for alignment.
-  uint64_t mask = el_size - 1;
-  for (auto address : address_db->Get<uint64_t>()) {
-    if ((address & mask) != 0) {
-      Trap(/*is_interrupt*/ false, address, *EC::kStoreAddressMisaligned,
-           inst == nullptr ? 0 : inst->address(), inst);
-      return;
-    }
-  }
+  // Ignore alignment check for vector memory accesses.
+
   // Check for physical address violation.
   for (auto address : address_db->Get<uint64_t>()) {
     if (address < min_physical_address_ || address > max_physical_address_) {
@@ -523,6 +509,10 @@ void CheriotState::StoreMemory(const Instruction *inst, DataBuffer *address_db,
   }
   // Forward the store.
   tagged_memory_->Store(address_db, mask_db, el_size, db);
+}
+
+void CheriotState::DbgStoreMemory(uint64_t address, DataBuffer *db) {
+  tagged_memory_->Store(address, db);
 }
 
 void CheriotState::DbgLoadMemory(uint64_t address, DataBuffer *db) {

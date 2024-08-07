@@ -1,4 +1,18 @@
-// This file contains the ISA description for the RiscV32G architecture.
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file contains the ISA description for the Cheriot architecture.
 
 includes {
 #include "absl/functional/bind_front.h"
@@ -459,11 +473,11 @@ slot riscv32c {
     clwsp{(: c2, I_ci_uimm6x4 : ), (: : rd)},
       disasm: "c.lw", "%rd, %I_ci_uimm6x4(%c2)",
       semfunc: "&RiscVILw", "&RiscVILwChild";
-    cflwsp{(: c2, I_ci_uimm6x4 : ), (: : frd)},
-      disasm: "c.flw", "%frd, %I_ci_uimm6x4(%c2)",
-      semfunc: "&RiscVILw", "&RiscVILwChild";
+    // cflwsp{(: c2, I_ci_uimm6x4 : ), (: : frd)},
+    //   disasm: "c.flw", "%frd, %I_ci_uimm6x4(%c2)",
+    //   semfunc: "&RiscVILw", "&RiscVILwChild";
     // Reused for clc
-    cldsp{(: c2, I_ci_uimm6x8 : ), (: : cd)},
+    clcsp{(: c2, I_ci_uimm6x8 : ), (: : cd)},
       disasm: "c.clc", "%cd, %I_ci_uimm6x8(%c2)",
       semfunc: "&CheriotCLc", "&CheriotCLcChild";
     // cfldsp{(: x2, I_ci_uimm6x8 : ), (: : drd)},
@@ -472,11 +486,11 @@ slot riscv32c {
     cswsp{: c2, I_css_uimm6x4, crs2 : },
       disasm: "c.csw", "%crs2, %I_css_uimm6x4(%c2)",
       semfunc: "&RiscVISw";
-    cfswsp{: c2, I_css_uimm6x4, cfrs2 : },
-      disasm: ".cfsw", "%cfrs2, %I_css_uimm6x4(%c2)",
-      semfunc: "&RiscVISw";
+    // cfswsp{: c2, I_css_uimm6x4, cfrs2 : },
+    //   disasm: ".cfsw", "%cfrs2, %I_css_uimm6x4(%c2)",
+    //   semfunc: "&RiscVISw";
     // Reused for csc
-    csdsp{: c2, I_css_uimm6x8, ccs2 : },
+    cscsp{: c2, I_css_uimm6x8, ccs2 : },
       disasm: "c.csc", "%ccs2, %I_css_uimm6x8(%c2)",
       semfunc: "&CheriotCSc";
     // cfsdsp{: x2, I_css_uimm6x8, rdrs2 : },
@@ -486,7 +500,7 @@ slot riscv32c {
       disasm: "c.clw", "%c3rd, %I_cl_uimm5x4(%c3rs1)",
       semfunc: "&RiscVILw", "&RiscVILwChild";
     // Reused for clc
-    cld{(: c3cs1, I_cl_uimm5x8 : ), (: : c3cd)},
+    clc{(: c3cs1, I_cl_uimm5x8 : ), (: : c3cd)},
       disasm: "c.clc", "%c3cd, %I_cl_uimm5x8(%c3cs1)",
       semfunc: "&CheriotCLc", "&CheriotCLcChild";
     // cfld{(: c3rs1, I_cl_uimm5x8 : ), (: : c3drd)},
@@ -496,7 +510,7 @@ slot riscv32c {
       disasm: "c.csw", "%c3cs2, %I_cl_uimm5x4(%c3rs1)",
       semfunc: "&RiscVISw";
     // Reused for csc
-    csd{: c3cs1, I_cl_uimm5x8, c3cs2 : },
+    csc{: c3cs1, I_cl_uimm5x8, c3cs2 : },
       disasm: "c.csc", "%c3cs2, %I_cl_uimm5x8(%c3cs1)",
       semfunc: "&CheriotCSc";
     // cfsd{: c3rs1, I_cl_uimm5x8, c3drs2 : },

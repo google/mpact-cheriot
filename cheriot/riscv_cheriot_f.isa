@@ -1,0 +1,132 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+
+// RiscV32 F (single precision floating point) instructions.
+slot riscv_cheriot_f {
+  includes {
+    #include "cheriot/riscv_cheriot_f_instructions.h"
+  }
+  default size = 4;
+  default latency = global_latency;
+  resources TwoOp = { next_pc, frs1 : frd[0..]};
+  resources ThreeOp = { next_pc, frs1, frs2 : frd[0..]};
+  resources FourOp = { next_pc, frs1, frs2, frs3 : frd[0..]};
+  opcodes {
+    flw{(: rs1, I_imm12 : ), (: : frd)},
+      resources: { next_pc, rs1 : frd[0..]},
+      semfunc: "&RiscVILw", "&RiscVIFlwChild",
+      disasm: "flw", "%frd, %I_imm12(%rs1)";
+    fsw{: rs1, S_imm12, frs2},
+      resources: { next_pc, rs1, frs2},
+      semfunc: "&RV32::RiscVFSw",
+      disasm: "fsw", "%frs2, %S_imm12(%rs1)";
+    fadd_s{: frs1, frs2, rm : frd},
+      resources: ThreeOp,
+      semfunc: "&RiscVFAdd",
+      disasm: "fadd", "%frd, %frs1, %frs2";
+    fsub_s{: frs1, frs2, rm : frd},
+      resources: ThreeOp,
+      semfunc: "&RiscVFSub",
+      disasm: "fsub", "%frd, %frs1, %frs2";
+    fmul_s{: frs1, frs2, rm : frd},
+      resources: ThreeOp,
+      semfunc: "&RiscVFMul",
+      disasm: "fmul", "%frd, %frs1, %frs2";
+    fdiv_s{: frs1, frs2, rm : frd},
+      resources: ThreeOp,
+      semfunc: "&RiscVFDiv",
+      disasm: "fdiv", "%frd, %frs1, %frs2";
+    fsqrt_s{: frs1, rm : frd},
+      resources: TwoOp,
+      semfunc: "&RiscVFSqrt",
+      disasm: "fsqrt", "%frd, %frs1";
+    fmin_s{: frs1, frs2 : frd, fflags},
+      resources: ThreeOp,
+      semfunc: "&RiscVFMin",
+      disasm: "fmin", "%frd, %frs1, %frs2";
+    fmax_s{: frs1, frs2 : frd, fflags},
+      resources: ThreeOp,
+      semfunc: "&RiscVFMax",
+      disasm: "fmax", "%frd, %frs1, %frs2";
+    fmadd_s{: frs1, frs2, frs3, rm : frd, fflags},
+      resources: FourOp,
+      semfunc: "&RiscVFMadd",
+      disasm: "fmadd", "%frd, %frs1, %frs2, %frs3";
+    fmsub_s{: frs1, frs2, frs3, rm : frd, fflags},
+      resources: FourOp,
+      semfunc: "&RiscVFMsub",
+      disasm: "fmsub", "%frd, %frs1, %frs2, %frs3";
+    fnmadd_s{: frs1, frs2, frs3, rm : frd, fflags},
+      resources: FourOp,
+      semfunc: "&RiscVFNmadd",
+      disasm: "fnmadd", "%frd, %frs1, %frs2, %frs3";
+    fnmsub_s{: frs1, frs2, frs3, rm : frd, fflags},
+      resources: FourOp,
+      semfunc: "&RiscVFNmsub",
+      disasm: "fnmsub", "%frd, %frs1, %frs2, %frs3";
+    fcvt_ws{: frs1, rm : rd, fflags},
+      resources: TwoOp,
+      semfunc: "&RV32::RiscVFCvtWs",
+      disasm: "fcvt.w.s", "%rd, %frs1";
+    fcvt_sw{: rs1, rm : frd},
+      resources: TwoOp,
+      semfunc: "&RiscVFCvtSw",
+      disasm: "fcvt.s.w", "%frd, %rs1";
+    fcvt_wus{: frs1, rm : rd, fflags},
+      resources: TwoOp,
+      semfunc: "&RV32::RiscVFCvtWus",
+      disasm: "fcvt.wu.s", "%rd, %frs1";
+    fcvt_swu{: rs1, rm : frd},
+      resources: TwoOp,
+      semfunc: "&RiscVFCvtSwu",
+      disasm: "fcvt.s.wu", "%frd, %rs1";
+    fsgnj_s{: frs1, frs2 : frd},
+      resources: ThreeOp,
+      semfunc: "&RiscVFSgnj",
+      disasm: "fsgn.s", "%frd, %frs1, %frs2";
+    fsgnjn_s{: frs1, frs2 : frd},
+      resources: ThreeOp,
+      semfunc: "&RiscVFSgnjn",
+      disasm: "fsgnjx.s", "%frd, %frs1, %frs2";
+    fsgnjx_s{: frs1, frs2 : frd},
+      resources: ThreeOp,
+      semfunc: "&RiscVFSgnjx",
+      disasm: "fsgnjx.s", "%frd, %frs1, %frs2";
+    fmv_xw{: frs1 : rd},
+      resources: { next_pc, frs1 : rd[0..]},
+      disasm: "mv.x.w", "%rd, %frs1",
+      semfunc: "&RV32::RiscVFMvxw";
+    fmv_wx{: rs1 : frd},
+      resources: { next_pc, rs1 : frd[0..]},
+      disasm: "mv.w.x", "%frd, %rs1",
+      semfunc: "&RiscVFMvwx";
+    fcmpeq_s{: frs1, frs2 : rd, fflags},
+      resources: { next_pc, frs1, frs2 : rd[0..]},
+      semfunc: "&RV32::RiscVFCmpeq",
+      disasm: "fcmpeq", "%rd, %frs1, %frs2";
+    fcmplt_s{: frs1, frs2 : rd, fflags},
+      resources: { next_pc, frs1, frs2 : rd[0..]},
+      semfunc: "&RV32::RiscVFCmplt",
+      disasm: "fcmplt", "%rd, %frs1, %frs2";
+    fcmple_s{: frs1, frs2 : rd, fflags},
+      resources: { next_pc, frs1, frs2 : rd[0..]},
+      semfunc: "&RV32::RiscVFCmple",
+      disasm: "fcmple", "%rd, %frs1, %frs2";
+    fclass_s{: frs1 : rd},
+      resources: { next_pc, frs1 : rd[0..]},
+      semfunc: "&RV32::RiscVFClass",
+      disasm: "fclass", "%rd, %frs1";
+  }
+}

@@ -41,11 +41,14 @@
 #include "absl/time/time.h"
 #include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_instrumentation_control.h"
+#include "cheriot/cheriot_rvv_decoder.h"
+#include "cheriot/cheriot_rvv_fp_decoder.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
 #include "cheriot/riscv_cheriot_minstret.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/counters.h"
+#include "mpact/sim/generic/decoder_interface.h"
 #include "mpact/sim/generic/instruction.h"
 #include "mpact/sim/proto/component_data.pb.h"
 #include "mpact/sim/util/memory/atomic_memory.h"
@@ -67,7 +70,10 @@
 using AddressRange = mpact::sim::util::MemoryWatcher::AddressRange;
 using ::mpact::sim::cheriot::CheriotDecoder;
 using ::mpact::sim::cheriot::CheriotInstrumentationControl;
+using ::mpact::sim::cheriot::CheriotRVVDecoder;
+using ::mpact::sim::cheriot::CheriotRVVFPDecoder;
 using ::mpact::sim::cheriot::CheriotState;
+using ::mpact::sim::generic::DecoderInterface;
 using ::mpact::sim::proto::ComponentData;
 using ::mpact::sim::util::InstructionProfiler;
 using ::mpact::sim::util::TaggedMemoryUseProfiler;
@@ -136,6 +142,12 @@ ABSL_FLAG(bool, inst_profile, false, "Enable instruction profiling");
 
 // Enable memory use profiling.
 ABSL_FLAG(bool, mem_profile, false, "Enable memory use profiling");
+
+// Enable RiscV Vector instructions
+ABSL_FLAG(bool, rvv, false, "Enable RVV");
+
+// Enable RiscV Vector instructions + FP.
+ABSL_FLAG(bool, rvv_fp, false, "Enable RVV + FP");
 
 constexpr char kStackEndSymbolName[] = "__stack_end";
 constexpr char kStackSizeSymbolName[] = "__stack_size";
@@ -256,10 +268,20 @@ int main(int argc, char **argv) {
   }
   CheriotState cheriot_state("CherIoT", data_memory,
                              static_cast<AtomicMemoryOpInterface *>(router));
-  CheriotDecoder cheriot_decoder(&cheriot_state,
-                                 static_cast<MemoryInterface *>(router));
 
-  CheriotTop cheriot_top("Cheriot", &cheriot_state, &cheriot_decoder);
+  DecoderInterface *decoder = nullptr;
+  if (absl::GetFlag(FLAGS_rvv_fp)) {
+    decoder = new CheriotRVVFPDecoder(&cheriot_state,
+                                      static_cast<MemoryInterface *>(router));
+  } else if (absl::GetFlag(FLAGS_rvv_fp)) {
+    decoder = new CheriotRVVDecoder(&cheriot_state,
+                                    static_cast<MemoryInterface *>(router));
+  } else {
+    decoder = new CheriotDecoder(&cheriot_state,
+                                 static_cast<MemoryInterface *>(router));
+  }
+
+  CheriotTop cheriot_top("Cheriot", &cheriot_state, decoder);
 
   // Enable instruction profiling if the flag is set.
   InstructionProfiler *inst_profiler = nullptr;
