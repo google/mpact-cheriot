@@ -36,6 +36,7 @@
 #include "mpact/sim/util/memory/tagged_memory_interface.h"
 #include "riscv//riscv_csr.h"
 #include "riscv//riscv_misa.h"
+#include "riscv//riscv_pmp.h"
 #include "riscv//riscv_state.h"
 
 ABSL_FLAG(uint64_t, revocation_ram_base, 0x8000'0000,
@@ -47,13 +48,14 @@ namespace mpact {
 namespace sim {
 namespace cheriot {
 
+using EC = ::mpact::sim::riscv::ExceptionCode;
 using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
 using ::mpact::sim::riscv::IsaExtension;
-using ::mpact::sim::riscv::RiscVXlen;
-using EC = ::mpact::sim::riscv::ExceptionCode;
 using ::mpact::sim::riscv::RiscVCsrEnum;
 using ::mpact::sim::riscv::RiscVCsrInterface;
+using ::mpact::sim::riscv::RiscVPmp;
 using ::mpact::sim::riscv::RiscVSimpleCsr;
+using ::mpact::sim::riscv::RiscVXlen;
 
 // These helper templates are used to store information about the CSR registers
 // used in CHERIoT RiscV (32 bits).
@@ -221,6 +223,10 @@ void CreateCsrs(CheriotState *state,
   // User level CSRs
   // None in CHERIoT.
 
+  // PMP CSRs
+  state->pmp_ = new RiscVPmp(state);
+  state->pmp_->CreatePmpCsrs<T, RiscVCheriotCsrEnum>(state->csr_set());
+
   // Simulator CSRs
 
   // Access current privilege mode. Omitted.
@@ -306,6 +312,7 @@ CheriotState::~CheriotState() {
   delete pc_src_operand_;
   for (auto *csr : csr_vec_) delete csr;
   delete csr_set_;
+  delete pmp_;
   delete temp_reg_;
   revocation_db_->DecRef();
 }

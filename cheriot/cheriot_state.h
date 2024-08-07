@@ -40,6 +40,7 @@
 #include "riscv//riscv_csr.h"
 #include "riscv//riscv_fp_state.h"
 #include "riscv//riscv_misa.h"
+#include "riscv//riscv_pmp.h"
 #include "riscv//riscv_register.h"
 #include "riscv//riscv_state.h"
 #include "riscv//riscv_vector_state.h"
@@ -69,6 +70,7 @@ using ::mpact::sim::riscv::RiscVMIe;
 using ::mpact::sim::riscv::RiscVMIp;
 using ::mpact::sim::riscv::RiscVMIsa;
 using ::mpact::sim::riscv::RiscVMStatus;
+using ::mpact::sim::riscv::RiscVPmp;
 using ::mpact::sim::riscv::RiscVSimpleCsr;
 using ::mpact::sim::riscv::RVVectorRegister;
 
@@ -448,6 +450,7 @@ class CheriotState : public generic::ArchState {
   CheriotRegister *mscratchc_ = nullptr;
   CheriotRegister *mtdc_ = nullptr;
   CheriotRegister *temp_reg_ = nullptr;
+  RiscVPmp *pmp_ = nullptr;
   RiscVCsrInterface *mtval_ = nullptr;
   RiscVCsrInterface *mcause_ = nullptr;
   RiscVCheri32PcSourceOperand *pc_src_operand_ = nullptr;
