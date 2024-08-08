@@ -320,6 +320,8 @@ class RiscVCheriotFPInstructionsTest
         {{kVmaskName, Span<const uint8_t>(kA5Mask)}});
     // Iterate across different lmul values.
     for (int lmul_index = 0; lmul_index < 7; lmul_index++) {
+      // Clear vd_span.
+      for (auto &vd_val : vd_span) vd_val = 0;
       // Initialize input values.
       FillArrayWithRandomFPValues<Vs2>(vs2_span);
       using Vs2Int = typename FPTypeInfo<Vs2>::IntType;
