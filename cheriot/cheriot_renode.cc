@@ -39,6 +39,8 @@
 #include "cheriot/cheriot_instrumentation_control.h"
 #include "cheriot/cheriot_renode_cli_top.h"
 #include "cheriot/cheriot_renode_register_info.h"
+#include "cheriot/cheriot_rvv_decoder.h"
+#include "cheriot/cheriot_rvv_fp_decoder.h"
 #include "cheriot/cheriot_state.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
@@ -60,8 +62,14 @@
 #include "src/google/protobuf/text_format.h"
 
 ::mpact::sim::util::renode::RenodeDebugInterface *CreateMpactSim(
-    std::string name, ::mpact::sim::util::MemoryInterface *renode_sysbus) {
+    std::string name, std::string cpu_type,
+    ::mpact::sim::util::MemoryInterface *renode_sysbus) {
   auto *top = new ::mpact::sim::cheriot::CheriotRenode(name, renode_sysbus);
+  auto status = top->InitializeSimulator(cpu_type);
+  if (!status.ok()) {
+    delete top;
+    return nullptr;
+  }
   return top;
 }
 
@@ -94,86 +102,17 @@ constexpr std::string_view kCLIPort = "cliPort";
 constexpr std::string_view kWaitForCLI = "waitForCLI";
 constexpr std::string_view kInstProfile = "instProfile";
 constexpr std::string_view kMemProfile = "memProfile";
+// Cpu names
+constexpr std::string_view kBaseName = "Mpact.Cheriot";
+constexpr std::string_view kRvvName = "Mpact.CheriotRvv";
+constexpr std::string_view kRvvFpName = "Mpact.CheriotRvvFp";
 
 CheriotRenode::CheriotRenode(std::string name, MemoryInterface *renode_sysbus)
-    : name_(name), renode_sysbus_(renode_sysbus) {
-  router_ = new mpact::sim::util::SingleInitiatorRouter(name + "_router");
-  renode_router_ =
-      new mpact::sim::util::SingleInitiatorRouter(name + "_renode_router");
-  auto *data_memory = static_cast<TaggedMemoryInterface *>(router_);
-  // Instantiate memory profiler, but disable it until the config information
-  // has been received.
-  mem_profiler_ = new TaggedMemoryUseProfiler(data_memory);
-  data_memory = mem_profiler_;
-  mem_profiler_->set_is_enabled(false);
-  cheriot_state_ = new CheriotState(
-      "CherIoT", data_memory, static_cast<AtomicMemoryOpInterface *>(router_));
-  cheriot_decoder_ = new CheriotDecoder(
-      cheriot_state_, static_cast<MemoryInterface *>(router_));
-
-  // Instantiate cheriot_top.
-  cheriot_top_ = new CheriotTop("Cheriot", cheriot_state_, cheriot_decoder_);
-  // Initialize minstret/minstreth. Bind the instruction counter to those
-  // registers.
-  auto minstret_res = cheriot_top_->state()->csr_set()->GetCsr("minstret");
-  auto minstreth_res = cheriot_top_->state()->csr_set()->GetCsr("minstreth");
-  if (!minstret_res.ok() || !minstreth_res.ok()) {
-    LOG(ERROR) << name << ":Error while initializing minstret/minstreth\n";
-  }
-  auto *minstret = static_cast<RiscVCheriotMInstret *>(minstret_res.value());
-  auto *minstreth = static_cast<RiscVCheriotMInstreth *>(minstreth_res.value());
-  minstret->set_counter(cheriot_top_->counter_num_instructions());
-  minstreth->set_counter(cheriot_top_->counter_num_instructions());
-
-  // Set up the memory router with the system bus. Other devices are added once
-  // config info has been received. Add a tagged default memory transactor, so
-  // that any tagged loads/stores are forward to the sysbus without tags.
-  tagged_sysbus_ = new TaggedToUntaggedMemoryTransactor(renode_sysbus_);
-  CHECK_OK(router_->AddDefaultTarget<MemoryInterface>(renode_sysbus));
-  CHECK_OK(router_->AddDefaultTarget<TaggedMemoryInterface>(tagged_sysbus_));
-
-  // Create memory. These memories will be added to the core router when there
-  // is configuration data for the address space that belongs to the core. The
-  // memories will be added to the renode router immediately as the default
-  // target, since memory references from ReNode are only in the memory range
-  // exposed on the sysbus.
-  tagged_memory_ =
-      new mpact::sim::util::TaggedFlatDemandMemory(kCapabilityGranule);
-  atomic_memory_ = new mpact::sim::util::AtomicMemory(tagged_memory_);
-
-  // Need to set up the renode router with the tagged_memory.
-  CHECK_OK(
-      renode_router_->AddDefaultTarget<TaggedMemoryInterface>(tagged_memory_));
-  CHECK_OK(renode_router_->AddDefaultTarget<MemoryInterface>(tagged_memory_));
-
-  // Set up semihosting.
-  semihost_ =
-      new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32,
-                           static_cast<MemoryInterface *>(router_),
-                           static_cast<MemoryInterface *>(renode_router_));
-  // Set up special handlers (ebreak, wfi, ecall).
-  cheriot_top_->state()->AddEbreakHandler([this](const Instruction *inst) {
-    if (this->semihost_->IsSemihostingCall(inst)) {
-      this->semihost_->OnEBreak(inst);
-      return true;
-    }
-    if (this->cheriot_top_->HasBreakpoint(inst->address())) {
-      this->cheriot_top_->RequestHalt(HaltReason::kSoftwareBreakpoint, nullptr);
-      return true;
-    }
-    return false;
-  });
-  cheriot_top_->state()->set_on_wfi([](const Instruction *) { return true; });
-  cheriot_top_->state()->set_on_ecall(
-      [](const Instruction *) { return false; });
-  semihost_->set_exit_callback([this]() {
-    this->cheriot_top_->RequestHalt(HaltReason::kProgramDone, nullptr);
-  });
-}
+    : name_(name), renode_sysbus_(renode_sysbus) {}
 
 CheriotRenode::~CheriotRenode() {
   // Halt the core just to be safe.
-  (void)cheriot_top_->Halt();
+  if (cheriot_top_ != nullptr) (void)cheriot_top_->Halt();
   // Write out instruction profile.
   if (inst_profiler_ != nullptr) {
     std::string inst_profile_file_name =
@@ -200,19 +139,21 @@ CheriotRenode::~CheriotRenode() {
     mem_profile_file.close();
   }
   // Export counters.
-  auto component_proto = std::make_unique<ComponentData>();
-  CHECK_OK(cheriot_top_->Export(component_proto.get()))
-      << "Failed to export proto";
-  std::string proto_file_name;
-  proto_file_name = absl::StrCat("./mpact_cheriot_", name_, ".proto");
-  std::fstream proto_file(proto_file_name.c_str(), std::ios_base::out);
-  std::string serialized;
-  if (!proto_file.good() || !google::protobuf::TextFormat::PrintToString(
-                                *component_proto.get(), &serialized)) {
-    LOG(ERROR) << "Failed to write proto to file";
-  } else {
-    proto_file << serialized;
-    proto_file.close();
+  if (cheriot_top_ != nullptr) {
+    auto component_proto = std::make_unique<ComponentData>();
+    CHECK_OK(cheriot_top_->Export(component_proto.get()))
+        << "Failed to export proto";
+    std::string proto_file_name;
+    proto_file_name = absl::StrCat("./mpact_cheriot_", name_, ".proto");
+    std::fstream proto_file(proto_file_name.c_str(), std::ios_base::out);
+    std::string serialized;
+    if (!proto_file.good() || !google::protobuf::TextFormat::PrintToString(
+                                  *component_proto.get(), &serialized)) {
+      LOG(ERROR) << "Failed to write proto to file";
+    } else {
+      proto_file << serialized;
+      proto_file.close();
+    }
   }
   // Clean up.
   delete mem_profiler_;
@@ -410,11 +351,13 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
   int wait_for_cli = 0;
   for (int i = 0; i < size; ++i) {
     std::string name(config_names[i]);
-    auto res = ParseNumber(config_values[i]);
+    std::string str_value = config_values[i];
+    auto res = ParseNumber(str_value);
+    uint64_t value = 0;
     if (!res.ok()) {
       return res.status();
     }
-    auto value = res.value();
+    value = res.value();
     if (name == kTaggedMemoryBase) {
       tagged_memory_base = value;
     } else if (name == kTaggedMemorySize) {
@@ -515,6 +458,102 @@ absl::Status CheriotRenode::SetIrqValue(int32_t irq_num, bool irq_value) {
       return absl::NotFoundError(
           absl::StrCat("Unsupported irq number: ", irq_num));
   }
+}
+
+absl::Status CheriotRenode::InitializeSimulator(const std::string &cpu_type) {
+  router_ = new mpact::sim::util::SingleInitiatorRouter(name_ + "_router");
+  renode_router_ =
+      new mpact::sim::util::SingleInitiatorRouter(name_ + "_renode_router");
+  auto *data_memory = static_cast<TaggedMemoryInterface *>(router_);
+  // Instantiate memory profiler, but disable it until the config information
+  // has been received.
+  mem_profiler_ = new TaggedMemoryUseProfiler(data_memory);
+  data_memory = mem_profiler_;
+  mem_profiler_->set_is_enabled(false);
+  cheriot_state_ = new CheriotState(
+      "CherIoT", data_memory, static_cast<AtomicMemoryOpInterface *>(router_));
+  // First create the decoder according to the cpu type.
+  if (cpu_type == kBaseName) {
+    cheriot_decoder_ = new CheriotDecoder(
+        cheriot_state_, static_cast<MemoryInterface *>(router_));
+    cpu_type_ = CheriotCpuType::kBase;
+  } else if (cpu_type == kRvvName) {
+    cheriot_decoder_ = new CheriotRVVDecoder(
+        cheriot_state_, static_cast<MemoryInterface *>(router_));
+    cpu_type_ = CheriotCpuType::kRvv;
+  } else if (cpu_type == kRvvFpName) {
+    cheriot_decoder_ = new CheriotRVVFPDecoder(
+        cheriot_state_, static_cast<MemoryInterface *>(router_));
+    cpu_type_ = CheriotCpuType::kRvvFp;
+  } else {
+    return absl::NotFoundError(
+        absl::StrCat("Cpu type '", cpu_type, "' must be one of: '", kBaseName,
+                     "', '", kRvvName, "', '", kRvvFpName, "'"));
+  }
+  // Instantiate cheriot_top.
+  cheriot_top_ = new CheriotTop("Cheriot", cheriot_state_, cheriot_decoder_);
+  // Initialize minstret/minstreth. Bind the instruction counter to those
+  // registers.
+  auto minstret_res = cheriot_top_->state()->csr_set()->GetCsr("minstret");
+  auto minstreth_res = cheriot_top_->state()->csr_set()->GetCsr("minstreth");
+  if (!minstret_res.ok() || !minstreth_res.ok()) {
+    return absl::InternalError(
+        absl::StrCat(name_, ": Error while initializing minstret/minstreth\n"));
+  }
+  auto *minstret = static_cast<RiscVCheriotMInstret *>(minstret_res.value());
+  auto *minstreth = static_cast<RiscVCheriotMInstreth *>(minstreth_res.value());
+  minstret->set_counter(cheriot_top_->counter_num_instructions());
+  minstreth->set_counter(cheriot_top_->counter_num_instructions());
+
+  // Set up the memory router with the system bus. Other devices are added once
+  // config info has been received. Add a tagged default memory transactor, so
+  // that any tagged loads/stores are forward to the sysbus without tags.
+  tagged_sysbus_ = new TaggedToUntaggedMemoryTransactor(renode_sysbus_);
+  auto status = router_->AddDefaultTarget<MemoryInterface>(renode_sysbus_);
+  if (!status.ok()) return status;
+  status = router_->AddDefaultTarget<TaggedMemoryInterface>(tagged_sysbus_);
+  if (!status.ok()) return status;
+
+  // Create memory. These memories will be added to the core router when there
+  // is configuration data for the address space that belongs to the core. The
+  // memories will be added to the renode router immediately as the default
+  // target, since memory references from ReNode are only in the memory range
+  // exposed on the sysbus.
+  tagged_memory_ =
+      new mpact::sim::util::TaggedFlatDemandMemory(kCapabilityGranule);
+  atomic_memory_ = new mpact::sim::util::AtomicMemory(tagged_memory_);
+
+  // Need to set up the renode router with the tagged_memory.
+  status =
+      renode_router_->AddDefaultTarget<TaggedMemoryInterface>(tagged_memory_);
+  if (!status.ok()) return status;
+  status = renode_router_->AddDefaultTarget<MemoryInterface>(tagged_memory_);
+  if (!status.ok()) return status;
+
+  // Set up semihosting.
+  semihost_ =
+      new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32,
+                           static_cast<MemoryInterface *>(router_),
+                           static_cast<MemoryInterface *>(renode_router_));
+  // Set up special handlers (ebreak, wfi, ecall).
+  cheriot_top_->state()->AddEbreakHandler([this](const Instruction *inst) {
+    if (this->semihost_->IsSemihostingCall(inst)) {
+      this->semihost_->OnEBreak(inst);
+      return true;
+    }
+    if (this->cheriot_top_->HasBreakpoint(inst->address())) {
+      this->cheriot_top_->RequestHalt(HaltReason::kSoftwareBreakpoint, nullptr);
+      return true;
+    }
+    return false;
+  });
+  cheriot_top_->state()->set_on_wfi([](const Instruction *) { return true; });
+  cheriot_top_->state()->set_on_ecall(
+      [](const Instruction *) { return false; });
+  semihost_->set_exit_callback([this]() {
+    this->cheriot_top_->RequestHalt(HaltReason::kProgramDone, nullptr);
+  });
+  return absl::OkStatus();
 }
 
 }  // namespace cheriot

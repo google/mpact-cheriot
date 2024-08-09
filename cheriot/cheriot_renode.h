@@ -24,7 +24,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "cheriot/cheriot_cli_forwarder.h"
-#include "cheriot/cheriot_decoder.h"
 #include "cheriot/cheriot_instrumentation_control.h"
 #include "cheriot/cheriot_renode_cli_top.h"
 #include "cheriot/cheriot_state.h"
@@ -96,6 +95,12 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
     kConnected = 1,
   };
 
+  enum class CheriotCpuType {
+    kBase = 0,
+    kRvv = 1,
+    kRvvFp = 2,
+  };
+
   using ::mpact::sim::generic::CoreDebugInterface::HaltReason;
   using ::mpact::sim::generic::CoreDebugInterface::RunStatus;
   using RenodeCpuRegister = ::mpact::sim::util::renode::RenodeCpuRegister;
@@ -136,12 +141,15 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
   // These correspond to the msip and meip bits of the mip register.
   absl::Status SetIrqValue(int32_t irq_num, bool irq_value) override;
 
+  absl::Status InitializeSimulator(const std::string &cpu_type);
+
  private:
   std::string name_;
   MemoryInterface *renode_sysbus_ = nullptr;
+  TaggedMemoryInterface *data_memory_ = nullptr;
   TaggedMemoryInterface *tagged_sysbus_ = nullptr;
   CheriotState *cheriot_state_ = nullptr;
-  CheriotDecoder *cheriot_decoder_ = nullptr;
+  DecoderInterface *cheriot_decoder_ = nullptr;
   CheriotTop *cheriot_top_ = nullptr;
   RiscVArmSemihost *semihost_ = nullptr;
   SingleInitiatorRouter *router_ = nullptr;
@@ -158,6 +166,7 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
   InstructionProfiler *inst_profiler_ = nullptr;
   TaggedMemoryUseProfiler *mem_profiler_ = nullptr;
   CheriotInstrumentationControl *instrumentation_control_ = nullptr;
+  CheriotCpuType cpu_type_ = CheriotCpuType::kBase;
 };
 
 }  // namespace cheriot

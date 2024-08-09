@@ -99,14 +99,11 @@ void CheriotTop::Initialize() {
   auto *memory = static_cast<util::MemoryInterface *>(state_->tagged_memory());
   tagged_watcher_ = new util::TaggedMemoryWatcher(state_->tagged_memory());
   memory_watcher_ = new util::MemoryWatcher(memory);
-
   atomic_memory_ = new util::AtomicMemory(memory_watcher_);
   state_->set_tagged_memory(tagged_watcher_);
   state_->set_atomic_tagged_memory(atomic_memory_);
-
   pcc_ = static_cast<CheriotRegister *>(
       state_->registers()->at(CheriotState::kPcName));
-
   // Register opcode counters.
   int num_opcodes = cheriot_decoder_->GetNumOpcodes();
   counter_opcode_.resize(num_opcodes);
