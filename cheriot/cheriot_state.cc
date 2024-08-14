@@ -241,7 +241,9 @@ CheriotState::CheriotState(std::string_view id,
                            util::AtomicMemoryOpInterface *atomic_memory)
     : generic::ArchState(id),
       tagged_memory_(memory),
-      atomic_tagged_memory_(atomic_memory) {
+      atomic_tagged_memory_(atomic_memory),
+      counter_interrupts_taken_("interrupts_taken", 0),
+      counter_interrupt_returns_("interrupt_returns", 0) {
   for (auto &[name, index] : std::vector<std::pair<std::string, unsigned>>{
            {"c0", 0b0'00000},   {"c1", 0b0'00001},   {"c2", 0b0'00010},
            {"c3", 0b0'00011},   {"c4", 0b0'00100},   {"c5", 0b0'00101},
@@ -258,6 +260,8 @@ CheriotState::CheriotState(std::string_view id,
            {"mepcc", 0b1'11111}}) {
     cap_index_map_.emplace(name, index);
   }
+  CHECK_OK(AddCounter(&counter_interrupts_taken_));
+  CHECK_OK(AddCounter(&counter_interrupt_returns_));
   // Create root capabilities and the special capability CSRs.
   executable_root_ = new CheriotRegister(this, "executable_root");
   executable_root_->ResetExecuteRoot();
@@ -604,8 +608,8 @@ void CheriotState::Cease(const Instruction *inst) {
 void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
                         uint64_t exception_code, uint64_t epc,
                         const Instruction *inst) {
-  // LOG(INFO) << "Trap: " << std::hex << is_interrupt << " " << trap_value << "
-  // " << exception_code << " " << epc; Call the handler.
+  // LOG(INFO) << "Trap: " << std::hex << is_interrupt << " " << trap_value
+  //  << " " << exception_code << " " << epc;  // Call the handler.
   if (on_trap_ != nullptr) {
     bool res = on_trap_(is_interrupt, trap_value, exception_code, epc, inst);
     // If the handler returns true, the trap has been handled. Just return.
@@ -651,6 +655,7 @@ void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
   set_branch(true);
   // TODO(torerik): set next pc
   mstatus_->Submit();
+  counter_interrupts_taken_.Increment(1);
 }
 
 // CheckForInterrupt is called whenever any relevant bits in the interrupt
@@ -682,7 +687,6 @@ void CheriotState::TakeAvailableInterrupt(uint64_t epc) {
   Trap(/*is_interrupt*/ true, 0, *available_interrupt_code_, epc, nullptr);
   // Clear pending interrupt.
   is_interrupt_available_ = false;
-  ++interrupt_handler_depth_;
   available_interrupt_code_ = InterruptCode::kNone;
 }
 

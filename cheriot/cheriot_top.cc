@@ -73,6 +73,7 @@ CheriotTop::CheriotTop(std::string name, CheriotState *state,
       counter_pc_("pc", 0),
       cap_reg_re_{
           R"((\w+)\.(top|base|length|tag|permissions|object_type|reserved))"} {
+  CHECK_OK(AddChildComponent(*state_));
   Initialize();
 }
 

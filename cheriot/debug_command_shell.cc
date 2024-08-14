@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <istream>
 #include <ostream>
 #include <string>
@@ -24,6 +25,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
@@ -50,6 +52,59 @@ using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 
 using HaltReason = ::mpact::sim::generic::CoreDebugInterface::HaltReason;
 using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
+
+DebugCommandShell::InterruptListener::InterruptListener(CoreAccess *core_access)
+    : core_access_(core_access),
+      top_(static_cast<CheriotTop *>(core_access->debug_interface)),
+      taken_listener_(std::bind_front(&InterruptListener::SetTakenValue, this)),
+      return_listener_(
+          std::bind_front(&InterruptListener::SetReturnValue, this)) {
+  top_->state()->counter_interrupts_taken()->AddListener(&taken_listener_);
+  top_->state()->counter_interrupt_returns()->AddListener(&return_listener_);
+}
+
+void DebugCommandShell::InterruptListener::SetReturnValue(int64_t value) {
+  if (interrupt_info_list_.empty()) {
+    LOG(ERROR) << "Interrupt stack is empty";
+    return;
+  }
+  auto info = interrupt_info_list_.front();
+  interrupt_info_list_.pop_front();
+  // If breakpoints are enabled, then request a halt of the appropriate type.
+  if (info.is_interrupt && interrupts_enabled_)
+    top_->RequestHalt(kInterruptReturn, nullptr);
+  if (!info.is_interrupt && exceptions_enabled_)
+    top_->RequestHalt(kExceptionReturn, nullptr);
+}
+
+void DebugCommandShell::InterruptListener::SetTakenValue(int64_t value) {
+  InterruptInfo info;
+  bool ok = true;
+  // Read the values of the interrupt registers.
+  auto res = core_access_->debug_interface->ReadRegister("mcause");
+  ok &= res.ok();
+  if (ok) info.cause = res.value();
+
+  res = core_access_->debug_interface->ReadRegister("mtval");
+  ok &= res.ok();
+  if (ok) info.tval = res.value();
+
+  res = core_access_->debug_interface->ReadRegister("mepcc");
+  ok &= res.ok();
+  if (ok) info.epc = res.value();
+
+  if (!ok) {
+    LOG(ERROR) << "Failed to read interrupt registers";
+    return;
+  }
+  info.is_interrupt = (info.cause & 0x8000'0000u) != 0;
+  // If breakpoints are enabled, the request a halt of the appropriate type.
+  if (info.is_interrupt && interrupts_enabled_)
+    top_->RequestHalt(kInterruptTaken, nullptr);
+  if (!info.is_interrupt && exceptions_enabled_)
+    top_->RequestHalt(kExceptionTaken, nullptr);
+  interrupt_info_list_.push_front(info);
+}
 
 // The constructor initializes all the regular expressions and the help string.
 DebugCommandShell::DebugCommandShell()
@@ -123,6 +178,9 @@ DebugCommandShell::DebugCommandShell()
                                      according to FORMAT. Default format is x32.
   break [set] VALUE                - set breakpoint at address VALUE.
   break [set] SYMBOL               - set breakpoint at value of SYMBOL.
+                                     '$exception' and '$interrupt are special
+                                     symbols to break upon entry to and return
+                                     from exception/interrupt handlers.
   break set #<N>                   - reactivate breakpoint index N.
   break #<N>                       - reactivate breakpoint index N.
   break clear VALUE                - clear breakpoint at address VALUE.
@@ -175,8 +233,15 @@ DebugCommandShell::DebugCommandShell()
   reg_vector_.push_back("mscratchc");
 }
 
+DebugCommandShell::~DebugCommandShell() {
+  for (auto *listener : interrupt_listeners_) {
+    delete listener;
+  }
+}
+
 void DebugCommandShell::AddCore(const CoreAccess &core_access) {
   core_access_.push_back(core_access);
+  interrupt_listeners_.push_back(new InterruptListener(&core_access_.back()));
   core_action_point_id_.push_back(0);
   core_action_point_info_.emplace_back();
 }
@@ -218,6 +283,19 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
           case *HaltReason::kDataWatchPoint:
             absl::StrAppend(&prompt, "Stopped at data watchpoint\n");
             break;
+          case InterruptListener::kInterruptTaken:
+            absl::StrAppend(&prompt, "Stopped at taken interrupt\n");
+            break;
+          case InterruptListener::kInterruptReturn:
+            absl::StrAppend(&prompt,
+                            "Stopped at return from interrupt handler\n");
+            break;
+          case InterruptListener::kExceptionTaken:
+            absl::StrAppend(&prompt, "Stopped at exception\n");
+            break;
+          case InterruptListener::kExceptionReturn:
+            absl::StrAppend(&prompt, "Stopped at return exception handler\n");
+            break;
           case *HaltReason::kProgramDone:
             absl::StrAppend(&prompt, "Program done\n");
             break;
@@ -251,6 +329,16 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         absl::StrAppend(&prompt, "   ", disasm_result.value());
       }
       absl::StrAppend(&prompt, "\n");
+    }
+    auto &info_list =
+        interrupt_listeners_[current_core_]->interrupt_info_list();
+    int count = 0;
+    for (auto iter = info_list.rbegin(); iter != info_list.rend(); ++iter) {
+      auto const &info = *iter;
+      absl::StrAppend(&prompt, "[", count++, "] ",
+                      info.is_interrupt ? "interrupt" : "exception", " ",
+                      info.is_interrupt ? GetInterruptDescription(info)
+                                        : GetExceptionDescription(info));
     }
     absl::StrAppend(&prompt, "[", current_core_, "] > ");
     while (!command_streams_.empty()) {
@@ -455,16 +543,31 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
 
     // break set VALUE | SYMBOL
     if (std::string str_value;
-        RE2::FullMatch(line_view, *set_break_re_, &str_value)) {
+        RE2::FullMatch(line_view, *set_break_re_, &str_value) ||
+        RE2::FullMatch(line_view, *set_break2_re_, &str_value)) {
       if (str_value == "$branch") {
         auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
             core_access_[current_core_].debug_interface);
         cheriot_interface->SetBreakOnControlFlowChange(true);
         continue;
+      } else if (str_value == "$exception") {
+        if (interrupt_listeners_[current_core_]->AreExceptionsEnabled()) {
+          os << "Break on exceptions are already enabled\n";
+          continue;
+        }
+        interrupt_listeners_[current_core_]->SetEnableExceptions(true);
+        continue;
+      } else if (str_value == "$interrupt") {
+        if (interrupt_listeners_[current_core_]->AreInterruptsEnabled()) {
+          os << "Break on interrupts are already enabled\n";
+          continue;
+        }
+        interrupt_listeners_[current_core_]->SetEnableInterrupts(true);
+        continue;
       }
       auto result = GetValueFromString(current_core_, str_value, /*radix=*/0);
       if (!result.ok()) {
-        os << absl::StrCat("Error: '", str_value, "' ",
+        os << absl::StrCat("Error: ?????? '", str_value, "' ",
                            result.status().message())
            << std::endl;
         os.flush();
@@ -538,6 +641,8 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         if (!status.ok()) {
           os << absl::StrCat("Error: ", status.message(), "\n");
         }
+      } else {
+        os << absl::StrCat("No such active breakpoint: #", index, "\n");
       }
       continue;
     }
@@ -565,6 +670,20 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
             core_access_[current_core_].debug_interface);
         cheriot_interface->SetBreakOnControlFlowChange(false);
+        continue;
+      } else if (str_value == "$exception") {
+        if (!interrupt_listeners_[current_core_]->AreExceptionsEnabled()) {
+          os << "Break on exceptions are already disabled\n";
+          continue;
+        }
+        interrupt_listeners_[current_core_]->SetEnableExceptions(false);
+        continue;
+      } else if (str_value == "$interrupt") {
+        if (!interrupt_listeners_[current_core_]->AreInterruptsEnabled()) {
+          os << "Break on interrupts are already disabled\n";
+          continue;
+        }
+        interrupt_listeners_[current_core_]->SetEnableInterrupts(false);
         continue;
       }
       auto result = GetValueFromString(current_core_, str_value, /*radix=*/0);
@@ -629,40 +748,6 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       }
       os << FormatRegister(current_core_, name) << std::endl;
       os.flush();
-      continue;
-    }
-
-    // break SYMBOL | VALUE
-    if (std::string str_value;
-        RE2::FullMatch(line_view, *set_break2_re_, &str_value)) {
-      if (str_value == "$branch") {
-        auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
-            core_access_[current_core_].debug_interface);
-        cheriot_interface->SetBreakOnControlFlowChange(true);
-        continue;
-      }
-      auto result = GetValueFromString(current_core_, str_value, /*radix=*/0);
-      if (!result.ok()) {
-        os << absl::StrCat("Error: '", str_value, "' ",
-                           result.status().message())
-           << std::endl;
-        os.flush();
-        continue;
-      }
-      auto cmd_result =
-          core_access_[current_core_].debug_interface->SetSwBreakpoint(
-              result.value());
-      if (!cmd_result.ok()) {
-        os << "Error:  " << cmd_result.message() << std::endl;
-        os.flush();
-        continue;
-      }
-      core_access_[current_core_]
-          .breakpoint_map[core_access_[current_core_].breakpoint_index++] =
-          result.value();
-      os << absl::StrCat("Breakpoint set at 0x",
-                         absl::Hex(result.value(), absl::PadSpec::kZeroPad8))
-         << std::endl;
       continue;
     }
 
@@ -1457,11 +1542,9 @@ absl::Status DebugCommandShell::StepOverCall(int core, std::ostream &os) {
   // inserted and return.
   uint64_t bp_address = pcc + inst->size();
   inst->DecRef();
-  bool bp_set = false;
   // See if there is a bp on that address already, if so, don't try to set
   // another one.
   if (!core_access_[current_core_].debug_interface->HasBreakpoint(bp_address)) {
-    bp_set = true;
     auto bp_set_res =
         core_access_[current_core_].debug_interface->SetSwBreakpoint(
             bp_address);
@@ -1682,6 +1765,159 @@ absl::Status DebugCommandShell::SetActionPoint(
   auto &action_map = core_action_point_info_[current_core_];
   action_map.emplace(local_id, ActionPointInfo{address, id, name, true});
   return absl::OkStatus();
+}
+
+std::string DebugCommandShell::GetInterruptDescription(
+    const InterruptInfo &info) {
+  std::string output;
+  if (!info.is_interrupt) return output;
+  switch (info.cause & 0x7fff'ffff) {
+    case 0:
+      absl::StrAppend(&output, "User software interrupt");
+      break;
+    case 1:
+      absl::StrAppend(&output, "Supervisor software interrupt");
+      break;
+    case 3:
+      absl::StrAppend(&output, "Machine software interrupt");
+      break;
+    case 4:
+      absl::StrAppend(&output, "User timer interrupt");
+      break;
+    case 5:
+      absl::StrAppend(&output, "Supervisor timer interrupt");
+      break;
+    case 7:
+      absl::StrAppend(&output, "Machine timer interrupt");
+      break;
+    case 8:
+      absl::StrAppend(&output, "User external interrupt");
+      break;
+    case 9:
+      absl::StrAppend(&output, "Supervisor external interrupt");
+      break;
+    case 11:
+      absl::StrAppend(&output, "Machine external interrupt");
+      break;
+    default:
+      absl::StrAppend(&output, "Error - Unknown interrupt");
+      break;
+  }
+  absl::StrAppend(&output, "\n");
+  return output;
+}
+
+std::string DebugCommandShell::GetExceptionDescription(
+    const InterruptInfo &info) {
+  std::string output;
+  if (info.is_interrupt) return output;
+  absl::StrAppend(&output, " Exception taken at ", absl::Hex(info.epc), ": ");
+  switch (info.cause) {
+    case 0:
+      absl::StrAppend(&output, "Instruction address misaligned: ");
+      absl::StrAppend(&output, ": ", absl::Hex(info.tval));
+      break;
+    case 1:
+      absl::StrAppend(&output, "Instruction access fault");
+      break;
+    case 2:
+      absl::StrAppend(&output, "Illegal instruction");
+      absl::StrAppend(&output, " opcode: ", absl::Hex(info.tval));
+      break;
+    case 3:
+      absl::StrAppend(&output, "Breakpoint instruction");
+      break;
+    case 4:
+      absl::StrAppend(&output, "Load address misaligned");
+      absl::StrAppend(&output, ": ", absl::Hex(info.tval));
+      break;
+    case 5:
+      absl::StrAppend(&output, "Load access fault");
+      break;
+    case 6:
+      absl::StrAppend(&output, "Store/AMO address misaligned");
+      absl::StrAppend(&output, ": ", absl::Hex(info.tval));
+      break;
+    case 7:
+      absl::StrAppend(&output, "Store/AMO access fault");
+      break;
+    case 8:
+      absl::StrAppend(&output, "Environment call from U-mode");
+      break;
+    case 9:
+      absl::StrAppend(&output, "Environment call from S-mode");
+      break;
+    case 11:
+      absl::StrAppend(&output, "Environment call from M-mode");
+      break;
+    case 12:
+      absl::StrAppend(&output, "Instruction page fault");
+      absl::StrAppend(&output, ": ", absl::Hex(info.tval));
+      break;
+    case 13:
+      absl::StrAppend(&output, "Load page fault");
+      absl::StrAppend(&output, ": ", absl::Hex(info.tval));
+      break;
+    case 15:
+      absl::StrAppend(&output, "Store/AMO page fault");
+      absl::StrAppend(&output, ": ", absl::Hex(info.tval));
+      break;
+    case 0x1c: {
+      absl::StrAppend(&output, "CHERI exception");
+      switch (info.tval & 0x1f) {
+        case 0:
+          absl::StrAppend(&output, ": none??");
+          break;
+        case 1:
+          absl::StrAppend(&output, ": bounds violation");
+          break;
+        case 2:
+          absl::StrAppend(&output, ": tag violation");
+          break;
+        case 3:
+          absl::StrAppend(&output, ": seal violation");
+          break;
+        case 0x11:
+          absl::StrAppend(&output, ": PERMIT_EXECUTION violation");
+          break;
+        case 0x12:
+          absl::StrAppend(&output, ": PERMIT_LOAD violation");
+          break;
+        case 0x13:
+          absl::StrAppend(&output, ": PERMIT_STORE violation");
+          break;
+        case 0x15:
+          absl::StrAppend(&output, ": PERMIT_STORE_CAPABILITY violation");
+          break;
+        case 0x18:
+          absl::StrAppend(&output,
+                          ": PERMIT_ACCESS_SYSTEM_REGISTERS violation");
+          break;
+        default:
+          absl::StrAppend(&output, ": unknown cause");
+          break;
+      }
+      int cap_indx = (info.tval >> 5) & 0x1f;
+      if (cap_indx < 16)
+        absl::StrAppend(&output, " c", cap_indx);
+      else if (cap_indx == 28)
+        absl::StrAppend(&output, " mtcc");
+      else if (cap_indx == 29)
+        absl::StrAppend(&output, " mtdc");
+      else if (cap_indx == 30)
+        absl::StrAppend(&output, " mscratchc");
+      else if (cap_indx == 31)
+        absl::StrAppend(&output, " mepcc");
+      else
+        absl::StrAppend(&output, " unknown capability");
+      break;
+    }
+    default:
+      absl::StrAppend(&output, "Error - Unknown trap");
+      break;
+  }
+  absl::StrAppend(&output, "\n");
+  return output;
 }
 
 }  // namespace cheriot

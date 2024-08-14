@@ -19,11 +19,11 @@
 
 #include <cstdint>
 #include <deque>
-#include <fstream>
 #include <iostream>
 #include <istream>
 #include <ostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/container/btree_map.h"
@@ -32,7 +32,11 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "cheriot/cheriot_top.h"
+#include "mpact/sim/generic/core_debug_interface.h"
+#include "mpact/sim/generic/counters_base.h"
 #include "mpact/sim/generic/debug_command_shell_interface.h"
+#include "mpact/sim/generic/type_helpers.h"
 #include "re2/re2.h"
 
 namespace mpact::sim::generic {
@@ -43,14 +47,17 @@ namespace mpact {
 namespace sim {
 namespace cheriot {
 
+using ::mpact::sim::generic::CounterValueSetInterface;
 using ::mpact::sim::generic::DebugCommandShellInterface;
+using HaltReason = ::mpact::sim::generic::CoreDebugInterface::HaltReason;
+using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
 
 // This class implements an interactive command shell for a set of cores
 // simulated by the MPact simulator using the CoreDebugInterface.
 class DebugCommandShell : public DebugCommandShellInterface {
  public:
-  // Default constructor is deleted.
   DebugCommandShell();
+  ~DebugCommandShell() override;
 
   // Add core access to the system. All cores must be added before calling Run.
   void AddCore(const CoreAccess &core_access) override;
@@ -80,6 +87,67 @@ class DebugCommandShell : public DebugCommandShellInterface {
     std::string name;
     bool is_enabled;
   };
+
+  // Struct to track interrupt/trap information.
+  struct InterruptInfo {
+    bool is_interrupt;
+    uint32_t cause;
+    uint32_t tval;
+    uint32_t epc;
+  };
+
+  // The interrupt listener class is used to track interrupts/exceptions and
+  // returns from interrupts/exceptions, so that breakpoints can be set on these
+  // events.
+  class InterruptListener {
+   public:
+    // Convenience class to provide listeners to the counters.
+    class Listener : public CounterValueSetInterface<int64_t> {
+     public:
+      explicit Listener(absl::AnyInvocable<void(int64_t)> callback)
+          : callback_(std::move(callback)) {}
+
+     private:
+      void SetValue(const int64_t &value) override { callback_(value); }
+      absl::AnyInvocable<void(int64_t)> callback_;
+    };
+
+    using InterruptInfoList = std::deque<InterruptInfo>;
+    static constexpr uint32_t kInterruptTaken =
+        *HaltReason::kUserSpecifiedMin + 1;
+    static constexpr uint32_t kInterruptReturn =
+        *HaltReason::kUserSpecifiedMin + 2;
+    static constexpr uint32_t kExceptionTaken =
+        *HaltReason::kUserSpecifiedMin + 3;
+    static constexpr uint32_t kExceptionReturn =
+        *HaltReason::kUserSpecifiedMin + 4;
+
+    explicit InterruptListener(CoreAccess *core_access);
+    void SetEnableExceptions(bool value) { exceptions_enabled_ = value; }
+    void SetEnableInterrupts(bool value) { interrupts_enabled_ = value; }
+    bool AreExceptionsEnabled() const { return exceptions_enabled_; }
+    bool AreInterruptsEnabled() const { return interrupts_enabled_; }
+
+    const InterruptInfoList &interrupt_info_list() const {
+      return interrupt_info_list_;
+    }
+
+   private:
+    void SetReturnValue(int64_t value);
+    void SetTakenValue(int64_t value);
+
+    CoreAccess *core_access_;
+    CheriotTop *top_;
+    bool interrupts_enabled_ = false;
+    bool exceptions_enabled_ = false;
+    InterruptInfoList interrupt_info_list_;
+    Listener taken_listener_;
+    Listener return_listener_;
+  };
+
+  // Helper method to get the interrupt description.
+  std::string GetInterruptDescription(const InterruptInfo &info);
+  std::string GetExceptionDescription(const InterruptInfo &info);
 
   // Helper method for formatting single data buffer value.
   std::string FormatSingleDbValue(generic::DataBuffer *db,
@@ -194,6 +262,7 @@ class DebugCommandShell : public DebugCommandShellInterface {
   std::deque<std::string> previous_commands_;
   std::vector<absl::btree_map<int, ActionPointInfo>> core_action_point_info_;
   std::vector<int> core_action_point_id_;
+  std::vector<InterruptListener *> interrupt_listeners_;
 };
 
 }  // namespace cheriot

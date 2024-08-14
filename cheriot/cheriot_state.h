@@ -30,6 +30,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "mpact/sim/generic/arch_state.h"
+#include "mpact/sim/generic/counters.h"
 #include "mpact/sim/generic/data_buffer.h"
 #include "mpact/sim/generic/instruction.h"
 #include "mpact/sim/generic/operand_interface.h"
@@ -60,6 +61,7 @@ namespace cheriot {
 using ::mpact::sim::generic::DataBuffer;
 using ::mpact::sim::generic::Instruction;
 using ::mpact::sim::generic::ReferenceCount;
+using ::mpact::sim::generic::SimpleCounter;
 using ::mpact::sim::riscv::InterruptCode;
 using ::mpact::sim::riscv::IsaExtension;
 using ::mpact::sim::riscv::PrivilegeMode;
@@ -288,11 +290,23 @@ class CheriotState : public generic::ArchState {
   // Indicates that the program has returned from handling an interrupt. This
   // decrements the interrupt handler depth and should be called by the
   // implementations of mret, sret, and uret.
-  void SignalReturnFromInterrupt() { --interrupt_handler_depth_; }
+  void SignalReturnFromInterrupt() { counter_interrupt_returns_.Increment(1); }
 
   // Returns the depth of the interrupt handler currently being executed, or
   // zero if no interrupt handler is being executed.
-  int InterruptHandlerDepth() const { return interrupt_handler_depth_; }
+  int InterruptHandlerDepth() const {
+    return counter_interrupts_taken_.GetValue() -
+           counter_interrupt_returns_.GetValue();
+  }
+  // Returns the interrupt counters. This allows code to be connected to the
+  // counters when the value changes.
+  SimpleCounter<int64_t> *counter_interrupts_taken() {
+    return &counter_interrupts_taken_;
+  }
+
+  SimpleCounter<int64_t> *counter_interrupt_returns() {
+    return &counter_interrupt_returns_;
+  }
 
   // Returns true if a capability register with the given base should be
   // revoked.
@@ -434,7 +448,8 @@ class CheriotState : public generic::ArchState {
   CheriotVectorState *rv_vector_ = nullptr;
   // For interrupt handling.
   bool is_interrupt_available_ = false;
-  int interrupt_handler_depth_ = 0;
+  SimpleCounter<int64_t> counter_interrupts_taken_;
+  SimpleCounter<int64_t> counter_interrupt_returns_;
   InterruptCode available_interrupt_code_ = InterruptCode::kNone;
   // By default, execute in machine mode.
   PrivilegeMode privilege_mode_ = PrivilegeMode::kMachine;

@@ -36,8 +36,8 @@ void RiscVPrivMRet(const Instruction *inst) {
   // Set mstatus:mpie to 1.
   mstatus->set_mpie(1);
   mstatus->set_mpp(*PrivilegeMode::kMachine);
-  state->SignalReturnFromInterrupt();
   mstatus->Submit();
+  state->SignalReturnFromInterrupt();
 }
 
 void RiscVPrivWfi(const Instruction *inst) {
