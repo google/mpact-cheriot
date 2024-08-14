@@ -68,7 +68,6 @@ using ::mpact::sim::cheriot::VlSegmentChild;
 using ::mpact::sim::cheriot::VlSegmentIndexed;
 using ::mpact::sim::cheriot::VlSegmentStrided;
 using ::mpact::sim::cheriot::VlStrided;
-using ::mpact::sim::cheriot::VlUnitStrided;
 using ::mpact::sim::cheriot::Vsetvl;
 using ::mpact::sim::cheriot::VsIndexed;
 using ::mpact::sim::cheriot::Vsm;
@@ -314,16 +313,17 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
   template <typename T>
   void VectorLoadUnitStridedHelper() {
     // Set up instructions.
-    AppendRegisterOperands({kRs1Name}, {});
+    AppendRegisterOperands({kRs1Name, kRs2Name}, {});
     AppendVectorRegisterOperands({kVmask}, {});
-    SetSemanticFunction(absl::bind_front(&VlUnitStrided,
+    SetSemanticFunction(absl::bind_front(&VlStrided,
                                          /*element_width*/ sizeof(T)));
     // Add the child instruction that performs the register write-back.
     SetChildInstruction();
     SetChildSemanticFunction(&VlChild);
     AppendVectorRegisterOperands(child_instruction_, {}, {kVd});
     // Set up register values.
-    SetRegisterValues<uint32_t>({{kRs1Name, kDataLoadAddress}});
+    SetRegisterValues<uint32_t>(
+        {{kRs1Name, kDataLoadAddress}, {kRs2Name, sizeof(T)}});
     SetVectorRegisterValues<uint8_t>(
         {{kVmaskName, Span<const uint8_t>(kA5Mask)}});
     // Iterate over different lmul values.

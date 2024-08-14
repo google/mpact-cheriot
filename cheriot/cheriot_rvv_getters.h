@@ -52,6 +52,15 @@ void AddCheriotRVVSourceGetters(SourceOpGetterMap &getter_map,
   Insert(getter_map, *Enum::kConst1, [common]() -> SourceOperandInterface * {
     return new IntLiteralOperand<1>();
   });
+  Insert(getter_map, *Enum::kConst2, [common]() -> SourceOperandInterface * {
+    return new IntLiteralOperand<2>();
+  });
+  Insert(getter_map, *Enum::kConst4, [common]() -> SourceOperandInterface * {
+    return new IntLiteralOperand<4>();
+  });
+  Insert(getter_map, *Enum::kConst8, [common]() -> SourceOperandInterface * {
+    return new IntLiteralOperand<8>();
+  });
   Insert(getter_map, *Enum::kNf, [common]() -> SourceOperandInterface * {
     auto imm = Extractors::VMem::ExtractNf(common->inst_word());
     return new ImmediateOperand<uint32_t>(imm);
