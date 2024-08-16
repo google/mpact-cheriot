@@ -3,6 +3,7 @@
 #include <string>
 
 #include "absl/debugging/leak_check.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "googlemock/include/gmock/gmock.h"
 
@@ -10,7 +11,7 @@ namespace {
 
 constexpr char kFileName[] = "librenode_mpact_cheriot.so";
 
-constexpr char kDepotPath[] = "third_party/mpact_cheriot/";
+constexpr char kDepotPath[] = "cheriot/";
 
 class LibRenodeMpactCheriotSoTest : public ::testing::Test {
  protected:
@@ -18,6 +19,7 @@ class LibRenodeMpactCheriotSoTest : public ::testing::Test {
     std::string path = absl::StrCat(kDepotPath, kFileName);
     absl::LeakCheckDisabler disabler;  // Ignore leaks from dlopen.
     lib_ = dlopen(path.c_str(), RTLD_LAZY);
+    CHECK_NE(lib_, nullptr);
   }
 
   ~LibRenodeMpactCheriotSoTest() { dlclose(lib_); }
