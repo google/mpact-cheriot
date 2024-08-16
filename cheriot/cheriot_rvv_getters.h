@@ -49,16 +49,16 @@ using DestOpGetterMap =
 template <typename Enum, typename Extractors>
 void AddCheriotRVVSourceGetters(SourceOpGetterMap &getter_map,
                                 RiscVCheriotEncodingCommon *common) {
-  Insert(getter_map, *Enum::kConst1, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kConst1, []() -> SourceOperandInterface * {
     return new IntLiteralOperand<1>();
   });
-  Insert(getter_map, *Enum::kConst2, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kConst2, []() -> SourceOperandInterface * {
     return new IntLiteralOperand<2>();
   });
-  Insert(getter_map, *Enum::kConst4, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kConst4, []() -> SourceOperandInterface * {
     return new IntLiteralOperand<4>();
   });
-  Insert(getter_map, *Enum::kConst8, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kConst8, []() -> SourceOperandInterface * {
     return new IntLiteralOperand<8>();
   });
   Insert(getter_map, *Enum::kNf, [common]() -> SourceOperandInterface * {

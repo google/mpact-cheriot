@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/functional/bind_front.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -56,9 +57,10 @@ using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
 DebugCommandShell::InterruptListener::InterruptListener(CoreAccess *core_access)
     : core_access_(core_access),
       top_(static_cast<CheriotTop *>(core_access->debug_interface)),
-      taken_listener_(std::bind_front(&InterruptListener::SetTakenValue, this)),
+      taken_listener_(
+          absl::bind_front(&InterruptListener::SetTakenValue, this)),
       return_listener_(
-          std::bind_front(&InterruptListener::SetReturnValue, this)) {
+          absl::bind_front(&InterruptListener::SetReturnValue, this)) {
   top_->state()->counter_interrupts_taken()->AddListener(&taken_listener_);
   top_->state()->counter_interrupt_returns()->AddListener(&return_listener_);
 }

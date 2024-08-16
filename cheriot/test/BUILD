@@ -256,7 +256,7 @@ cc_library(
 )
 
 cc_library(
-    name = "riscv_vector_fp_test_utilities",
+    name = "riscv_cheriot_vector_fp_test_utilities",
     testonly = True,
     hdrs = ["riscv_cheriot_vector_fp_test_utilities.h"],
     deps = [
@@ -265,7 +265,6 @@ cc_library(
         "@com_google_absl//absl/random",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
-        "@com_google_googletest//:gtest_for_library_testonly",
         "@com_google_mpact-riscv//riscv:riscv_fp_state",
         "@com_google_mpact-riscv//riscv:riscv_state",
         "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
@@ -403,8 +402,8 @@ cc_test(
         "//conditions:default": ["-fprotect-parens"],
     }),
     deps = [
+        ":riscv_cheriot_vector_fp_test_utilities",
         ":riscv_cheriot_vector_instructions_test_base",
-        ":riscv_vector_fp_test_utilities",
         "//cheriot:cheriot_state",
         "//cheriot:cheriot_vector_state",
         "//cheriot:riscv_cheriot_vector_fp",
@@ -433,8 +432,8 @@ cc_test(
         "//conditions:default": ["-fprotect-parens"],
     }),
     deps = [
+        ":riscv_cheriot_vector_fp_test_utilities",
         ":riscv_cheriot_vector_instructions_test_base",
-        ":riscv_vector_fp_test_utilities",
         "//cheriot:cheriot_state",
         "//cheriot:cheriot_vector_state",
         "//cheriot:riscv_cheriot_vector_fp",
@@ -463,8 +462,8 @@ cc_test(
         "//conditions:default": ["-fprotect-parens"],
     }),
     deps = [
+        ":riscv_cheriot_vector_fp_test_utilities",
         ":riscv_cheriot_vector_instructions_test_base",
-        ":riscv_vector_fp_test_utilities",
         "//cheriot:cheriot_state",
         "//cheriot:riscv_cheriot_vector_fp",
         "@com_google_absl//absl/random",
@@ -490,8 +489,8 @@ cc_test(
         "//conditions:default": ["-fprotect-parens"],
     }),
     deps = [
+        ":riscv_cheriot_vector_fp_test_utilities",
         ":riscv_cheriot_vector_instructions_test_base",
-        ":riscv_vector_fp_test_utilities",
         "//cheriot:cheriot_state",
         "//cheriot:riscv_cheriot_vector_fp",
         "@com_google_absl//absl/random",
