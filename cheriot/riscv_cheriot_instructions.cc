@@ -457,7 +457,7 @@ void CheriotCSc(const Instruction *instruction) {
     return;
   }
   if (!cs1->HasPermission(CapReg::kPermitStoreLocalCapability) && cs2->tag() &&
-      !cs2->HasPermission(CapReg::kPermitGlobal)) {
+      (!cs2->HasPermission(CapReg::kPermitGlobal) || cs2->IsBackwardSentry())) {
     tag = 0;
   }
   if (!cs1->IsInBounds(address, CapReg::kCapabilitySizeInBytes)) {

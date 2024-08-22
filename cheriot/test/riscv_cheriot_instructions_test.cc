@@ -1106,10 +1106,13 @@ TEST_F(RiscVCheriotInstructionsTest, CSc) {
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
   auto *db = state()->db_factory()->Allocate<uint32_t>(2);
-  memory()->Load(kMemAddress + 0x200, db, nullptr, nullptr);
+  auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
+  EXPECT_EQ(tag_db->Get<uint8_t>(0), 1);
   EXPECT_EQ(db->Get<uint32_t>(0), c3_reg()->address());
   EXPECT_EQ(db->Get<uint32_t>(1), c3_reg()->Compress());
   db->DecRef();
+  tag_db->DecRef();
 }
 
 // Check store capability with invalid capability.
@@ -1202,13 +1205,53 @@ TEST_F(RiscVCheriotInstructionsTest, CScStoreLocalCapViolation) {
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
   auto *db = state()->db_factory()->Allocate<uint32_t>(2);
-  memory()->Load(kMemAddress + 0x200, db, nullptr, nullptr);
-  // Invalidate c3 - the stored tag should be the same as c3, but with the tag
-  // cleared.
-  c3_reg()->Invalidate();
+  auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
+  // Expect the tag to be cleared.
+  EXPECT_EQ(tag_db->Get<uint8_t>(0), 0);
   EXPECT_EQ(db->Get<uint32_t>(0), c3_reg()->address());
   EXPECT_EQ(db->Get<uint32_t>(1), c3_reg()->Compress());
   db->DecRef();
+  tag_db->DecRef();
+}
+
+// Check for proper handling of backward sentry with no local cap permission.
+TEST_F(RiscVCheriotInstructionsTest, CScStoreLocalCapViolationBackwardSentry) {
+  inst()->set_semantic_function(&CheriotCSc);
+  AppendCapabilityOperands(inst(), {kC1, kC2, kC3}, {});
+  c1_reg()->ResetMemoryRoot();
+  c1_reg()->ClearPermissions(PB::kPermitStoreLocalCapability);
+  c1_reg()->set_address(kMemAddress);
+  c2_reg()->set_address(0x200);
+  c3_reg()->ResetExecuteRoot();
+  c3_reg()->set_object_type(CheriotRegister::kInterruptDisablingReturnSentry);
+  c3_reg()->ClearPermissions(PB::kPermitGlobal);
+  EXPECT_TRUE(c3_reg()->IsBackwardSentry());
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken());
+  auto *db = state()->db_factory()->Allocate<uint32_t>(2);
+  auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
+  // Expect the tag to be cleared.
+  EXPECT_EQ(tag_db->Get<uint8_t>(0), 0);
+  EXPECT_EQ(db->Get<uint32_t>(0), c3_reg()->address());
+  EXPECT_EQ(db->Get<uint32_t>(1), c3_reg()->Compress());
+
+  // Now with global flag on the stored capability.
+  c3_reg()->ResetExecuteRoot();
+  c3_reg()->set_object_type(CheriotRegister::kInterruptDisablingReturnSentry);
+  EXPECT_TRUE(c3_reg()->IsBackwardSentry());
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken());
+  memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
+  // Expect the tag to be cleared.
+  EXPECT_EQ(tag_db->Get<uint8_t>(0), 0);
+  EXPECT_EQ(db->Get<uint32_t>(0), c3_reg()->address());
+  EXPECT_EQ(db->Get<uint32_t>(1), c3_reg()->Compress());
+
+  // Clean up.
+  db->DecRef();
+  tag_db->DecRef();
 }
 
 // Check store capability with bounds violation.
