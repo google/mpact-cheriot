@@ -1106,7 +1106,9 @@ TEST_F(RiscVCheriotInstructionsTest, CSc) {
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
   auto *db = state()->db_factory()->Allocate<uint32_t>(2);
+  db->set_latency(0);
   auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  tag_db->set_latency(0);
   memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
   EXPECT_EQ(tag_db->Get<uint8_t>(0), 1);
   EXPECT_EQ(db->Get<uint32_t>(0), c3_reg()->address());
@@ -1205,7 +1207,9 @@ TEST_F(RiscVCheriotInstructionsTest, CScStoreLocalCapViolation) {
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
   auto *db = state()->db_factory()->Allocate<uint32_t>(2);
+  db->set_latency(0);
   auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  tag_db->set_latency(0);
   memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
   // Expect the tag to be cleared.
   EXPECT_EQ(tag_db->Get<uint8_t>(0), 0);
@@ -1230,7 +1234,9 @@ TEST_F(RiscVCheriotInstructionsTest, CScStoreLocalCapViolationBackwardSentry) {
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
   auto *db = state()->db_factory()->Allocate<uint32_t>(2);
+  db->set_latency(0);
   auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  tag_db->set_latency(0);
   memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
   // Expect the tag to be cleared.
   EXPECT_EQ(tag_db->Get<uint8_t>(0), 0);
