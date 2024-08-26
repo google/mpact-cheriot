@@ -19,6 +19,7 @@
 
 #include <any>
 #include <cstdint>
+#include <deque>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -157,6 +158,15 @@ class RiscVCheri32PcSourceOperand;
 
 using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
 
+// Struct to track interrupt/trap information.
+struct InterruptInfo {
+  bool is_interrupt;
+  uint32_t cause;
+  uint32_t tval;
+  uint32_t epc;
+};
+using InterruptInfoList = std::deque<InterruptInfo>;
+
 class CheriotState : public generic::ArchState {
  public:
   static int constexpr kCapRegQueueSizeMask = 0x11;
@@ -290,7 +300,7 @@ class CheriotState : public generic::ArchState {
   // Indicates that the program has returned from handling an interrupt. This
   // decrements the interrupt handler depth and should be called by the
   // implementations of mret, sret, and uret.
-  void SignalReturnFromInterrupt() { counter_interrupt_returns_.Increment(1); }
+  void SignalReturnFromInterrupt();
 
   // Returns the depth of the interrupt handler currently being executed, or
   // zero if no interrupt handler is being executed.
@@ -399,7 +409,9 @@ class CheriotState : public generic::ArchState {
   CheriotRegister *temp_reg() { return temp_reg_; }
   RiscVCsrInterface *mcause() { return mcause_; }
   RiscVCheri32PcSourceOperand *pc_src_operand() { return pc_src_operand_; }
-
+  const InterruptInfoList &interrupt_info_list() const {
+    return interrupt_info_list_;
+  }
   uint64_t revocation_mem_base() const { return revocation_mem_base_; }
   uint64_t revocation_ram_base() const { return revocation_ram_base_; }
 
@@ -451,6 +463,7 @@ class CheriotState : public generic::ArchState {
   SimpleCounter<int64_t> counter_interrupts_taken_;
   SimpleCounter<int64_t> counter_interrupt_returns_;
   InterruptCode available_interrupt_code_ = InterruptCode::kNone;
+  InterruptInfoList interrupt_info_list_;
   // By default, execute in machine mode.
   PrivilegeMode privilege_mode_ = PrivilegeMode::kMachine;
   // Handles to frequently used CSRs.

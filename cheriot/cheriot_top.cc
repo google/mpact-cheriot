@@ -216,6 +216,16 @@ absl::Status CheriotTop::Halt() {
   return absl::OkStatus();
 }
 
+absl::Status CheriotTop::Halt(HaltReason halt_reason) {
+  RequestHalt(halt_reason, nullptr);
+  return absl::OkStatus();
+}
+
+absl::Status CheriotTop::Halt(HaltReasonValueType halt_reason) {
+  RequestHalt(halt_reason, nullptr);
+  return absl::OkStatus();
+}
+
 absl::Status CheriotTop::StepPastBreakpoint() {
   uint64_t pc = state_->pc_operand()->AsUint64(0);
   // Disable the breakpoint.

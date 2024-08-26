@@ -32,7 +32,8 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "cheriot/cheriot_top.h"
+#include "cheriot/cheriot_debug_interface.h"
+#include "cheriot/cheriot_state.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/counters_base.h"
 #include "mpact/sim/generic/debug_command_shell_interface.h"
@@ -88,14 +89,6 @@ class DebugCommandShell : public DebugCommandShellInterface {
     bool is_enabled;
   };
 
-  // Struct to track interrupt/trap information.
-  struct InterruptInfo {
-    bool is_interrupt;
-    uint32_t cause;
-    uint32_t tval;
-    uint32_t epc;
-  };
-
   // The interrupt listener class is used to track interrupts/exceptions and
   // returns from interrupts/exceptions, so that breakpoints can be set on these
   // events.
@@ -112,7 +105,6 @@ class DebugCommandShell : public DebugCommandShellInterface {
       absl::AnyInvocable<void(int64_t)> callback_;
     };
 
-    using InterruptInfoList = std::deque<InterruptInfo>;
     static constexpr uint32_t kInterruptTaken =
         *HaltReason::kUserSpecifiedMin + 1;
     static constexpr uint32_t kInterruptReturn =
@@ -128,19 +120,15 @@ class DebugCommandShell : public DebugCommandShellInterface {
     bool AreExceptionsEnabled() const { return exceptions_enabled_; }
     bool AreInterruptsEnabled() const { return interrupts_enabled_; }
 
-    const InterruptInfoList &interrupt_info_list() const {
-      return interrupt_info_list_;
-    }
-
    private:
     void SetReturnValue(int64_t value);
     void SetTakenValue(int64_t value);
 
     CoreAccess *core_access_;
-    CheriotTop *top_;
+    CheriotState *state_ = nullptr;
+    CheriotDebugInterface *dbg_if_ = nullptr;
     bool interrupts_enabled_ = false;
     bool exceptions_enabled_ = false;
-    InterruptInfoList interrupt_info_list_;
     Listener taken_listener_;
     Listener return_listener_;
   };

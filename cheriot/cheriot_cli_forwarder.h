@@ -71,6 +71,8 @@ class CheriotCLIForwarder : public CheriotDebugInterface {
   void SetBreakOnControlFlowChange(bool value) override;
   // Request that core stop running.
   absl::Status Halt() override;
+  absl::Status Halt(HaltReason halt_reason) override;
+  absl::Status Halt(HaltReasonValueType halt_reason) override;
   // Step the core by num instructions.
   absl::StatusOr<int> Step(int num) override;
   // Allow the core to free-run. The loop to run the instructions should be

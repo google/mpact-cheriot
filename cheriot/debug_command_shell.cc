@@ -35,6 +35,7 @@
 #include "absl/strings/string_view.h"
 #include "cheriot/cheriot_debug_interface.h"
 #include "cheriot/cheriot_register.h"
+#include "cheriot/cheriot_state.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/riscv_cheriot_enums.h"
 #include "cheriot/riscv_cheriot_register_aliases.h"
@@ -56,56 +57,37 @@ using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
 
 DebugCommandShell::InterruptListener::InterruptListener(CoreAccess *core_access)
     : core_access_(core_access),
-      top_(static_cast<CheriotTop *>(core_access->debug_interface)),
+      state_(static_cast<CheriotState *>(core_access_->state)),
+      dbg_if_(static_cast<CheriotTop *>(core_access->debug_interface)),
       taken_listener_(
           absl::bind_front(&InterruptListener::SetTakenValue, this)),
       return_listener_(
           absl::bind_front(&InterruptListener::SetReturnValue, this)) {
-  top_->state()->counter_interrupts_taken()->AddListener(&taken_listener_);
-  top_->state()->counter_interrupt_returns()->AddListener(&return_listener_);
+  state_->counter_interrupts_taken()->AddListener(&taken_listener_);
+  state_->counter_interrupt_returns()->AddListener(&return_listener_);
 }
 
 void DebugCommandShell::InterruptListener::SetReturnValue(int64_t value) {
-  if (interrupt_info_list_.empty()) {
+  auto &interrupt_info_list = state_->interrupt_info_list();
+  if (interrupt_info_list.empty()) {
     LOG(ERROR) << "Interrupt stack is empty";
     return;
   }
-  auto info = interrupt_info_list_.front();
-  interrupt_info_list_.pop_front();
+  auto info = interrupt_info_list.back();
   // If breakpoints are enabled, then request a halt of the appropriate type.
   if (info.is_interrupt && interrupts_enabled_)
-    top_->RequestHalt(kInterruptReturn, nullptr);
+    (void)dbg_if_->Halt(kInterruptReturn);
   if (!info.is_interrupt && exceptions_enabled_)
-    top_->RequestHalt(kExceptionReturn, nullptr);
+    (void)dbg_if_->Halt(kExceptionReturn);
 }
 
 void DebugCommandShell::InterruptListener::SetTakenValue(int64_t value) {
-  InterruptInfo info;
-  bool ok = true;
-  // Read the values of the interrupt registers.
-  auto res = core_access_->debug_interface->ReadRegister("mcause");
-  ok &= res.ok();
-  if (ok) info.cause = res.value();
-
-  res = core_access_->debug_interface->ReadRegister("mtval");
-  ok &= res.ok();
-  if (ok) info.tval = res.value();
-
-  res = core_access_->debug_interface->ReadRegister("mepcc");
-  ok &= res.ok();
-  if (ok) info.epc = res.value();
-
-  if (!ok) {
-    LOG(ERROR) << "Failed to read interrupt registers";
-    return;
-  }
-  info.is_interrupt = (info.cause & 0x8000'0000u) != 0;
+  InterruptInfo info = state_->interrupt_info_list().back();
   // If breakpoints are enabled, the request a halt of the appropriate type.
   if (info.is_interrupt && interrupts_enabled_)
-    top_->RequestHalt(kInterruptTaken, nullptr);
+    (void)dbg_if_->Halt(kInterruptTaken);
   if (!info.is_interrupt && exceptions_enabled_)
-    top_->RequestHalt(kExceptionTaken, nullptr);
-  interrupt_info_list_.push_front(info);
+    (void)dbg_if_->Halt(kExceptionTaken);
 }
 
 // The constructor initializes all the regular expressions and the help string.
@@ -332,8 +314,9 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       }
       absl::StrAppend(&prompt, "\n");
     }
-    auto &info_list =
-        interrupt_listeners_[current_core_]->interrupt_info_list();
+    auto cheriot_state =
+        static_cast<CheriotState *>(core_access_[current_core_].state);
+    auto &info_list = cheriot_state->interrupt_info_list();
     int count = 0;
     for (auto iter = info_list.rbegin(); iter != info_list.rend(); ++iter) {
       auto const &info = *iter;

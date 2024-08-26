@@ -655,7 +655,26 @@ void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
   set_branch(true);
   // TODO(torerik): set next pc
   mstatus_->Submit();
+  // Set up interrupt info before incrementing the interrupt counter. That way
+  // any code that is triggered by the interrupt counter will see the updated
+  // interrupt info.
+  InterruptInfo info;
+  info.is_interrupt = is_interrupt;
+  info.cause = mcause_->GetUint32();
+  info.tval = mtval_->GetUint32();
+  info.epc = epc;
+  interrupt_info_list_.push_back(info);
+
   counter_interrupts_taken_.Increment(1);
+}
+
+// Called upon returning from an interrupt or exception.
+void CheriotState::SignalReturnFromInterrupt() {
+  // First increment the interrupt return counter. Then pop the interrupt info.
+  // This way any code that is triggered by the interrupt return counter will
+  // be able to access the interrupt info.
+  counter_interrupt_returns_.Increment(1);
+  interrupt_info_list_.pop_back();
 }
 
 // CheckForInterrupt is called whenever any relevant bits in the interrupt

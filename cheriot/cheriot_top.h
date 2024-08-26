@@ -73,6 +73,8 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
 
   // Methods inherited from CoreDebugInterface.
   absl::Status Halt() override;
+  absl::Status Halt(HaltReason halt_reason) override;
+  absl::Status Halt(HaltReasonValueType halt_reason) override;
   absl::StatusOr<int> Step(int num) override;
   absl::Status Run() override;
   absl::Status Wait() override;
