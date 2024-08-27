@@ -144,38 +144,39 @@ DebugCommandShell::DebugCommandShell()
   step [N]                         - step [N] instructions (default: 1).
   next                             - step 1 instruction (stepping over calls).
   halt                             - halt a running program.
-  reg get NAME [FORMAT]            - get the value or register NAME.
-  reg NAME [FORMAT]                - get the value of register NAME.
+  reg get NAME [FORMAT]            - get the value or register NAME (see below
+                                     for special names and display formats).
+  reg NAME [FORMAT]                - get the value of register NAME (see below).
   reg set NAME VALUE               - set register NAME to VALUE.
   reg set NAME SYMBOL              - set register NAME to value of SYMBOL.
   mem get VALUE [FORMAT]           - get memory from location VALUE according to
-                                     format. The format is a letter (o, d, u, x,
-                                     or X) followed by width (8, 16, 32, 64).
-                                     The default format is x32.
+                                     FORMAT (see below for display formats).
+                                     Default format is x32.
   mem get SYMBOL [FORMAT]          - get memory from location SYMBOL and format
-                                     according to FORMAT (see above).
+                                     according to FORMAT (see below).
   mem SYMBOL [FORMAT]              - get memory from location SYMBOL and format
-                                     according to FORMAT (see above).
+                                     according to FORMAT (see below).
   mem set VALUE [FORMAT] VALUE     - set memory at location VALUE(1) to VALUE(2)
-                                     according to FORMAT. Default format is x32.
+                                     according to FORMAT (see below). Default
+                                     format is x32.
   mem set SYMBOL [FORMAT] VALUE    - set memory at location SYMBOL to VALUE
-                                     according to FORMAT. Default format is x32.
+                                     according to FORMAT (see below). Default
+                                     format is x32.
   break [set] VALUE                - set breakpoint at address VALUE.
-  break [set] SYMBOL               - set breakpoint at value of SYMBOL.
-                                     '$exception' and '$interrupt are special
-                                     symbols to break upon entry to and return
-                                     from exception/interrupt handlers.
+  break [set] SYMBOL               - set breakpoint at value of SYMBOL (see below
+                                     for special symbol names).
   break set #<N>                   - reactivate breakpoint index N.
   break #<N>                       - reactivate breakpoint index N.
   break clear VALUE                - clear breakpoint at address VALUE.
-  break clear SYMBOL               - clear breakpoint at value of SYMBOL.
+  break clear SYMBOL               - clear breakpoint at value of SYMBOL (see
+                                     below for pseudo-symbols).
   break clear #<N>                 - clear breakpoint index N.
   break clear-all                  - remove all breakpoints.
   break                            - list breakpoints.
   watch [set] VALUE len [r|w|rw]   - set watchpoint at value (read, write, or
-                                     readwrite) - default is write.
+                                     read+write) - default is write.
   watch [set] SYMBOL len [r|w|rw]  - set watchpoint at value (read, write, or
-                                     readwrite) - default is write.
+                                     read+write) - default is write.
   watch set #<N>                   - reactivate watchpoint index N.
   watch clear VALUE [r|w|rw]       - clear watchpoint at value (read, write, or
                                      readwrite) - default is write.
@@ -196,8 +197,20 @@ DebugCommandShell::DebugCommandShell()
                                      a '#' are treated as comments.
   help                             - display this message.
 
-  Special register names:
+  Special names:
   $all                             - core set of registers (e.g., reg $all).
+  $exception                       - pseudo-symbol for exception handler entry/exit
+                                     (e.g., break set $exception).
+  $interrupt                       - pseudo-symbol for interrupt handler entry/exit
+                                     (e.g., break clear $interrupt).
+
+  Display formats:
+  o{8|16|32|64}                    - octal (base 8) of bit-width data
+  d{8|16|32|64}                    - signed decimal (base 10) of bit-width data
+  u{8|16|32|64}                    - unsigned decimal (base 10) of bit-width data
+  x{8|16|32|64}                    - lower-case hexdecimal (base 16) of bit-width data
+  X{8|16|32|64}                    - upper-case hexdecimal (base 16) of bit-width data
+  i                                - decode as instruction (only use with memory get)
 )raw";
   // Insert known capability registers
   for (int i = 0; i < 16; i++) {
