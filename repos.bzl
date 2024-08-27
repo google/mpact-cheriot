@@ -22,7 +22,7 @@ def mpact_cheriot_repos():
     if not native.existing_rule("com_google_mpact-riscv"):
         http_archive(
             name = "com_google_mpact-riscv",
-            sha256 = "363affcb4f305213d3573990365a5227044b4d9e95465f51de6e27e1ec35725e",
-            strip_prefix = "mpact-riscv-0752db375e00e12dcbd227571025c83c37a65efa",
-            url = "https://github.com/google/mpact-riscv/archive/0752db375e00e12dcbd227571025c83c37a65efa.tar.gz",
+            sha256 = "197130ded17a63c9521a89320534fc25a13b11e1b2bc9a60c343b7e49e181123",
+            strip_prefix = "mpact-riscv-b9b96386e92c82f512a118972e72c8616adfac9c",
+            url = "https://github.com/google/mpact-riscv/archive/b9b96386e92c82f512a118972e72c8616adfac9c.tar.gz",
         )
