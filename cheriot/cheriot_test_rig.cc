@@ -16,6 +16,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <new>
 #include <string>
 
 #include "absl/functional/bind_front.h"
@@ -26,12 +27,12 @@
 #include "cheriot/cheriot_register.h"
 #include "cheriot/cheriot_state.h"
 #include "cheriot/cheriot_test_rig_decoder.h"
-#include "cheriot/riscv_cheriot_minstret.h"
 #include "cheriot/riscv_cheriot_register_aliases.h"
 #include "cheriot/test_rig_packets.h"
 #include "mpact/sim/generic/component.h"
 #include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 #include "mpact/sim/util/memory/tagged_memory_watcher.h"
+#include "riscv//riscv_counter_csr.h"
 #include "riscv//riscv_register.h"
 #include "riscv//riscv_state.h"
 
@@ -40,6 +41,8 @@ namespace mpact::sim::cheriot {
 using EC = ::mpact::sim::riscv::ExceptionCode;
 using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 using CheriotEC = ::mpact::sim::cheriot::ExceptionCode;
+using ::mpact::sim::riscv::RiscVCounterCsr;
+using ::mpact::sim::riscv::RiscVCounterCsrHigh;
 using ::mpact::sim::util::TaggedFlatDemandMemory;
 using ::mpact::sim::util::TaggedMemoryWatcher;
 
@@ -105,13 +108,27 @@ CheriotTestRig::CheriotTestRig()
   // registers.
   auto minstret_res = state_->csr_set()->GetCsr("minstret");
   auto minstreth_res = state_->csr_set()->GetCsr("minstreth");
-  if (!minstret_res.ok() || !minstreth_res.ok()) {
-    LOG(ERROR) << "Error while initializing minstret/minstreth";
-  }
-  auto *minstret = static_cast<RiscVCheriotMInstret *>(minstret_res.value());
-  auto *minstreth = static_cast<RiscVCheriotMInstreth *>(minstreth_res.value());
+  CHECK_OK(minstret_res.status());
+  CHECK_OK(minstreth_res.status());
+  auto *minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+      minstret_res.value());
+  auto *minstreth =
+      static_cast<RiscVCounterCsrHigh<CheriotState> *>(minstreth_res.value());
   minstret->set_counter(&counter_num_instructions_);
   minstreth->set_counter(&counter_num_instructions_);
+
+  // Initialize mcycle/mcycleh. Bind the instruction counter to those
+  // registers.
+  auto mcycle_res = state_->csr_set()->GetCsr("mcycle");
+  auto mcycleh_res = state_->csr_set()->GetCsr("mcycleh");
+  CHECK_OK(mcycle_res.status());
+  CHECK_OK(mcycleh_res.status());
+  auto *mcycle = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+      mcycle_res.value());
+  auto *mcycleh =
+      static_cast<RiscVCounterCsrHigh<CheriotState> *>(mcycleh_res.value());
+  mcycle->set_counter(&counter_num_instructions_);
+  mcycleh->set_counter(&counter_num_instructions_);
   // Set memory limits according to the memory space for TestRIG.
   state_->set_max_physical_address(0x8000'0000ULL + 64 * 1024);
   state_->set_min_physical_address(0x8000'0000ULL);

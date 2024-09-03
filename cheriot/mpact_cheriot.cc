@@ -20,6 +20,7 @@
 #include <ios>
 #include <iostream>
 #include <memory>
+#include <new>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -43,9 +44,9 @@
 #include "cheriot/cheriot_instrumentation_control.h"
 #include "cheriot/cheriot_rvv_decoder.h"
 #include "cheriot/cheriot_rvv_fp_decoder.h"
+#include "cheriot/cheriot_state.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
-#include "cheriot/riscv_cheriot_minstret.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/counters.h"
 #include "mpact/sim/generic/decoder_interface.h"
@@ -65,6 +66,7 @@
 #include "re2/re2.h"
 #include "riscv//riscv_arm_semihost.h"
 #include "riscv//riscv_clint.h"
+#include "riscv//riscv_counter_csr.h"
 #include "src/google/protobuf/text_format.h"
 
 using AddressRange = mpact::sim::util::MemoryWatcher::AddressRange;
@@ -75,6 +77,8 @@ using ::mpact::sim::cheriot::CheriotRVVFPDecoder;
 using ::mpact::sim::cheriot::CheriotState;
 using ::mpact::sim::generic::DecoderInterface;
 using ::mpact::sim::proto::ComponentData;
+using ::mpact::sim::riscv::RiscVCounterCsr;
+using ::mpact::sim::riscv::RiscVCounterCsrHigh;
 using ::mpact::sim::util::InstructionProfiler;
 using ::mpact::sim::util::TaggedMemoryUseProfiler;
 
@@ -156,8 +160,6 @@ constexpr int kCapabilityGranule = 8;
 
 using HaltReason = ::mpact::sim::generic::CoreDebugInterface::HaltReason;
 using ::mpact::sim::cheriot::CheriotTop;
-using ::mpact::sim::cheriot::RiscVCheriotMInstret;
-using ::mpact::sim::cheriot::RiscVCheriotMInstreth;
 using ::mpact::sim::generic::Instruction;
 using ::mpact::sim::riscv::RiscVArmSemihost;
 using ::mpact::sim::riscv::RiscVClint;
@@ -334,10 +336,27 @@ int main(int argc, char **argv) {
     std::cerr << "Error while initializing minstret/minstreth";
     return -1;
   }
-  auto *minstret = static_cast<RiscVCheriotMInstret *>(minstret_res.value());
-  auto *minstreth = static_cast<RiscVCheriotMInstreth *>(minstreth_res.value());
+  auto *minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+      minstret_res.value());
+  auto *minstreth =
+      static_cast<RiscVCounterCsrHigh<CheriotState> *>(minstreth_res.value());
   minstret->set_counter(cheriot_top.counter_num_instructions());
   minstreth->set_counter(cheriot_top.counter_num_instructions());
+
+  // Initialize mcycle/mcycleh. Bind the instruction counter to those
+  // registers.
+  auto mcycle_res = cheriot_top.state()->csr_set()->GetCsr("mcycle");
+  auto mcycleh_res = cheriot_top.state()->csr_set()->GetCsr("mcycleh");
+  if (!mcycle_res.ok() || !mcycleh_res.ok()) {
+    std::cerr << "Error while initializing mcycle/mcycleh";
+    return -1;
+  }
+  auto *mcycle = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+      mcycle_res.value());
+  auto *mcycleh =
+      static_cast<RiscVCounterCsrHigh<CheriotState> *>(mcycleh_res.value());
+  mcycle->set_counter(cheriot_top.counter_num_cycles());
+  mcycleh->set_counter(cheriot_top.counter_num_cycles());
 
   // Set up the memory router with the appropriate targets.
   ::mpact::sim::util::AtomicMemory *atomic_memory = nullptr;

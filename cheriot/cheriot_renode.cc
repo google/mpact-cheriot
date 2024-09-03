@@ -23,6 +23,7 @@
 #include <ios>
 #include <iostream>
 #include <memory>
+#include <new>
 #include <string>
 #include <string_view>
 
@@ -44,7 +45,6 @@
 #include "cheriot/cheriot_state.h"
 #include "cheriot/cheriot_top.h"
 #include "cheriot/debug_command_shell.h"
-#include "cheriot/riscv_cheriot_minstret.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/type_helpers.h"
 #include "mpact/sim/proto/component_data.pb.h"
@@ -57,6 +57,7 @@
 #include "mpact/sim/util/renode/renode_debug_interface.h"
 #include "riscv//riscv_arm_semihost.h"
 #include "riscv//riscv_clint.h"
+#include "riscv//riscv_counter_csr.h"
 #include "riscv//riscv_state.h"
 #include "riscv//stoull_wrapper.h"
 #include "src/google/protobuf/text_format.h"
@@ -77,10 +78,10 @@ namespace mpact {
 namespace sim {
 namespace cheriot {
 
-using ::mpact::sim::cheriot::RiscVCheriotMInstret;
-using ::mpact::sim::cheriot::RiscVCheriotMInstreth;
 using ::mpact::sim::proto::ComponentData;
 using ::mpact::sim::riscv::RiscVClint;
+using ::mpact::sim::riscv::RiscVCounterCsr;
+using ::mpact::sim::riscv::RiscVCounterCsrHigh;
 using ::mpact::sim::util::AtomicMemoryOpInterface;
 using ::mpact::sim::util::TaggedMemoryWatcher;
 using ::mpact::sim::util::TaggedToUntaggedMemoryTransactor;
@@ -500,11 +501,26 @@ absl::Status CheriotRenode::InitializeSimulator(const std::string &cpu_type) {
     return absl::InternalError(
         absl::StrCat(name_, ": Error while initializing minstret/minstreth\n"));
   }
-  auto *minstret = static_cast<RiscVCheriotMInstret *>(minstret_res.value());
-  auto *minstreth = static_cast<RiscVCheriotMInstreth *>(minstreth_res.value());
+  auto *minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+      minstret_res.value());
+  auto *minstreth =
+      static_cast<RiscVCounterCsrHigh<CheriotState> *>(minstreth_res.value());
   minstret->set_counter(cheriot_top_->counter_num_instructions());
   minstreth->set_counter(cheriot_top_->counter_num_instructions());
-
+  // Initialize mcycle/mcycleh. Bind the instruction counter to those
+  // registers.
+  auto mcycle_res = cheriot_top_->state()->csr_set()->GetCsr("mcycle");
+  auto mcycleh_res = cheriot_top_->state()->csr_set()->GetCsr("mcycleh");
+  if (!mcycle_res.ok() || !mcycleh_res.ok()) {
+    return absl::InternalError(
+        absl::StrCat(name_, ": Error while initializing mcycle/mcycleh\n"));
+  }
+  auto *mcycle = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+      mcycle_res.value());
+  auto *mcycleh =
+      static_cast<RiscVCounterCsrHigh<CheriotState> *>(mcycleh_res.value());
+  mcycle->set_counter(cheriot_top_->counter_num_cycles());
+  mcycleh->set_counter(cheriot_top_->counter_num_cycles());
   // Set up the memory router with the system bus. Other devices are added once
   // config info has been received. Add a tagged default memory transactor, so
   // that any tagged loads/stores are forward to the sysbus without tags.

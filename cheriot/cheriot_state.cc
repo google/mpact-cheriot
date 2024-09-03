@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <new>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -28,12 +29,12 @@
 #include "absl/strings/str_cat.h"
 #include "cheriot/cheriot_register.h"
 #include "cheriot/riscv_cheriot_csr_enum.h"
-#include "cheriot/riscv_cheriot_minstret.h"
 #include "mpact/sim/generic/arch_state.h"
 #include "mpact/sim/generic/type_helpers.h"
 #include "mpact/sim/util/memory/memory_interface.h"
 #include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
 #include "mpact/sim/util/memory/tagged_memory_interface.h"
+#include "riscv//riscv_counter_csr.h"
 #include "riscv//riscv_csr.h"
 #include "riscv//riscv_misa.h"
 #include "riscv//riscv_pmp.h"
@@ -51,6 +52,8 @@ namespace cheriot {
 using EC = ::mpact::sim::riscv::ExceptionCode;
 using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
 using ::mpact::sim::riscv::IsaExtension;
+using ::mpact::sim::riscv::RiscVCounterCsr;
+using ::mpact::sim::riscv::RiscVCounterCsrHigh;
 using ::mpact::sim::riscv::RiscVCsrEnum;
 using ::mpact::sim::riscv::RiscVCsrInterface;
 using ::mpact::sim::riscv::RiscVPmp;
@@ -191,10 +194,23 @@ void CreateCsrs(CheriotState *state,
   CHECK_NE(mtval, nullptr);
 
   // minstret/minstreth
-  CHECK_NE(CreateCsr<RiscVCheriotMInstret>(state, csr_vec, "minstret", state),
-           nullptr);
-  CHECK_NE(CreateCsr<RiscVCheriotMInstreth>(state, csr_vec, "minstreth", state),
-           nullptr);
+  auto *minstret = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
+      state, csr_vec, "minstret", RiscVCsrEnum ::kMInstret, state);
+  CHECK_NE(minstret, nullptr);
+  if (sizeof(T) == sizeof(uint32_t)) {
+    CHECK_NE(CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
+                 state, csr_vec, "minstreth", RiscVCsrEnum::kMInstretH, state),
+             nullptr);
+  }
+  // mcycle/mcycleh
+  auto *mcycle = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
+      state, csr_vec, "mcycle", RiscVCsrEnum::kMCycle, state);
+  CHECK_NE(mcycle, nullptr);
+  if (sizeof(T) == sizeof(uint32_t)) {
+    CHECK_NE(CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
+                 state, csr_vec, "mcycleh", RiscVCsrEnum::kMCycleH, state),
+             nullptr);
+  }
 
   // Stack high water mark CSRs. Mshwm gets updated automatically during
   // execution. mshwm
