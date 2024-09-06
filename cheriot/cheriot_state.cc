@@ -199,7 +199,9 @@ void CreateCsrs(CheriotState *state,
   CHECK_NE(minstret, nullptr);
   if (sizeof(T) == sizeof(uint32_t)) {
     CHECK_NE(CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
-                 state, csr_vec, "minstreth", RiscVCsrEnum::kMInstretH, state),
+                 state, csr_vec, "minstreth", RiscVCsrEnum::kMInstretH, state,
+                 reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+                     minstret)),
              nullptr);
   }
   // mcycle/mcycleh
@@ -208,7 +210,9 @@ void CreateCsrs(CheriotState *state,
   CHECK_NE(mcycle, nullptr);
   if (sizeof(T) == sizeof(uint32_t)) {
     CHECK_NE(CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
-                 state, csr_vec, "mcycleh", RiscVCsrEnum::kMCycleH, state),
+                 state, csr_vec, "mcycleh", RiscVCsrEnum::kMCycleH, state,
+                 reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+                     mcycle)),
              nullptr);
   }
 
