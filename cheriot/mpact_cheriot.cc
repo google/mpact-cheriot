@@ -153,6 +153,10 @@ ABSL_FLAG(bool, rvv, false, "Enable RVV");
 // Enable RiscV Vector instructions + FP.
 ABSL_FLAG(bool, rvv_fp, false, "Enable RVV + FP");
 
+// Location of clint and uart.
+ABSL_FLAG(uint64_t, clint, 0x0200'0000ULL, "Base address of clint");
+ABSL_FLAG(uint64_t, uart, 0x1000'0000ULL, "Base address of uart");
+
 constexpr char kStackEndSymbolName[] = "__stack_end";
 constexpr char kStackSizeSymbolName[] = "__stack_size";
 
@@ -364,20 +368,16 @@ int main(int argc, char **argv) {
 
   auto *uart = new SimpleUart(cheriot_top.state());
 
-  CHECK_OK(
-      router->AddTarget<MemoryInterface>(uart, 0x1000'0000ULL, 0x1000'00ffULL));
+  auto uart_base = absl::GetFlag(FLAGS_uart);
+  auto clint_base = absl::GetFlag(FLAGS_clint);
+  CHECK_OK(router->AddTarget<MemoryInterface>(uart, uart_base,
+                                              uart_base + 0x100ULL - 1));
   auto *clint = new RiscVClint(/*period=*/100, cheriot_top.state()->mip());
   cheriot_top.counter_num_cycles()->AddListener(clint);
-  CHECK_OK(router->AddTarget<AtomicMemoryOpInterface>(
-      atomic_memory, 0x0000'0000ULL, 0x01ff'ffffULL));
-  CHECK_OK(router->AddTarget<TaggedMemoryInterface>(
-      tagged_memory, 0x0000'0000ULL, 0x01ff'ffffULL));
-  CHECK_OK(router->AddTarget<MemoryInterface>(clint, 0x0200'0000ULL,
-                                              0x0200'ffffULL));
-  CHECK_OK(router->AddTarget<AtomicMemoryOpInterface>(
-      atomic_memory, 0x02001'0000ULL, 0xffff'ffffULL));
-  CHECK_OK(router->AddTarget<TaggedMemoryInterface>(
-      tagged_memory, 0x0201'0000ULL, 0xffff'ffffULL));
+  CHECK_OK(router->AddTarget<MemoryInterface>(clint, clint_base,
+                                              clint_base + 0x10000ULL - 1));
+  CHECK_OK(router->AddDefaultTarget<AtomicMemoryOpInterface>(atomic_memory));
+  CHECK_OK(router->AddDefaultTarget<TaggedMemoryInterface>(tagged_memory));
 
   // Set up a dummy WFI handler.
   cheriot_top.state()->set_on_wfi([](const Instruction *) { return true; });
@@ -515,8 +515,13 @@ int main(int argc, char **argv) {
     absl::Duration duration = t1 - t0;
     double sec = static_cast<double>(duration / absl::Milliseconds(100)) / 10;
     counter_sec.SetValue(sec);
+    uint64_t num_instructions =
+        cheriot_top.counter_num_instructions()->GetValue();
+    double mips = static_cast<double>(num_instructions) / sec / 1000000.0;
 
-    std::cerr << absl::StrFormat("Simulation done: %0.1f sec\n", sec);
+    std::cerr << absl::StrFormat(
+        "Simulation done: %llu instructions in %0.1f sec (%0.1f MIPS)\n",
+        num_instructions, sec, mips);
   }
 
   // Write out memory use profile.
