@@ -42,6 +42,11 @@ config_setting(
     values = {"cpu": "darwin_arm64"},
 )
 
+config_setting(
+    name = "aarch64",
+    values = {"cpu": "aarch64"},
+)
+
 mpact_isa_decoder(
     name = "riscv_cheriot_isa",
     src = "riscv_cheriot.isa",
