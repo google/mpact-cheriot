@@ -203,6 +203,7 @@ cc_test(
     data = [
         "//cheriot:renode_mpact_cheriot",
     ],
+    tags = ["notap"],
     deps = [
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/log:check",
