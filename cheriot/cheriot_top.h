@@ -38,6 +38,7 @@
 #include "mpact/sim/generic/data_buffer.h"
 #include "mpact/sim/generic/decode_cache.h"
 #include "mpact/sim/generic/decoder_interface.h"
+#include "mpact/sim/util/memory/cache.h"
 #include "mpact/sim/util/memory/memory_interface.h"
 #include "mpact/sim/util/memory/memory_watcher.h"
 #include "mpact/sim/util/memory/tagged_memory_watcher.h"
@@ -52,6 +53,7 @@ using ::mpact::sim::generic::ActionPointManagerBase;
 using ::mpact::sim::generic::BreakpointManager;
 using ::mpact::sim::generic::DecoderInterface;
 using ::mpact::sim::riscv::RiscVActionPointMemoryInterface;
+using ::mpact::sim::util::Cache;
 
 struct BranchTraceEntry {
   uint32_t from;
@@ -160,6 +162,7 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   absl::Status StepPastBreakpoint();
   // Set the pc value.
   void SetPc(uint64_t value);
+  void ICacheFetch(uint64_t address);
   // Branch tracing.
   void AddToBranchTrace(uint64_t from, uint64_t to);
   // The DB factory is used to manage data buffers for memory read/writes.
@@ -215,6 +218,9 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   LazyRE2 cap_reg_re_;
   // Flag for breaking on a control flow change.
   bool break_on_control_flow_change_ = false;
+  // ICache.
+  Cache *icache_ = nullptr;
+  DataBuffer *inst_db_ = nullptr;
 };
 
 }  // namespace cheriot

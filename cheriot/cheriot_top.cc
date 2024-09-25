@@ -18,9 +18,10 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
-#include <thread>
+#include <thread>  // NOLINT: third party code.
 #include <utility>
 
+#include "absl/flags/flag.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
@@ -43,6 +44,7 @@
 #include "mpact/sim/generic/decode_cache.h"
 #include "mpact/sim/generic/type_helpers.h"
 #include "mpact/sim/util/memory/atomic_memory.h"
+#include "mpact/sim/util/memory/cache.h"
 #include "mpact/sim/util/memory/memory_interface.h"
 #include "mpact/sim/util/memory/memory_watcher.h"
 #include "mpact/sim/util/memory/tagged_flat_demand_memory.h"
@@ -53,6 +55,9 @@
 #include "riscv//riscv_csr.h"
 #include "riscv//riscv_register.h"
 
+// Flag to enable and configure instruction cache.
+ABSL_FLAG(std::string, icache, "", "Instruction cache configuration");
+
 namespace mpact {
 namespace sim {
 namespace cheriot {
@@ -60,6 +65,7 @@ namespace cheriot {
 using ::mpact::sim::generic::ActionPointManagerBase;
 using ::mpact::sim::generic::BreakpointManager;
 using ::mpact::sim::riscv::RiscVActionPointMemoryInterface;
+using ::mpact::sim::util::Cache;
 using EC = ::mpact::sim::cheriot::ExceptionCode;
 using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 
@@ -88,6 +94,8 @@ CheriotTop::~CheriotTop() {
 
   if (branch_trace_db_ != nullptr) branch_trace_db_->DecRef();
 
+  delete icache_;
+  if (inst_db_) inst_db_->DecRef();
   delete rv_bp_manager_;
   delete cheriot_decode_cache_;
   delete atomic_memory_;
@@ -144,6 +152,16 @@ void CheriotTop::Initialize() {
     }
     return false;
   });
+  // Instruction cache.
+  if (!absl::GetFlag(FLAGS_icache).empty()) {
+    icache_ = new Cache("icache", this);
+    absl::Status status =
+        icache_->Configure(absl::GetFlag(FLAGS_icache), &counter_num_cycles_);
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to configure instruction cache: " << status;
+    }
+    inst_db_ = state_->db_factory()->Allocate<uint32_t>(1);
+  }
 
   // Make sure the architectural and abi register aliases are added.
   std::string reg_name;
@@ -235,6 +253,7 @@ absl::Status CheriotTop::StepPastBreakpoint() {
   real_inst->IncRef();
   uint64_t next_pc = pc + real_inst->size();
   bool executed = false;
+  if (icache_) ICacheFetch(pc);
   do {
     executed = ExecuteInstruction(real_inst);
     counter_num_cycles_.Increment(1);
@@ -303,6 +322,7 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
     // Set the next_pc to the next sequential instruction.
     next_pc = pc + inst->size();
     bool executed = false;
+    if (icache_) ICacheFetch(pc);
     do {
       executed = ExecuteInstruction(inst);
       counter_num_cycles_.Increment(1);
@@ -405,6 +425,7 @@ absl::Status CheriotTop::Run() {
       // executed will overwrite this.
       next_pc = pc + inst->size();
       bool executed = false;
+      if (icache_) ICacheFetch(pc);
       do {
         // Try executing the instruction. If it fails, advance a cycle
         // and try again.
@@ -1013,6 +1034,10 @@ void CheriotTop::DisableStatistics() {
     if (counter_ptr->GetName() == "pc") continue;
     counter_ptr->SetIsEnabled(false);
   }
+}
+
+void CheriotTop::ICacheFetch(uint64_t address) {
+  icache_->Load(address, inst_db_, nullptr, nullptr);
 }
 
 }  // namespace cheriot

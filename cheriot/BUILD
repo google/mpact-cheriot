@@ -491,6 +491,7 @@ cc_library(
         ":cheriot_state",
         ":riscv_cheriot_isa",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/functional:any_invocable",
         "@com_google_absl//absl/functional:bind_front",
         "@com_google_absl//absl/log",
@@ -511,6 +512,7 @@ cc_library(
         "@com_google_mpact-sim//mpact/sim/generic:decode_cache",
         "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
         "@com_google_mpact-sim//mpact/sim/util/memory",
+        "@com_google_mpact-sim//mpact/sim/util/memory:cache",
         "@com_googlesource_code_re2//:re2",
     ],
 )
