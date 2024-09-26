@@ -33,6 +33,7 @@
 #include "mpact/sim/generic/action_point_manager_base.h"
 #include "mpact/sim/generic/breakpoint_manager.h"
 #include "mpact/sim/generic/component.h"
+#include "mpact/sim/generic/config.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/counters.h"
 #include "mpact/sim/generic/data_buffer.h"
@@ -51,6 +52,7 @@ namespace cheriot {
 
 using ::mpact::sim::generic::ActionPointManagerBase;
 using ::mpact::sim::generic::BreakpointManager;
+using ::mpact::sim::generic::Config;
 using ::mpact::sim::generic::DecoderInterface;
 using ::mpact::sim::riscv::RiscVActionPointMemoryInterface;
 using ::mpact::sim::util::Cache;
@@ -152,9 +154,14 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   const std::string &halt_string() const { return halt_string_; }
   void set_halt_string(std::string halt_string) { halt_string_ = halt_string; }
 
+  Cache *icache() const { return icache_; }
+  Cache *dcache() const { return dcache_; }
+
  private:
   // Initialize the top.
   void Initialize();
+  // Configure cache helper method.
+  void ConfigureCache(Cache *&cache, Config<std::string> &config);
   // Execute instruction. Returns true if the instruction was executed (or
   // an exception was triggered).
   bool ExecuteInstruction(Instruction *inst);
@@ -218,7 +225,11 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   LazyRE2 cap_reg_re_;
   // Flag for breaking on a control flow change.
   bool break_on_control_flow_change_ = false;
-  // ICache.
+  // Configuration items.
+  Config<std::string> icache_config_;
+  Config<std::string> dcache_config_;
+  // ICache & DCache.
+  Cache *dcache_ = nullptr;
   Cache *icache_ = nullptr;
   DataBuffer *inst_db_ = nullptr;
 };

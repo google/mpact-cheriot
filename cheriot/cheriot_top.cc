@@ -21,7 +21,6 @@
 #include <thread>  // NOLINT: third party code.
 #include <utility>
 
-#include "absl/flags/flag.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
@@ -55,9 +54,6 @@
 #include "riscv//riscv_csr.h"
 #include "riscv//riscv_register.h"
 
-// Flag to enable and configure instruction cache.
-ABSL_FLAG(std::string, icache, "", "Instruction cache configuration");
-
 namespace mpact {
 namespace sim {
 namespace cheriot {
@@ -78,8 +74,20 @@ CheriotTop::CheriotTop(std::string name, CheriotState *state,
       counter_num_cycles_("num_cycles", 0),
       counter_pc_("pc", 0),
       cap_reg_re_{
-          R"((\w+)\.(top|base|length|tag|permissions|object_type|reserved))"} {
+          R"((\w+)\.(top|base|length|tag|permissions|object_type|reserved))"},
+      icache_config_("icache", ""),
+      dcache_config_("dcache", "") {
   CHECK_OK(AddChildComponent(*state_));
+  // Register icache configuration, and set a callback for when the config
+  // entry is written to.
+  CHECK_OK(AddConfig(&icache_config_));
+  icache_config_.AddValueWrittenCallback(
+      [this]() { ConfigureCache(icache_, icache_config_); });
+  // Register dcache configuration, and set a callback for when the config
+  // entry is written to.
+  CHECK_OK(AddConfig(&dcache_config_));
+  dcache_config_.AddValueWrittenCallback(
+      [this]() { ConfigureCache(dcache_, dcache_config_); });
   Initialize();
 }
 
@@ -152,16 +160,7 @@ void CheriotTop::Initialize() {
     }
     return false;
   });
-  // Instruction cache.
-  if (!absl::GetFlag(FLAGS_icache).empty()) {
-    icache_ = new Cache("icache", this);
-    absl::Status status =
-        icache_->Configure(absl::GetFlag(FLAGS_icache), &counter_num_cycles_);
-    if (!status.ok()) {
-      LOG(ERROR) << "Failed to configure instruction cache: " << status;
-    }
-    inst_db_ = state_->db_factory()->Allocate<uint32_t>(1);
-  }
+  inst_db_ = db_factory_.Allocate<uint32_t>(1);
 
   // Make sure the architectural and abi register aliases are added.
   std::string reg_name;
@@ -188,6 +187,22 @@ void CheriotTop::Initialize() {
       reinterpret_cast<BranchTraceEntry *>(branch_trace_db_->raw_ptr());
   for (int i = 0; i < kBranchTraceSize; i++) {
     branch_trace_[i] = {0, 0, 0};
+  }
+}
+
+void CheriotTop::ConfigureCache(Cache *&cache, Config<std::string> &config) {
+  if (cache != nullptr) {
+    LOG(WARNING) << "Cache already configured - ignored";
+    return;
+  }
+  auto cfg_str = config.GetValue();
+  if (cfg_str.empty()) {
+    LOG(WARNING) << "Cache configuration is empty - ignored";
+  }
+  cache = new Cache(config.name(), this);
+  absl::Status status = cache->Configure(cfg_str, &counter_num_cycles_);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to configure instruction cache: " << status.message();
   }
 }
 

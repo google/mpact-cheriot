@@ -506,6 +506,7 @@ cc_library(
         "@com_google_mpact-riscv//riscv:riscv_state",
         "@com_google_mpact-sim//mpact/sim/generic:action_points",
         "@com_google_mpact-sim//mpact/sim/generic:component",
+        "@com_google_mpact-sim//mpact/sim/generic:config",
         "@com_google_mpact-sim//mpact/sim/generic:core",
         "@com_google_mpact-sim//mpact/sim/generic:core_debug_interface",
         "@com_google_mpact-sim//mpact/sim/generic:counters",

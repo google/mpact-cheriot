@@ -23,7 +23,6 @@
 #include <ios>
 #include <iostream>
 #include <memory>
-#include <new>
 #include <string>
 #include <string_view>
 
@@ -79,6 +78,7 @@ namespace sim {
 namespace cheriot {
 
 using ::mpact::sim::proto::ComponentData;
+using ::mpact::sim::proto::ComponentValueEntry;
 using ::mpact::sim::riscv::RiscVClint;
 using ::mpact::sim::riscv::RiscVCounterCsr;
 using ::mpact::sim::riscv::RiscVCounterCsrHigh;
@@ -103,6 +103,8 @@ constexpr std::string_view kCLIPort = "cliPort";
 constexpr std::string_view kWaitForCLI = "waitForCLI";
 constexpr std::string_view kInstProfile = "instProfile";
 constexpr std::string_view kMemProfile = "memProfile";
+constexpr std::string_view kICache = "iCache";
+constexpr std::string_view kDCache = "dCache";
 // Cpu names
 constexpr std::string_view kBaseName = "Mpact.Cheriot";
 constexpr std::string_view kRvvName = "Mpact.CheriotRvv";
@@ -166,8 +168,8 @@ CheriotRenode::~CheriotRenode() {
   delete cheriot_renode_cli_top_;
   delete cheriot_cli_forwarder_;
   delete cheriot_decoder_;
-  delete cheriot_state_;
   delete cheriot_top_;
+  delete cheriot_state_;
   delete semihost_;
   delete router_;
   delete atomic_memory_;
@@ -342,6 +344,8 @@ static absl::StatusOr<uint64_t> ParseNumber(const std::string &number) {
 
 absl::Status CheriotRenode::SetConfig(const char *config_names[],
                                       const char *config_values[], int size) {
+  std::string icache_cfg;
+  std::string dcache_cfg;
   uint64_t tagged_memory_base = 0;
   uint64_t tagged_memory_size = 0;
   uint64_t revocation_memory_base = 0;
@@ -353,32 +357,41 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
   for (int i = 0; i < size; ++i) {
     std::string name(config_names[i]);
     std::string str_value = config_values[i];
-    auto res = ParseNumber(str_value);
-    uint64_t value = 0;
-    if (!res.ok()) {
-      return res.status();
-    }
-    value = res.value();
-    if (name == kTaggedMemoryBase) {
-      tagged_memory_base = value;
-    } else if (name == kTaggedMemorySize) {
-      tagged_memory_size = value;
-    } else if (name == kRevocationMemoryBase) {
-      revocation_memory_base = value;
-    } else if (name == kClintMMRBase) {
-      clint_mmr_base = value;
-    } else if (name == kClintPeriod) {
-      clint_period = value;
-    } else if (name == kCLIPort) {
-      cli_port = value;
-    } else if (name == kWaitForCLI) {
-      wait_for_cli = value;
-    } else if (name == kInstProfile) {
-      do_inst_profile = value != 0;
-    } else if (name == kMemProfile) {
-      mem_profiler_->set_is_enabled(value != 0);
+    // First check string valued config values.
+    if (name == kICache) {
+      icache_cfg = str_value;
+    } else if (name == kDCache) {
+      dcache_cfg = str_value;
     } else {
-      LOG(ERROR) << "Unknown config name: " << name << " " << config_values[i];
+      // Numeric config values.
+      auto res = ParseNumber(str_value);
+      uint64_t value = 0;
+      if (!res.ok()) {
+        return res.status();
+      }
+      value = res.value();
+      if (name == kTaggedMemoryBase) {
+        tagged_memory_base = value;
+      } else if (name == kTaggedMemorySize) {
+        tagged_memory_size = value;
+      } else if (name == kRevocationMemoryBase) {
+        revocation_memory_base = value;
+      } else if (name == kClintMMRBase) {
+        clint_mmr_base = value;
+      } else if (name == kClintPeriod) {
+        clint_period = value;
+      } else if (name == kCLIPort) {
+        cli_port = value;
+      } else if (name == kWaitForCLI) {
+        wait_for_cli = value;
+      } else if (name == kInstProfile) {
+        do_inst_profile = value != 0;
+      } else if (name == kMemProfile) {
+        mem_profiler_->set_is_enabled(value != 0);
+      } else {
+        LOG(ERROR) << "Unknown config name: " << name << " "
+                   << config_values[i];
+      }
     }
   }
   if (tagged_memory_size == 0) {
@@ -440,6 +453,22 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
       return absl::InternalError(
           absl::StrCat("Failed to create socket CLI (", errno, ")"));
     }
+  }
+  if (!icache_cfg.empty()) {
+    ComponentValueEntry icache_value;
+    icache_value.set_name("icache");
+    icache_value.set_string_value(icache_cfg);
+    auto *cfg = cheriot_top_->GetConfig("icache");
+    auto status = cfg->Import(&icache_value);
+    if (!status.ok()) return status;
+  }
+  if (!dcache_cfg.empty()) {
+    ComponentValueEntry dcache_value;
+    dcache_value.set_name("dcache");
+    dcache_value.set_string_value(dcache_cfg);
+    auto *cfg = cheriot_top_->GetConfig("dcache");
+    auto status = cfg->Import(&dcache_value);
+    if (!status.ok()) return status;
   }
   return absl::OkStatus();
 }

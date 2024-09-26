@@ -20,7 +20,6 @@
 #include <ios>
 #include <iostream>
 #include <memory>
-#include <new>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -157,6 +156,9 @@ ABSL_FLAG(bool, rvv_fp, false, "Enable RVV + FP");
 ABSL_FLAG(uint64_t, clint, 0x0200'0000ULL, "Base address of clint");
 ABSL_FLAG(uint64_t, uart, 0x1000'0000ULL, "Base address of uart");
 
+// Flag to enable and configure the instruction cache.
+ABSL_FLAG(std::string, icache, "", "Instruction cache configuration");
+
 constexpr char kStackEndSymbolName[] = "__stack_end";
 constexpr char kStackSizeSymbolName[] = "__stack_size";
 
@@ -165,6 +167,7 @@ constexpr int kCapabilityGranule = 8;
 using HaltReason = ::mpact::sim::generic::CoreDebugInterface::HaltReason;
 using ::mpact::sim::cheriot::CheriotTop;
 using ::mpact::sim::generic::Instruction;
+using ::mpact::sim::proto::ComponentValueEntry;
 using ::mpact::sim::riscv::RiscVArmSemihost;
 using ::mpact::sim::riscv::RiscVClint;
 using ::mpact::sim::util::AtomicMemoryOpInterface;
@@ -288,6 +291,17 @@ int main(int argc, char **argv) {
   }
 
   CheriotTop cheriot_top("Cheriot", &cheriot_state, decoder);
+
+  if (!absl::GetFlag(FLAGS_icache).empty()) {
+    ComponentValueEntry icache_value;
+    icache_value.set_name("icache");
+    icache_value.set_string_value(absl::GetFlag(FLAGS_icache));
+    auto *cfg = cheriot_top.GetConfig("icache");
+    auto status = cfg->Import(&icache_value);
+    if (!status.ok()) return -1;
+  }
+
+  // TODO: enable dcache.
 
   // Enable instruction profiling if the flag is set.
   InstructionProfiler *inst_profiler = nullptr;
