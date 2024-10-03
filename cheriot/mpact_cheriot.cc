@@ -156,8 +156,9 @@ ABSL_FLAG(bool, rvv_fp, false, "Enable RVV + FP");
 ABSL_FLAG(uint64_t, clint, 0x0200'0000ULL, "Base address of clint");
 ABSL_FLAG(uint64_t, uart, 0x1000'0000ULL, "Base address of uart");
 
-// Flag to enable and configure the instruction cache.
+// Flag to enable and configure the instruction and data caches.
 ABSL_FLAG(std::string, icache, "", "Instruction cache configuration");
+ABSL_FLAG(std::string, dcache, "", "Data cache configuration");
 
 constexpr char kStackEndSymbolName[] = "__stack_end";
 constexpr char kStackSizeSymbolName[] = "__stack_size";
@@ -301,7 +302,18 @@ int main(int argc, char **argv) {
     if (!status.ok()) return -1;
   }
 
-  // TODO: enable dcache.
+  if (!absl::GetFlag(FLAGS_dcache).empty()) {
+    ComponentValueEntry dcache_value;
+    dcache_value.set_name("dcache");
+    dcache_value.set_string_value(absl::GetFlag(FLAGS_dcache));
+    auto *cfg = cheriot_top.GetConfig("dcache");
+    auto status = cfg->Import(&dcache_value);
+    if (!status.ok()) return -1;
+    // Hook the cache into the memory port.
+    auto *dcache = cheriot_top.dcache();
+    dcache->set_memory(cheriot_top.state()->tagged_memory());
+    cheriot_top.state()->set_tagged_memory(dcache);
+  }
 
   // Enable instruction profiling if the flag is set.
   InstructionProfiler *inst_profiler = nullptr;

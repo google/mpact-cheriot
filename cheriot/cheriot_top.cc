@@ -103,6 +103,7 @@ CheriotTop::~CheriotTop() {
   if (branch_trace_db_ != nullptr) branch_trace_db_->DecRef();
 
   delete icache_;
+  delete dcache_;
   if (inst_db_) inst_db_->DecRef();
   delete rv_bp_manager_;
   delete cheriot_decode_cache_;

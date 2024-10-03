@@ -469,6 +469,10 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
     auto *cfg = cheriot_top_->GetConfig("dcache");
     auto status = cfg->Import(&dcache_value);
     if (!status.ok()) return status;
+    // Hook the cache into the memory port.
+    auto *dcache = cheriot_top_->dcache();
+    dcache->set_tagged_memory(cheriot_top_->state()->tagged_memory());
+    cheriot_top_->state()->set_tagged_memory(dcache);
   }
   return absl::OkStatus();
 }
