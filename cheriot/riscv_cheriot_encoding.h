@@ -42,6 +42,11 @@ using ::mpact::sim::cheriot::encoding::FormatEnum;
 class RiscVCheriotEncoding : public RiscVCheriotEncodingCommon,
                              public RiscVCheriotEncodingBase {
  public:
+  using SourceOpGetterMap =
+      absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface *()>>;
+  using DestOpGetterMap = absl::flat_hash_map<
+      int, absl::AnyInvocable<DestinationOperandInterface *(int)>>;
+
   explicit RiscVCheriotEncoding(CheriotState *state);
 
   // Parses an instruction and determines the opcode.
@@ -92,12 +97,10 @@ class RiscVCheriotEncoding : public RiscVCheriotEncodingCommon,
     return 0;
   }
 
- private:
-  using SourceOpGetterMap =
-      absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface *()>>;
-  using DestOpGetterMap = absl::flat_hash_map<
-      int, absl::AnyInvocable<DestinationOperandInterface *(int)>>;
+  const SourceOpGetterMap &source_op_getters() { return source_op_getters_; }
+  const DestOpGetterMap &dest_op_getters() { return dest_op_getters_; }
 
+ private:
   SourceOpGetterMap source_op_getters_;
   DestOpGetterMap dest_op_getters_;
   OpcodeEnum opcode_;

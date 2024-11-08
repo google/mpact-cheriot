@@ -148,6 +148,22 @@ cc_test(
 )
 
 cc_test(
+    name = "riscv_cheriot_rvv_encoding_test",
+    size = "small",
+    srcs = [
+        "riscv_cheriot_rvv_encoding_test.cc",
+    ],
+    deps = [
+        "//cheriot:cheriot_state",
+        "//cheriot:riscv_cheriot_rvv_decoder",
+        "//cheriot:riscv_cheriot_rvv_isa",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_test(
     name = "riscv_cheriot_a_instructions_test",
     size = "small",
     srcs = [

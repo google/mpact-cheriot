@@ -28,6 +28,10 @@ using ::mpact::sim::cheriot::CheriotState;
 using ::mpact::sim::cheriot::isa32::kOpcodeNames;
 using ::mpact::sim::cheriot::isa32::RiscVCheriotEncoding;
 using ::mpact::sim::generic::operator*;  // NOLINT: is used below (clang error).
+using ::mpact::sim::cheriot::isa32::DestOpEnum;
+using ::mpact::sim::cheriot::isa32::kDestOpNames;
+using ::mpact::sim::cheriot::isa32::kSourceOpNames;
+using ::mpact::sim::cheriot::isa32::SourceOpEnum;
 using ::mpact::sim::util::TaggedFlatDemandMemory;
 using SlotEnum = mpact::sim::cheriot::isa32::SlotEnum;
 using OpcodeEnum = mpact::sim::cheriot::isa32::OpcodeEnum;
@@ -221,6 +225,22 @@ static uint32_t Set16Rd(uint32_t iword, uint32_t val) {
 
 static uint32_t Set16Rs2(uint32_t iword, uint32_t val) {
   return (iword | ((val & 0x1f) << 2));
+}
+
+TEST_F(RiscVCheriotEncodingTest, SourceOperands) {
+  auto &getters = enc_->source_op_getters();
+  for (int i = *SourceOpEnum::kNone; i < *SourceOpEnum::kPastMaxValue; ++i) {
+    EXPECT_TRUE(getters.contains(i)) << "No source operand for enum value " << i
+                                     << " (" << kSourceOpNames[i] << ")";
+  }
+}
+
+TEST_F(RiscVCheriotEncodingTest, DestOperands) {
+  auto &getters = enc_->dest_op_getters();
+  for (int i = *DestOpEnum::kNone; i < *DestOpEnum::kPastMaxValue; ++i) {
+    EXPECT_TRUE(getters.contains(i)) << "No dest operand for enum value " << i
+                                     << " (" << kDestOpNames[i] << ")";
+  }
 }
 
 TEST_F(RiscVCheriotEncodingTest, RV32IOpcodes) {
