@@ -437,8 +437,6 @@ absl::Status CheriotTop::Run() {
     while (!halted_) {
       auto *inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
       SetPc(pc);
-      // Set the PC destination operand to next_seq_pc. Any branch that is
-      // executed will overwrite this.
       next_pc = pc + inst->size();
       bool executed = false;
       if (icache_) ICacheFetch(pc);
@@ -461,7 +459,6 @@ absl::Status CheriotTop::Run() {
       // Update counters.
       counter_opcode_[inst->opcode()].Increment(1);
       counter_num_instructions_.Increment(1);
-      // Get the next pc value.
       // Get the next pc value.
       uint64_t pcc_val = pcc_->data_buffer()->Get<uint32_t>(0);
       if (state_->branch()) {
@@ -656,10 +653,10 @@ absl::Status CheriotTop::WriteRegister(const std::string &name,
   // Was the register found? If not try CSRs.
   if (iter == state_->registers()->end()) {
     auto result = state_->csr_set()->GetCsr(name);
-    if (name == "$branch_trace_size") {
-      return ResizeBranchTrace(value);
-    }
     if (!result.ok()) {
+      if (name == "$branch_trace_size") {
+        return ResizeBranchTrace(value);
+      }
       return absl::NotFoundError(
           absl::StrCat("Register '", name, "' not found"));
     }
