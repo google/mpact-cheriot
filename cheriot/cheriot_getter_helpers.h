@@ -40,7 +40,11 @@ constexpr int kNumRegTable[8] = {8, 1, 2, 1, 4, 1, 2, 1};
 
 template <typename M, typename E, typename G>
 inline void Insert(M &map, E entry, G getter) {
-  map.insert(std::make_pair(static_cast<int>(entry), getter));
+  if (!map.contains(static_cast<int>(entry))) {
+    map.insert(std::make_pair(static_cast<int>(entry), getter));
+  } else {
+    map.at(static_cast<int>(entry)) = getter;
+  }
 }
 
 // Generic helper functions to create register operands.
