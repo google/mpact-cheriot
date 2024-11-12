@@ -1609,7 +1609,7 @@ std::string DebugCommandShell::FormatCapabilityRegister(
                    values[6] & PB::kPermitAccessSystemRegisters ? "a " : "- ",
                    values[6] & PB::kPermitSeal ? "S" : "-",
                    values[6] & PB::kPermitUnseal ? "U" : "-",
-                   values[6] & PB::kUserPerm0 ? "0)" : "-)");
+                   values[6] & PB::kUserPerm0 ? "0" : "-");
   absl::StrAppend(
       &output,
       absl::StrFormat(
