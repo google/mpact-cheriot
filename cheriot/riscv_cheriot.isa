@@ -64,7 +64,7 @@ slot riscv32i {
       disasm: "srai", "%rd, %rs1, 0x%(I_uimm5:x)",
       semfunc: "&RiscVISra";
     lui{: U_imm20 : rd},
-      disasm: "lui", "%rd, 0x%(U_imm20:8x)",
+      disasm: "lui", "%rd, %((U_imm20>>12))",
       semfunc: "&RiscVILui";
     add{: rs1, rs2 : rd},
       disasm: "add", "%rd, %rs1, %rs2",
@@ -164,10 +164,10 @@ slot cheriot {
   default latency = global_latency;
   opcodes {
     cheriot_auicgp{: cgp, S_imm20 : cd},
-      disasm: "auicgp", "%cd, 0x%(S_imm20:08x)",
+      disasm: "auicgp", "%cd, %((S_imm20>>11))",
       semfunc: "&CheriotAuicap";
     cheriot_auipcc{: pcc, S_imm20 : cd},
-      disasm: "auipcc", "%cd, 0x%(S_imm20:08x)",
+      disasm: "auipcc", "%cd, %((S_imm20>>11))",
       semfunc: "&CheriotAuicap";
     cheriot_andperm{: cs1, rs2 : cd},
       disasm: "candperm", "%cd, %cs1, %rs2",
@@ -200,10 +200,10 @@ slot cheriot {
       disasm: "cgettype", "%rd, %cs1",
       semfunc: "&CheriotCGetType";
     cheriot_incaddr{: cs1, rs2 : cd},
-      disasm: "cincaddr", "%cd, %cs1, %rs2",
+      disasm: "cincoffset", "%cd, %cs1, %rs2",
       semfunc: "&CheriotCIncAddr";
     cheriot_incaddrimm{: cs1, I_imm12 : cd},
-      disasm: "cincaddrimm", "%cd, %cs1, 0x%(I_imm12:08x)",
+      disasm: "cincoffset", "%cd, %cs1, 0x%(I_imm12:08x)",
       semfunc: "&CheriotCIncAddr";
     cheriot_jal{: J_imm20 : cd},
       disasm: "cjal", "%cd, 0x%(J_imm20:08x)",
