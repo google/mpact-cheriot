@@ -79,7 +79,6 @@ static inline T SignExtend(T value, int size) {
 // Instruction semantic function bodies.
 
 void CheriotAuicap(const Instruction *instruction) {
-  // TODO(torerik): fix bug here.
   auto *cap_src = GetCapSource(instruction, 0);
   auto offset = generic::GetInstructionSource<uint32_t>(instruction, 1);
   auto *cap_dest = GetCapDest(instruction, 0);

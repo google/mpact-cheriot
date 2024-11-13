@@ -210,8 +210,16 @@ void CheriotTop::ConfigureCache(Cache *&cache, Config<std::string> &config) {
 bool CheriotTop::ExecuteInstruction(Instruction *inst) {
   // Check that pcc has tag set.
   if (!pcc_->tag()) {
-    state_->HandleCheriRegException(inst, inst->address(),
-                                    EC::kCapExTagViolation, pcc_);
+    if (state_->mtcc()->tag()) {
+      state_->HandleCheriRegException(inst, inst->address(),
+                                      EC::kCapExTagViolation, pcc_);
+      return true;
+    }
+    // If the mtcc tag is not set, then we would get an infinite loop of
+    // exceptions. Better to exit.
+    LOG(ERROR) << absl::StrCat("Infinite exception loop detected at ",
+                               absl::Hex(inst->address()), " - halting");
+    RequestHalt(HaltReason::kSimulatorError, inst);
     return true;
   }
   // Check that pcc has execute permission.
