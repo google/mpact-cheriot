@@ -64,6 +64,8 @@ using ::mpact::sim::cheriot::CheriotCGetTag;
 using ::mpact::sim::cheriot::CheriotCGetType;
 using ::mpact::sim::cheriot::CheriotCIncAddr;
 using ::mpact::sim::cheriot::CheriotCJal;
+using ::mpact::sim::cheriot::CheriotCJalCra;
+using ::mpact::sim::cheriot::CheriotCJalr;
 using ::mpact::sim::cheriot::CheriotCJalrCra;
 using ::mpact::sim::cheriot::CheriotCLc;
 using ::mpact::sim::cheriot::CheriotCLcChild;
@@ -97,6 +99,8 @@ constexpr uint32_t kMemAddress = 0x1000;
 
 constexpr int kDataSeal10 = 10;
 constexpr int kInstSizeNormal = 4;
+
+constexpr int kVersion1Dot0 = 100;
 
 // Test fixture.
 class RiscVCheriotInstructionsTest : public ::testing::Test {
@@ -544,8 +548,8 @@ TEST_F(RiscVCheriotInstructionsTest, CIncAddr) {
 }
 
 // Jump and link - no traps.
-TEST_F(RiscVCheriotInstructionsTest, CJal) {
-  inst()->set_semantic_function(&CheriotCJal);
+TEST_F(RiscVCheriotInstructionsTest, CJalCra) {
+  inst()->set_semantic_function(&CheriotCJalCra);
   AppendCapabilityOperands(inst(), {kC1}, {kC3});
   state()->pcc()->set_address(inst()->address());
   c1_reg()->set_address(0x200);
@@ -558,7 +562,7 @@ TEST_F(RiscVCheriotInstructionsTest, CJal) {
   EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
   EXPECT_TRUE(c3_reg()->tag());
   EXPECT_TRUE(c3_reg()->IsSentry());
-  EXPECT_EQ(c3_reg()->object_type(), OT::kInterruptEnablingReturnSentry);
+  EXPECT_EQ(c3_reg()->object_type(), OT::kInterruptEnablingBackwardSentry);
   EXPECT_TRUE(state()->pcc()->tag());
   // Set interrupt enable to false.
   state()->mstatus()->set_mie(0);
@@ -570,13 +574,13 @@ TEST_F(RiscVCheriotInstructionsTest, CJal) {
   EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
   EXPECT_TRUE(c3_reg()->tag());
   EXPECT_TRUE(c3_reg()->IsSentry());
-  EXPECT_EQ(c3_reg()->object_type(), OT::kInterruptDisablingReturnSentry);
+  EXPECT_EQ(c3_reg()->object_type(), OT::kInterruptDisablingBackwardSentry);
   EXPECT_TRUE(state()->pcc()->tag());
 }
 
 // Jump and link - out of bounds error.
-TEST_F(RiscVCheriotInstructionsTest, CJalOutOfBounds) {
-  inst()->set_semantic_function(&CheriotCJal);
+TEST_F(RiscVCheriotInstructionsTest, CJalCraOutOfBounds) {
+  inst()->set_semantic_function(&CheriotCJalCra);
   AppendCapabilityOperands(inst(), {kC1}, {kC3});
   state()->pcc()->set_address(inst()->address());
   c1_reg()->set_address(0x200);
@@ -590,8 +594,8 @@ TEST_F(RiscVCheriotInstructionsTest, CJalOutOfBounds) {
 
 // Jump and link - misaligned (jumping to 2 byte aligned address with no
 // compact instructions).
-TEST_F(RiscVCheriotInstructionsTest, CJalMisaligned) {
-  inst()->set_semantic_function(&CheriotCJal);
+TEST_F(RiscVCheriotInstructionsTest, CJalCraMisaligned) {
+  inst()->set_semantic_function(&CheriotCJalCra);
   AppendCapabilityOperands(inst(), {kC1}, {kC3});
   state()->pcc()->set_address(inst()->address());
   state()->misa()->Set(state()->misa()->AsUint64() & ~*ISA::kCompressed);
@@ -608,8 +612,67 @@ TEST_F(RiscVCheriotInstructionsTest, CJalMisaligned) {
   EXPECT_EQ(inst(), trap_inst());
 }
 
+// Jump and link - rd != ra.
+TEST_F(RiscVCheriotInstructionsTest, CJalNonCra) {
+  inst()->set_semantic_function(&CheriotCJal);
+  AppendCapabilityOperands(inst(), {kC1}, {kC3});
+  state()->pcc()->set_address(inst()->address());
+  c1_reg()->set_address(0x200);
+  // Set interrupt enable to true.
+  state()->mstatus()->set_mie(1);
+  state()->mstatus()->Submit();
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken()) << "ec: " << std::hex << trap_exception_code()
+                             << " value: " << trap_value();
+  EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
+  EXPECT_TRUE(c3_reg()->tag());
+  EXPECT_TRUE(c3_reg()->IsSentry());
+  EXPECT_EQ(c3_reg()->object_type(), OT::kInterruptEnablingBackwardSentry);
+  EXPECT_TRUE(state()->pcc()->tag());
+
+  // Set interrupt enable to false.
+  state()->mstatus()->set_mie(0);
+  state()->mstatus()->Submit();
+  state()->pcc()->set_address(inst()->address());
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken()) << "ec: " << std::hex << trap_exception_code()
+                             << " value: " << trap_value();
+  EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
+  EXPECT_TRUE(c3_reg()->tag());
+  EXPECT_TRUE(c3_reg()->IsSentry());
+  EXPECT_EQ(c3_reg()->object_type(), OT::kInterruptDisablingBackwardSentry);
+  EXPECT_TRUE(state()->pcc()->tag());
+
+  // Now set core version to 1.0 - this behavior should return an unsealed
+  // capability.
+  state()->set_core_version(kVersion1Dot0);
+  // Set interrupt enable to true.
+  state()->mstatus()->set_mie(1);
+  state()->mstatus()->Submit();
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken()) << "ec: " << std::hex << trap_exception_code()
+                             << " value: " << trap_value();
+  EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
+  EXPECT_TRUE(c3_reg()->tag());
+  EXPECT_FALSE(c3_reg()->IsSentry());
+  EXPECT_EQ(c3_reg()->object_type(), OT::kUnsealed);
+  EXPECT_TRUE(state()->pcc()->tag());
+
+  // Set interrupt enable to false.
+  state()->mstatus()->set_mie(0);
+  state()->mstatus()->Submit();
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken()) << "ec: " << std::hex << trap_exception_code()
+                             << " value: " << trap_value();
+  EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
+  EXPECT_TRUE(c3_reg()->tag());
+  EXPECT_FALSE(c3_reg()->IsSentry());
+  EXPECT_EQ(c3_reg()->object_type(), OT::kUnsealed);
+  EXPECT_TRUE(state()->pcc()->tag());
+}
+
 // Jump and link register (capability) indirect - no traps, unsealed source.
-TEST_F(RiscVCheriotInstructionsTest, CJalr) {
+TEST_F(RiscVCheriotInstructionsTest, CJalrCra) {
   inst()->set_semantic_function(&CheriotCJalrCra);
   AppendCapabilityOperands(inst(), {kC1, kC2}, {kCra});
   state()->pcc()->set_address(inst()->address());
@@ -628,7 +691,7 @@ TEST_F(RiscVCheriotInstructionsTest, CJalr) {
   EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
   EXPECT_TRUE(cra_reg()->tag());
   EXPECT_TRUE(cra_reg()->IsSentry());
-  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptEnablingReturnSentry);
+  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptEnablingBackwardSentry);
   EXPECT_TRUE(state()->pcc()->tag());
   // Set interrupt enable to false.
   state()->mstatus()->set_mie(0);
@@ -640,12 +703,77 @@ TEST_F(RiscVCheriotInstructionsTest, CJalr) {
   EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
   EXPECT_TRUE(cra_reg()->tag());
   EXPECT_TRUE(cra_reg()->IsSentry());
-  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptDisablingReturnSentry);
+  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptDisablingBackwardSentry);
+  EXPECT_TRUE(state()->pcc()->tag());
+}
+
+// Jump and link register (capability) indirect - no traps, unsealed source.
+// Non cra register used for destination.
+TEST_F(RiscVCheriotInstructionsTest, CJalr) {
+  inst()->set_semantic_function(&CheriotCJalr);
+  AppendCapabilityOperands(inst(), {kC1, kC2}, {kCra});
+  state()->pcc()->set_address(inst()->address());
+  // Set up the destination capability.
+  c1_reg()->ResetExecuteRoot();
+  c1_reg()->set_address(kInstAddress + 0x100);
+  c1_reg()->SetBounds(kInstAddress, 0x400);
+  // Set offset.
+  c2_reg()->set_address(0x100);
+  // Set interrupt enable to true.
+  state()->mstatus()->set_mie(1);
+  state()->mstatus()->Submit();
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken()) << "ec: " << std::hex << trap_exception_code()
+                             << " value: " << trap_value();
+  EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
+  EXPECT_TRUE(cra_reg()->tag());
+  EXPECT_TRUE(cra_reg()->IsSentry());
+  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptEnablingBackwardSentry);
+  EXPECT_TRUE(state()->pcc()->tag());
+  // Set interrupt enable to false.
+  state()->mstatus()->set_mie(0);
+  state()->mstatus()->Submit();
+  state()->pcc()->set_address(inst()->address());
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken()) << "ec: " << std::hex << trap_exception_code()
+                             << " value: " << trap_value();
+  EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
+  EXPECT_TRUE(cra_reg()->tag());
+  EXPECT_TRUE(cra_reg()->IsSentry());
+  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptDisablingBackwardSentry);
+  EXPECT_TRUE(state()->pcc()->tag());
+
+  // Set core version to 1.0 - this behavior should return an unsealed
+  // capability.
+  state()->set_core_version(kVersion1Dot0);
+
+  // Set interrupt enable to true.
+  state()->mstatus()->set_mie(1);
+  state()->mstatus()->Submit();
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken()) << "ec: " << std::hex << trap_exception_code()
+                             << " value: " << trap_value();
+  EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
+  EXPECT_TRUE(cra_reg()->tag());
+  EXPECT_FALSE(cra_reg()->IsSentry());
+  EXPECT_EQ(cra_reg()->object_type(), OT::kUnsealed);
+  EXPECT_TRUE(state()->pcc()->tag());
+  // Set interrupt enable to false.
+  state()->mstatus()->set_mie(0);
+  state()->mstatus()->Submit();
+  state()->pcc()->set_address(inst()->address());
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken()) << "ec: " << std::hex << trap_exception_code()
+                             << " value: " << trap_value();
+  EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
+  EXPECT_TRUE(cra_reg()->tag());
+  EXPECT_FALSE(cra_reg()->IsSentry());
+  EXPECT_EQ(cra_reg()->object_type(), OT::kUnsealed);
   EXPECT_TRUE(state()->pcc()->tag());
 }
 
 // Jump and link register (capability) indirect - no traps, sentry.
-TEST_F(RiscVCheriotInstructionsTest, CJalrSentry) {
+TEST_F(RiscVCheriotInstructionsTest, CJalrCraSentry) {
   inst()->set_semantic_function(&CheriotCJalrCra);
   AppendCapabilityOperands(inst(), {kC1, kC2}, {kCra});
   state()->pcc()->set_address(inst()->address());
@@ -654,7 +782,7 @@ TEST_F(RiscVCheriotInstructionsTest, CJalrSentry) {
   c1_reg()->set_address(kInstAddress + 0x200);
   c1_reg()->SetBounds(kInstAddress, 0x400);
   (void)c1_reg()->Seal(*(state()->sealing_root()),
-                       OT::kInterruptEnablingSentry);
+                       OT::kInterruptEnablingForwardSentry);
   // Set offset to zero (because c1_reg is sealed).
   c2_reg()->set_address(0);
   // Set interrupt enable to false.
@@ -667,14 +795,14 @@ TEST_F(RiscVCheriotInstructionsTest, CJalrSentry) {
   EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
   EXPECT_TRUE(cra_reg()->tag());
   EXPECT_TRUE(cra_reg()->IsSentry());
-  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptDisablingReturnSentry);
+  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptDisablingBackwardSentry);
   EXPECT_TRUE(state()->pcc()->tag());
   // Set up the destination capability.
   c1_reg()->ResetExecuteRoot();
   c1_reg()->SetBounds(kInstAddress, 0x400);
   c1_reg()->set_address(kInstAddress + 0x200);
   (void)c1_reg()->Seal(*(state()->sealing_root()),
-                       OT::kInterruptDisablingSentry);
+                       OT::kInterruptDisablingForwardSentry);
   // Set interrupt enable to true.
   state()->mstatus()->set_mie(1);
   state()->mstatus()->Submit();
@@ -686,12 +814,12 @@ TEST_F(RiscVCheriotInstructionsTest, CJalrSentry) {
   EXPECT_EQ(state()->pcc()->address(), inst()->address() + 0x200);
   EXPECT_TRUE(cra_reg()->tag());
   EXPECT_TRUE(cra_reg()->IsSentry());
-  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptEnablingReturnSentry);
+  EXPECT_EQ(cra_reg()->object_type(), OT::kInterruptEnablingBackwardSentry);
   EXPECT_TRUE(state()->pcc()->tag());
 }
 
 // Verify an unset tag generates a tag violation exception.
-TEST_F(RiscVCheriotInstructionsTest, CJalrTagViolation) {
+TEST_F(RiscVCheriotInstructionsTest, CJalrCraTagViolation) {
   inst()->set_semantic_function(&CheriotCJalrCra);
   AppendCapabilityOperands(inst(), {kC1, kC2}, {kCra});
   state()->pcc()->set_address(inst()->address());
@@ -718,7 +846,7 @@ TEST_F(RiscVCheriotInstructionsTest, CJalrTagViolation) {
 
 // For a jalr with a sentry, the immediate has to be zero or it will cause
 // an exception. Make sure the exception happens.
-TEST_F(RiscVCheriotInstructionsTest, CJalrSentryNonZeroImmediate) {
+TEST_F(RiscVCheriotInstructionsTest, CJalrCraSentryNonZeroImmediate) {
   inst()->set_semantic_function(&CheriotCJalrCra);
   AppendCapabilityOperands(inst(), {kC1, kC2}, {kCra});
   state()->pcc()->set_address(inst()->address());
@@ -727,7 +855,7 @@ TEST_F(RiscVCheriotInstructionsTest, CJalrSentryNonZeroImmediate) {
   c1_reg()->set_address(kInstAddress + 0x200);
   c1_reg()->SetBounds(kInstAddress, 0x400);
   (void)c1_reg()->Seal(*(state()->sealing_root()),
-                       OT::kInterruptEnablingSentry);
+                       OT::kInterruptEnablingForwardSentry);
   // Set offset to non-zero - should cause an exception.
   c2_reg()->set_address(0x100);
   inst()->Execute(nullptr);
@@ -745,7 +873,7 @@ TEST_F(RiscVCheriotInstructionsTest, CJalrSentryNonZeroImmediate) {
 
 // If the source capability does not have execute permission, there should
 // be an exception.
-TEST_F(RiscVCheriotInstructionsTest, CJalrExecuteViolation) {
+TEST_F(RiscVCheriotInstructionsTest, CJalrCraExecuteViolation) {
   inst()->set_semantic_function(&CheriotCJalrCra);
   AppendCapabilityOperands(inst(), {kC1, kC2}, {kCra});
   state()->pcc()->set_address(inst()->address());
@@ -773,7 +901,7 @@ TEST_F(RiscVCheriotInstructionsTest, CJalrExecuteViolation) {
 
 // If the architecture does not have compact instructions, then misaligned
 // access on two byte boundary should cause an exception.
-TEST_F(RiscVCheriotInstructionsTest, CJalrAlignmentViolation) {
+TEST_F(RiscVCheriotInstructionsTest, CJalrCraAlignmentViolation) {
   inst()->set_semantic_function(&CheriotCJalrCra);
   AppendCapabilityOperands(inst(), {kC1, kC2}, {kC3});
   state()->pcc()->set_address(inst()->address());
@@ -1228,7 +1356,7 @@ TEST_F(RiscVCheriotInstructionsTest, CScStoreLocalCapViolationBackwardSentry) {
   c1_reg()->set_address(kMemAddress);
   c2_reg()->set_address(0x200);
   c3_reg()->ResetExecuteRoot();
-  c3_reg()->set_object_type(CheriotRegister::kInterruptDisablingReturnSentry);
+  c3_reg()->set_object_type(CheriotRegister::kInterruptDisablingBackwardSentry);
   c3_reg()->ClearPermissions(PB::kPermitGlobal);
   EXPECT_TRUE(c3_reg()->IsBackwardSentry());
   inst()->Execute(nullptr);
@@ -1245,7 +1373,7 @@ TEST_F(RiscVCheriotInstructionsTest, CScStoreLocalCapViolationBackwardSentry) {
 
   // Now with global flag on the stored capability.
   c3_reg()->ResetExecuteRoot();
-  c3_reg()->set_object_type(CheriotRegister::kInterruptDisablingReturnSentry);
+  c3_reg()->set_object_type(CheriotRegister::kInterruptDisablingBackwardSentry);
   EXPECT_TRUE(c3_reg()->IsBackwardSentry());
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
@@ -1321,8 +1449,9 @@ TEST_F(RiscVCheriotInstructionsTest, CSeal) {
     inst()->Execute(nullptr);
     EXPECT_EQ(c3_reg()->object_type(), o_type & 0b111);
     // For executable object types the tag should be true.
-    if ((o_type == OT::kSentry) || (o_type == OT::kInterruptDisablingSentry) ||
-        (o_type == OT::kInterruptEnablingSentry) ||
+    if ((o_type == OT::kInterruptInheritingSentry) ||
+        (o_type == OT::kInterruptDisablingForwardSentry) ||
+        (o_type == OT::kInterruptEnablingForwardSentry) ||
         (o_type == OT::kSealedExecutable6) ||
         (o_type == OT::kSealedExecutable7)) {
       EXPECT_TRUE(c3_reg()->tag());

@@ -158,7 +158,7 @@ constexpr uint32_t kCsw = 0b110'000'000'00'000'00;
 constexpr uint32_t kCsd = 0b111'000'000'00'000'00;
 // constexpr uint32_t kCdsd = 0b101'000'000'00'000'00;
 constexpr uint32_t kCheriotCj = 0b101'00000000000'01;
-constexpr uint32_t kCheriotCjal = 0b001'00000000000'01;
+constexpr uint32_t kCheriotCjalCra = 0b001'00000000000'01;
 constexpr uint32_t kCheriotCjr = 0b100'0'00000'00000'10;
 constexpr uint32_t kCheriotCjalr = 0b100'1'00000'00000'10;
 constexpr uint32_t kCbeqz = 0b110'000'000'00000'01;
@@ -206,6 +206,7 @@ class RiscVCheriotEncodingTest : public testing::Test {
 };
 
 constexpr int kRdValue = 1;
+constexpr int kNonRaValue = 2;
 
 static uint32_t SetRd(uint32_t iword, uint32_t rdval) {
   return (iword | ((rdval & 0x1f) << 7));
@@ -247,6 +248,9 @@ TEST_F(RiscVCheriotEncodingTest, RV32IOpcodes) {
   enc_->ParseInstruction(SetRd(kLui, kRdValue));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kLui);
   enc_->ParseInstruction(SetRd(kCheriotJal, kRdValue));
+  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
+            OpcodeEnum::kCheriotJalCra);
+  enc_->ParseInstruction(SetRd(kCheriotJal, kNonRaValue));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCheriotJal);
   enc_->ParseInstruction(SetRd(kCheriotJalr, kRdValue));
@@ -445,9 +449,9 @@ TEST_F(RiscVCheriotEncodingTest, RV32COpcodes) {
   enc_->ParseInstruction(kCheriotCj);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCheriotCj);
-  enc_->ParseInstruction(kCheriotCjal);
+  enc_->ParseInstruction(kCheriotCjalCra);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
-            OpcodeEnum::kCheriotCjal);
+            OpcodeEnum::kCheriotCjalCra);
   enc_->ParseInstruction(Set16Rd(kCheriotCjr, 1));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCheriotCjrCra);
@@ -542,6 +546,9 @@ TEST_F(RiscVCheriotEncodingTest, RiscVCheriotOpcodes) {
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCheriotIncaddrimm);
   enc_->ParseInstruction(SetRd(kCheriotJal, kRdValue));
+  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
+            OpcodeEnum::kCheriotJalCra);
+  enc_->ParseInstruction(SetRd(kCheriotJal, kNonRaValue));
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCheriotJal);
   enc_->ParseInstruction(SetRd(kCheriotJalr, kRdValue));

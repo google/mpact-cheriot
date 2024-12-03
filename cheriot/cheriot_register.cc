@@ -315,11 +315,11 @@ bool CheriotRegister::IsSealed() const {
   if (is_null_ || !tag()) return false;
 
   if (HasPermission(kPermitExecute)) {
-    return (object_type() == kSentry) ||
-           (object_type() == kInterruptEnablingSentry) ||
-           (object_type() == kInterruptDisablingSentry) ||
-           (object_type() == kInterruptEnablingReturnSentry) ||
-           (object_type() == kInterruptDisablingReturnSentry) ||
+    return (object_type() == kInterruptInheritingSentry) ||
+           (object_type() == kInterruptEnablingForwardSentry) ||
+           (object_type() == kInterruptDisablingForwardSentry) ||
+           (object_type() == kInterruptEnablingBackwardSentry) ||
+           (object_type() == kInterruptDisablingBackwardSentry) ||
            (object_type() == kSealedExecutable6) ||
            (object_type() == kSealedExecutable7);
   } else {
@@ -357,11 +357,11 @@ absl::Status CheriotRegister::Seal(const CheriotRegister &source,
   if (status.ok()) {
     if (HasPermission(PermissionBits::kPermitExecute)) {
       switch (obj_type) {
-        case kSentry:
-        case kInterruptEnablingSentry:
-        case kInterruptDisablingSentry:
-        case kInterruptEnablingReturnSentry:
-        case kInterruptDisablingReturnSentry:
+        case kInterruptInheritingSentry:
+        case kInterruptEnablingForwardSentry:
+        case kInterruptDisablingForwardSentry:
+        case kInterruptEnablingBackwardSentry:
+        case kInterruptDisablingBackwardSentry:
         case kSealedExecutable6:
         case kSealedExecutable7:
           // The sealing type is ok.
@@ -433,13 +433,13 @@ bool CheriotRegister::IsRepresentable() const {
 }
 
 bool CheriotRegister::IsSentry() const {
-  return !is_null_ && (object_type() >= kSentry) &&
-         (object_type() <= kInterruptEnablingReturnSentry);
+  return !is_null_ && (object_type() >= kInterruptInheritingSentry) &&
+         (object_type() <= kInterruptEnablingBackwardSentry);
 }
 
 bool CheriotRegister::IsBackwardSentry() const {
-  return !is_null_ && ((object_type() == kInterruptEnablingReturnSentry) ||
-                       (object_type() == kInterruptDisablingReturnSentry));
+  return !is_null_ && ((object_type() == kInterruptEnablingBackwardSentry) ||
+                       (object_type() == kInterruptDisablingBackwardSentry));
 }
 
 void CheriotRegister::CopyFrom(const CheriotRegister &other) {

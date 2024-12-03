@@ -205,6 +205,9 @@ slot cheriot {
     cheriot_incaddrimm{: cs1, I_imm12 : cd},
       disasm: "cincoffset", "%cd, %cs1, 0x%(I_imm12:08x)",
       semfunc: "&CheriotCIncAddr";
+    cheriot_jal_cra{: J_imm20 : cd},
+      disasm: "cjal", "%cd, 0x%(J_imm20:08x)",
+      semfunc: "&CheriotCJalCra";
     cheriot_jal{: J_imm20 : cd},
       disasm: "cjal", "%cd, 0x%(J_imm20:08x)",
       semfunc: "&CheriotCJal";
@@ -522,6 +525,9 @@ slot riscv32c {
     cheriot_cjal{: I_cj_imm11, x0 :  x1},
       disasm: "c.jal", "%(@+I_cj_imm11:08x)",
       semfunc: "&CheriotCJal";
+    cheriot_cjal_cra{: I_cj_imm11, x0 :  x1},
+      disasm: "c.jal", "%(@+I_cj_imm11:08x)",
+      semfunc: "&CheriotCJalCra";
     cheriot_cjr{: crs1, x0 :},
       disasm: "c.jr", "%crs1",
       semfunc: "&CheriotCJr";

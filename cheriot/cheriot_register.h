@@ -69,11 +69,11 @@ class CheriotRegister : public generic::Register<uint32_t> {
   // Special object types.
   enum ObjectType : uint32_t {
     kUnsealed = 0,
-    kSentry = 1,
-    kInterruptDisablingSentry = 2,
-    kInterruptEnablingSentry = 3,
-    kInterruptDisablingReturnSentry = 4,
-    kInterruptEnablingReturnSentry = 5,
+    kInterruptInheritingSentry = 1,
+    kInterruptDisablingForwardSentry = 2,
+    kInterruptEnablingForwardSentry = 3,
+    kInterruptDisablingBackwardSentry = 4,
+    kInterruptEnablingBackwardSentry = 5,
     kSealedExecutable6 = 6,
     kSealedExecutable7 = 7,
     kReserved8 = 8,

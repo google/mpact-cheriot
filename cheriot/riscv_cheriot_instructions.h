@@ -72,6 +72,7 @@ void CheriotCIncAddr(const Instruction *instruction);
 // This instruction takes 1 source (an offset), and one destination (the link
 // capability). The pcc is implied.
 void CheriotCJal(const Instruction *instruction);
+void CheriotCJalCra(const Instruction *instruction);
 // This instruction takes 1 source (an offset). The pcc is implied.
 void CheriotCJ(const Instruction *instruction);
 // This instruction takes 2 sources and one destination operand. Source 0 is the

@@ -109,6 +109,8 @@ constexpr std::string_view kDCache = "dCache";
 constexpr std::string_view kBaseName = "Mpact.Cheriot";
 constexpr std::string_view kRvvName = "Mpact.CheriotRvv";
 constexpr std::string_view kRvvFpName = "Mpact.CheriotRvvFp";
+// Core version.
+constexpr std::string_view kCoreVersion = "coreVersion";
 
 CheriotRenode::CheriotRenode(std::string name, MemoryInterface *renode_sysbus)
     : name_(name), renode_sysbus_(renode_sysbus) {}
@@ -151,7 +153,7 @@ CheriotRenode::~CheriotRenode() {
     std::fstream proto_file(proto_file_name.c_str(), std::ios_base::out);
     std::string serialized;
     if (!proto_file.good() || !google::protobuf::TextFormat::PrintToString(
-                                  *component_proto.get(), &serialized)) {
+                                  *component_proto, &serialized)) {
       LOG(ERROR) << "Failed to write proto to file";
     } else {
       proto_file << serialized;
@@ -388,6 +390,8 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
         do_inst_profile = value != 0;
       } else if (name == kMemProfile) {
         mem_profiler_->set_is_enabled(value != 0);
+      } else if (name == kCoreVersion) {
+        cheriot_state_->set_core_version(value);
       } else {
         LOG(ERROR) << "Unknown config name: " << name << " "
                    << config_values[i];

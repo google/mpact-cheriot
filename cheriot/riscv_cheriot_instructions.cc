@@ -200,9 +200,31 @@ void CheriotCJal(const Instruction *instruction) {
   cd->CopyFrom(*pcc);
   cd->set_address(instruction->address() + instruction->size());
   bool interrupt_enable = state->mstatus()->mie();
+  if (state->core_version() == CheriotState::kVersion0Dot5) {
+    (void)cd->Seal(*state->sealing_root(),
+                   interrupt_enable
+                       ? CapReg::kInterruptEnablingBackwardSentry
+                       : CapReg::kInterruptDisablingBackwardSentry);
+  }
+  // Update pcc.
+  pcc->set_address(new_pc);
+  state->set_branch(true);
+}
+
+void CheriotCJalCra(const Instruction *instruction) {
+  auto *state = static_cast<CheriotState *>(instruction->state());
+  auto offset = generic::GetInstructionSource<uint32_t>(instruction, 0);
+  uint64_t new_pc = offset + instruction->address();
+  auto *pcc = state->pcc();
+  if (!CheriotCJChecks(instruction, new_pc, pcc)) return;
+  // Update link register.
+  auto *cd = GetCapDest(instruction, 0);
+  cd->CopyFrom(*pcc);
+  cd->set_address(instruction->address() + instruction->size());
+  bool interrupt_enable = state->mstatus()->mie();
   (void)cd->Seal(*state->sealing_root(),
-                 interrupt_enable ? CapReg::kInterruptEnablingReturnSentry
-                                  : CapReg::kInterruptDisablingReturnSentry);
+                 interrupt_enable ? CapReg::kInterruptEnablingBackwardSentry
+                                  : CapReg::kInterruptDisablingBackwardSentry);
   // Update pcc.
   pcc->set_address(new_pc);
   state->set_branch(true);
@@ -233,11 +255,12 @@ static bool CheriotCJrCheck(const Instruction *instruction, uint64_t new_pc,
   ok |= !has_dest && uses_ra && cs1->IsBackwardSentry();
   ok |= !has_dest && !uses_ra &&
         ((cs1->object_type() == CapReg::kUnsealed) ||
-         (cs1->object_type() == CapReg::kSentry));
-  ok |= has_dest && ((cs1->object_type() == CapReg::kUnsealed) ||
-                     (cs1->object_type() == CapReg::kSentry));
+         (cs1->object_type() == CapReg::kInterruptInheritingSentry));
+  ok |=
+      has_dest && ((cs1->object_type() == CapReg::kUnsealed) ||
+                   (cs1->object_type() == CapReg::kInterruptInheritingSentry));
   ok |= has_dest && uses_ra && (cs1->object_type() >= CapReg::kUnsealed) &&
-        (cs1->object_type() <= CapReg::kInterruptEnablingSentry);
+        (cs1->object_type() <= CapReg::kInterruptEnablingForwardSentry);
   if ((cs1->IsSealed() && offset != 0) || !ok) {
     state->HandleCheriRegException(instruction, instruction->address(),
                                    EC::kCapExSealViolation, cs1);
@@ -275,23 +298,25 @@ static inline void CheriotCJalrHelper(const Instruction *instruction,
     state->temp_reg()->set_address(instruction->address() +
                                    instruction->size());
     bool interrupt_enable = (mstatus->GetUint32() & 0b1000) != 0;
-    auto status = state->temp_reg()->Seal(
-        *state->sealing_root(), interrupt_enable
-                                    ? CapReg::kInterruptEnablingReturnSentry
-                                    : CapReg::kInterruptDisablingReturnSentry);
-    if (!status.ok()) {
-      LOG(ERROR) << "Failed to seal: " << status;
-      return;
+    if ((state->core_version() == CheriotState::kVersion0Dot5) || uses_ra) {
+      auto status = state->temp_reg()->Seal(
+          *state->sealing_root(),
+          interrupt_enable ? CapReg::kInterruptEnablingBackwardSentry
+                           : CapReg::kInterruptDisablingBackwardSentry);
+      if (!status.ok()) {
+        LOG(ERROR) << "Failed to seal: " << status;
+        return;
+      }
     }
   }
   // Update pcc.
   pcc->CopyFrom(*cs1);
   // If the new pcc is a sentry, unseal and set/clear mie accordingly.
   if (pcc->IsSentry()) {
-    if (pcc->object_type() != CapReg::kSentry) {
+    if (pcc->object_type() != CapReg::kInterruptInheritingSentry) {
       bool interrupt_enable =
-          (pcc->object_type() == CapReg::kInterruptEnablingSentry) ||
-          (pcc->object_type() == CapReg::kInterruptEnablingReturnSentry);
+          (pcc->object_type() == CapReg::kInterruptEnablingForwardSentry) ||
+          (pcc->object_type() == CapReg::kInterruptEnablingBackwardSentry);
       mstatus->set_mie(interrupt_enable);
       mstatus->Submit();
     }
@@ -490,9 +515,9 @@ void CheriotCSeal(const Instruction *instruction) {
   uint32_t object_type = cs2->address();
   bool permitted_otype = false;
   switch (object_type) {
-    case CapReg::kSentry:
-    case CapReg::kInterruptDisablingSentry:
-    case CapReg::kInterruptEnablingSentry:
+    case CapReg::kInterruptInheritingSentry:
+    case CapReg::kInterruptDisablingForwardSentry:
+    case CapReg::kInterruptEnablingForwardSentry:
     case CapReg::kSealedExecutable6:
     case CapReg::kSealedExecutable7:
       permitted_otype = cs1->HasPermission(CapReg::kPermitExecute);

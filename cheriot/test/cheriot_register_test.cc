@@ -346,11 +346,11 @@ TEST_F(CheriotRegisterTest, SealExecuteCapability) {
     cap_reg()->ResetExecuteRoot();
     auto status = cap_reg()->Seal(*seal_cap_reg, i);
     // If the object type is out of range for data, expect failure.
-    if ((i == ObjectType::kSentry) ||
-        (i == ObjectType::kInterruptDisablingSentry) ||
-        (i == ObjectType::kInterruptEnablingSentry) ||
-        (i == ObjectType::kInterruptDisablingReturnSentry) ||
-        (i == ObjectType::kInterruptEnablingReturnSentry) ||
+    if ((i == ObjectType::kInterruptInheritingSentry) ||
+        (i == ObjectType::kInterruptDisablingForwardSentry) ||
+        (i == ObjectType::kInterruptEnablingForwardSentry) ||
+        (i == ObjectType::kInterruptDisablingBackwardSentry) ||
+        (i == ObjectType::kInterruptEnablingBackwardSentry) ||
         (i == ObjectType::kSealedExecutable6) ||
         (i == ObjectType::kSealedExecutable7)) {
       EXPECT_TRUE(status.ok()) << status.message();
@@ -373,7 +373,9 @@ TEST_F(CheriotRegisterTest, SealExecuteCapability) {
   // Try with a sealing root with cleared tag.
   seal_cap_reg->ResetSealingRoot();
   seal_cap_reg->Invalidate();
-  EXPECT_FALSE(cap_reg()->Seal(*seal_cap_reg, ObjectType::kSentry).ok());
+  EXPECT_FALSE(cap_reg()
+                   ->Seal(*seal_cap_reg, ObjectType::kInterruptInheritingSentry)
+                   .ok());
   cap_reg()->ResetExecuteRoot();
   seal_cap_reg->ResetSealingRoot();
   // Seal the sealing capability. This should succeed.
@@ -388,7 +390,8 @@ TEST_F(CheriotRegisterTest, SealExecuteCapability) {
   seal_cap_reg->ResetSealingRoot();
   seal_cap_reg->ClearPermissions(PermissionBits::kPermitSeal);
   cap_reg()->ResetExecuteRoot();
-  status = cap_reg()->Seal(*seal_cap_reg, ObjectType::kSentry);
+  status =
+      cap_reg()->Seal(*seal_cap_reg, ObjectType::kInterruptInheritingSentry);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.code(), absl::StatusCode::kPermissionDenied);
   EXPECT_THAT(status.message(),
@@ -396,15 +399,18 @@ TEST_F(CheriotRegisterTest, SealExecuteCapability) {
   // Try sealing a null capability.
   seal_cap_reg->ResetSealingRoot();
   cap_reg()->ResetNull();
-  status = cap_reg()->Seal(*seal_cap_reg, ObjectType::kSentry);
+  status =
+      cap_reg()->Seal(*seal_cap_reg, ObjectType::kInterruptInheritingSentry);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(status.message(),
               testing::HasSubstr("Target is not a valid capability"));
   // Try sealing twice.
   cap_reg()->ResetExecuteRoot();
-  CHECK_OK(cap_reg()->Seal(*seal_cap_reg, ObjectType::kSentry));
-  status = cap_reg()->Seal(*seal_cap_reg, ObjectType::kSentry);
+  CHECK_OK(
+      cap_reg()->Seal(*seal_cap_reg, ObjectType::kInterruptInheritingSentry));
+  status =
+      cap_reg()->Seal(*seal_cap_reg, ObjectType::kInterruptInheritingSentry);
   EXPECT_FALSE(status.ok());
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(status.message(),

@@ -81,6 +81,8 @@ using ::mpact::sim::riscv::RiscVCounterCsrHigh;
 using ::mpact::sim::util::InstructionProfiler;
 using ::mpact::sim::util::TaggedMemoryUseProfiler;
 
+// Flat to specify core version.
+ABSL_FLAG(int, core_version, 100, "Core version");
 // Flags for specifying interactive mode.
 ABSL_FLAG(bool, i, false, "Interactive mode");
 ABSL_FLAG(bool, interactive, false, "Interactive mode");
@@ -278,6 +280,7 @@ int main(int argc, char **argv) {
   }
   CheriotState cheriot_state("CherIoT", data_memory,
                              static_cast<AtomicMemoryOpInterface *>(router));
+  cheriot_state.set_core_version(absl::GetFlag(FLAGS_core_version));
 
   DecoderInterface *decoder = nullptr;
   if (absl::GetFlag(FLAGS_rvv_fp)) {
@@ -604,7 +607,7 @@ int main(int argc, char **argv) {
   std::fstream proto_file(proto_file_name.c_str(), std::ios_base::out);
   std::string serialized;
   if (!proto_file.good() || !google::protobuf::TextFormat::PrintToString(
-                                *component_proto.get(), &serialized)) {
+                                *component_proto, &serialized)) {
     LOG(ERROR) << "Failed to write proto to file";
   } else {
     proto_file << serialized;

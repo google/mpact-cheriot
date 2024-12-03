@@ -169,6 +169,7 @@ using InterruptInfoList = std::deque<InterruptInfo>;
 
 class CheriotState : public generic::ArchState {
  public:
+  static constexpr int kVersion0Dot5 = 50;
   static int constexpr kCapRegQueueSizeMask = 0x11;
   static constexpr uint32_t kCheriExceptionCode = 0x1c;
   static constexpr char kCregPrefix[] = "c";
@@ -323,6 +324,9 @@ class CheriotState : public generic::ArchState {
   bool MustRevoke(uint32_t address) const;
 
   // Accessors.
+  // Core version.
+  int core_version() const { return core_version_; }
+  void set_core_version(int version) { core_version_ = version; }
   // Returns true if an interrupt is available for the core to take or false
   // otherwise.
   inline bool is_interrupt_available() const { return is_interrupt_available_; }
@@ -431,6 +435,9 @@ class CheriotState : public generic::ArchState {
 
  private:
   InterruptCode PickInterrupt(uint32_t interrupts);
+  // Core version. Expressed as an integer where as version * 100. Thus
+  // version 1.0 is 100, and 1.5 is 150. Default is 0.5 (or 50).
+  int core_version_ = kVersion0Dot5;
   // A map from register name to entry in the mtval register.
   absl::flat_hash_map<std::string, uint32_t> cap_index_map_;
   // These are root capabilities

@@ -47,6 +47,11 @@ config_setting(
     values = {"cpu": "aarch64"},
 )
 
+config_setting(
+    name = "darwin_aarch64_cpu",
+    values = {"cpu": "darwin_arm64"},
+)
+
 mpact_isa_decoder(
     name = "riscv_cheriot_isa",
     src = "riscv_cheriot.isa",
@@ -266,12 +271,16 @@ cc_library(
         "riscv_cheriot_vector_reduction_instructions.h",
         "riscv_cheriot_vector_unary_instructions.h",
     ],
-    copts = [
-        "-O3",
-        "-ffp-model=strict",
-    ] + select({
-        "darwin_arm64_cpu": [],
-        "//conditions:default": ["-fprotect-parens"],
+    copts = select({
+        "darwin_aarch64_cpu": [
+            "-O3",
+            "-ffp-model=strict",
+        ],
+        "//conditions:default": [
+            "-O3",
+            "-ffp-model=strict",
+            "-fprotect-parens",
+        ],
     }),
     deps = [
         ":cheriot_state",
@@ -304,12 +313,16 @@ cc_library(
         "riscv_cheriot_vector_fp_reduction_instructions.h",
         "riscv_cheriot_vector_fp_unary_instructions.h",
     ],
-    copts = [
-        "-O3",
-        "-ffp-model=strict",
-    ] + select({
-        "darwin_arm64_cpu": [],
-        "//conditions:default": ["-fprotect-parens"],
+    copts = select({
+        "darwin_aarch64_cpu": [
+            "-O3",
+            "-ffp-model=strict",
+        ],
+        "//conditions:default": [
+            "-O3",
+            "-ffp-model=strict",
+            "-fprotect-parens",
+        ],
     }),
     deps = [
         ":cheriot_state",

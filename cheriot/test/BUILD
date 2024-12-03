@@ -21,6 +21,11 @@ config_setting(
     values = {"cpu": "darwin_arm64"},
 )
 
+config_setting(
+    name = "darwin_aarch64_cpu",
+    values = {"cpu": "darwin_arm64"},
+)
+
 cc_test(
     name = "cheriot_register_test",
     size = "small",
@@ -413,11 +418,12 @@ cc_test(
     srcs = [
         "riscv_cheriot_vector_fp_unary_instructions_test.cc",
     ],
-    copts = [
-        "-ffp-model=strict",
-    ] + select({
-        "darwin_arm64_cpu": [],
-        "//conditions:default": ["-fprotect-parens"],
+    copts = select({
+        "darwin_aarch64_cpu": ["-ffp-model=strict"],
+        "//conditions:default": [
+            "-ffp-model=strict",
+            "-fprotect-parens",
+        ],
     }),
     deps = [
         ":riscv_cheriot_vector_fp_test_utilities",
@@ -443,11 +449,12 @@ cc_test(
     srcs = [
         "riscv_cheriot_vector_fp_instructions_test.cc",
     ],
-    copts = [
-        "-ffp-model=strict",
-    ] + select({
-        "darwin_arm64_cpu": [],
-        "//conditions:default": ["-fprotect-parens"],
+    copts = select({
+        "darwin_aarch64_cpu": ["-ffp-model=strict"],
+        "//conditions:default": [
+            "-ffp-model=strict",
+            "-fprotect-parens",
+        ],
     }),
     deps = [
         ":riscv_cheriot_vector_fp_test_utilities",
@@ -473,11 +480,12 @@ cc_test(
     srcs = [
         "riscv_cheriot_vector_fp_compare_instructions_test.cc",
     ],
-    copts = [
-        "-ffp-model=strict",
-    ] + select({
-        "darwin_arm64_cpu": [],
-        "//conditions:default": ["-fprotect-parens"],
+    copts = select({
+        "darwin_aarch64_cpu": ["-ffp-model=strict"],
+        "//conditions:default": [
+            "-ffp-model=strict",
+            "-fprotect-parens",
+        ],
     }),
     deps = [
         ":riscv_cheriot_vector_fp_test_utilities",
@@ -500,11 +508,12 @@ cc_test(
     srcs = [
         "riscv_cheriot_vector_fp_reduction_instructions_test.cc",
     ],
-    copts = [
-        "-ffp-model=strict",
-    ] + select({
-        "darwin_arm64_cpu": [],
-        "//conditions:default": ["-fprotect-parens"],
+    copts = select({
+        "darwin_aarch64_cpu": ["-ffp-model=strict"],
+        "//conditions:default": [
+            "-ffp-model=strict",
+            "-fprotect-parens",
+        ],
     }),
     deps = [
         ":riscv_cheriot_vector_fp_test_utilities",
