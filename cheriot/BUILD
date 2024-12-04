@@ -33,21 +33,6 @@ exports_files([
 ])
 
 config_setting(
-    name = "arm_cpu",
-    values = {"cpu": "arm"},
-)
-
-config_setting(
-    name = "darwin_arm64_cpu",
-    values = {"cpu": "darwin_arm64"},
-)
-
-config_setting(
-    name = "aarch64",
-    values = {"cpu": "aarch64"},
-)
-
-config_setting(
     name = "darwin_aarch64_cpu",
     values = {"cpu": "darwin_arm64"},
 )

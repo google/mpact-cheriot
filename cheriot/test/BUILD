@@ -17,11 +17,6 @@
 package(default_applicable_licenses = ["//:license"])
 
 config_setting(
-    name = "darwin_arm64_cpu",
-    values = {"cpu": "darwin_arm64"},
-)
-
-config_setting(
     name = "darwin_aarch64_cpu",
     values = {"cpu": "darwin_arm64"},
 )
