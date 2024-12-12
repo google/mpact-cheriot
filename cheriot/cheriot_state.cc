@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <new>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -56,7 +57,6 @@ using ::mpact::sim::riscv::RiscVCounterCsrHigh;
 using ::mpact::sim::riscv::RiscVCsrEnum;
 using ::mpact::sim::riscv::RiscVCsrInterface;
 using ::mpact::sim::riscv::RiscVPmp;
-using ::mpact::sim::riscv::RiscVShadowCsr;
 using ::mpact::sim::riscv::RiscVSimpleCsr;
 using ::mpact::sim::riscv::RiscVXlen;
 
@@ -197,18 +197,24 @@ void CreateCsrs(CheriotState *state,
   auto *minstret = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
       state, csr_vec, "minstret", RiscVCsrEnum ::kMInstret, state);
   CHECK_NE(minstret, nullptr);
-  auto minstreth = CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
-      state, csr_vec, "minstreth", RiscVCsrEnum::kMInstretH, state,
-      reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(minstret));
-  CHECK_NE(minstreth, nullptr);
+  if (sizeof(T) == sizeof(uint32_t)) {
+    CHECK_NE(CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
+                 state, csr_vec, "minstreth", RiscVCsrEnum::kMInstretH, state,
+                 reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+                     minstret)),
+             nullptr);
+  }
   // mcycle/mcycleh
   auto *mcycle = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
       state, csr_vec, "mcycle", RiscVCsrEnum::kMCycle, state);
   CHECK_NE(mcycle, nullptr);
-  auto *mcycleh = CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
-      state, csr_vec, "mcycleh", RiscVCsrEnum::kMCycleH, state,
-      reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(mcycle));
-  CHECK_NE(mcycleh, nullptr);
+  if (sizeof(T) == sizeof(uint32_t)) {
+    CHECK_NE(CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
+                 state, csr_vec, "mcycleh", RiscVCsrEnum::kMCycleH, state,
+                 reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+                     mcycle)),
+             nullptr);
+  }
 
   // Stack high water mark CSRs. Mshwm gets updated automatically during
   // execution. mshwm
@@ -235,24 +241,7 @@ void CreateCsrs(CheriotState *state,
   // None in CHERIoT.
 
   // User level CSRs
-  // instret/instreth
-  CHECK_NE(CreateCsr<RiscVShadowCsr<T>>(
-               state, csr_vec, "instret", RiscVCsrEnum ::kInstret,
-               std::numeric_limits<T>::max(), 0, state, minstret),
-           nullptr);
-  CHECK_NE(CreateCsr<RiscVShadowCsr<T>>(
-               state, csr_vec, "instreth", RiscVCsrEnum::kInstretH,
-               std::numeric_limits<T>::max(), 0, state, minstreth),
-           nullptr);
-  // cycle/cycleh
-  CHECK_NE(CreateCsr<RiscVShadowCsr<T>>(
-               state, csr_vec, "cycle", RiscVCsrEnum::kCycle,
-               std::numeric_limits<T>::max(), 0, state, mcycle),
-           nullptr);
-  CHECK_NE(CreateCsr<RiscVShadowCsr<T>>(
-               state, csr_vec, "cycleh", RiscVCsrEnum::kCycleH,
-               std::numeric_limits<T>::max(), 0, state, mcycleh),
-           nullptr);
+  // None in CHERIoT.
 
   // PMP CSRs
   state->pmp_ = new RiscVPmp(state);
@@ -701,9 +690,9 @@ void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
 
 // Called upon returning from an interrupt or exception.
 void CheriotState::SignalReturnFromInterrupt() {
-  // First increment the interrupt return counter. Then pop the interrupt
-  // info. This way any code that is triggered by the interrupt return counter
-  // will be able to access the interrupt info.
+  // First increment the interrupt return counter. Then pop the interrupt info.
+  // This way any code that is triggered by the interrupt return counter will
+  // be able to access the interrupt info.
   counter_interrupt_returns_.Increment(1);
   interrupt_info_list_.pop_back();
 }
