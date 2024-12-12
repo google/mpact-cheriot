@@ -52,11 +52,11 @@ enum class RiscVCheriotCsrEnum {
   kTime = 0xc01,
   kInstret = 0xc02,
 
-  // Ignoring perf monitoring counters for now.
-
   kCycleH = 0xc80,
   kTimeH = 0xc81,
   kInstretH = 0x82,
+
+  // Ignoring perf monitoring counters for now.
 
   // Ignoring high bits of perf monitoring counters for now.
 
