@@ -134,8 +134,8 @@ class DebugCommandShell : public DebugCommandShellInterface {
   };
 
   // Helper method to get the interrupt description.
-  std::string GetInterruptDescription(const InterruptInfo &info);
-  std::string GetExceptionDescription(const InterruptInfo &info);
+  std::string GetInterruptDescription(const InterruptInfo &info) const;
+  std::string GetExceptionDescription(const InterruptInfo &info) const;
 
   // Helper method for formatting single data buffer value.
   std::string FormatSingleDbValue(generic::DataBuffer *db,

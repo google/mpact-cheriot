@@ -195,6 +195,7 @@ DebugCommandShell::DebugCommandShell()
   exec    NAME                     - load commands from file 'NAME' and execute
                                      each line as a command. Lines starting with
                                      a '#' are treated as comments.
+  status                           - display current status.
   help                             - display this message.
 
   Special names:
@@ -260,6 +261,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
   current_core_ = 0;
   absl::string_view line_view;
   bool halt_reason = false;
+  int last_info_list_size = 0;
   while (true) {
     // Prompt and read in the next command.
     auto pcc_result =
@@ -330,14 +332,14 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
     auto cheriot_state =
         static_cast<CheriotState *>(core_access_[current_core_].state);
     auto &info_list = cheriot_state->interrupt_info_list();
-    int count = 0;
-    for (auto iter = info_list.rbegin(); iter != info_list.rend(); ++iter) {
-      auto const &info = *iter;
-      absl::StrAppend(&prompt, "[", count++, "] ",
-                      info.is_interrupt ? "interrupt" : "exception", " ",
+    // Check if there is a new interrupt, if so print the info.
+    if (info_list.size() > last_info_list_size) {
+      auto const &info = *info_list.rbegin();
+      absl::StrAppend(&prompt, info.is_interrupt ? "interrupt " : "exception ",
                       info.is_interrupt ? GetInterruptDescription(info)
                                         : GetExceptionDescription(info));
     }
+    last_info_list_size = info_list.size();
     absl::StrAppend(&prompt, "[", current_core_, "] > ");
     while (!command_streams_.empty()) {
       auto &current_is = *command_streams_.back();
@@ -1643,6 +1645,23 @@ std::string DebugCommandShell::FormatRegister(
 
 std::string DebugCommandShell::FormatAllRegisters(int core) const {
   std::string output;
+  // Interrupt stack.
+  auto cheriot_state =
+      static_cast<CheriotState *>(core_access_[current_core_].state);
+  auto &info_list = cheriot_state->interrupt_info_list();
+  int count = 0;
+  if (!info_list.empty()) {
+    absl::StrAppend(&output, "Interrupt stack:\n");
+    for (auto iter = info_list.rbegin(); iter != info_list.rend(); ++iter) {
+      auto const &info = *iter;
+      absl::StrAppend(&output, "[", count++, "] ",
+                      info.is_interrupt ? "interrupt" : "exception", " ",
+                      info.is_interrupt ? GetInterruptDescription(info)
+                                        : GetExceptionDescription(info));
+    }
+    absl::StrAppend(&output, "\n");
+  }
+  // Registers.
   for (auto const &reg_name : reg_vector_) {
     absl::StrAppend(&output, FormatRegister(current_core_, reg_name), "\n");
   }
@@ -1766,7 +1785,7 @@ absl::Status DebugCommandShell::SetActionPoint(
 }
 
 std::string DebugCommandShell::GetInterruptDescription(
-    const InterruptInfo &info) {
+    const InterruptInfo &info) const {
   std::string output;
   if (!info.is_interrupt) return output;
   switch (info.cause & 0x7fff'ffff) {
@@ -1806,7 +1825,7 @@ std::string DebugCommandShell::GetInterruptDescription(
 }
 
 std::string DebugCommandShell::GetExceptionDescription(
-    const InterruptInfo &info) {
+    const InterruptInfo &info) const {
   std::string output;
   if (info.is_interrupt) return output;
   absl::StrAppend(&output, " Exception taken at ", absl::Hex(info.epc), ": ");
