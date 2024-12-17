@@ -1529,9 +1529,11 @@ absl::Status DebugCommandShell::StepOverCall(int core, std::ostream &os) {
   auto opcode = inst->opcode();
   // If it's not a jump-and-link, it's a single step.
   if ((opcode != *isa32::OpcodeEnum::kCheriotJal) &&
+      (opcode != *isa32::OpcodeEnum::kCheriotJalCra) &&
       (opcode != *isa32::OpcodeEnum::kCheriotJalr) &&
       (opcode != *isa32::OpcodeEnum::kCheriotJalrCra) &&
       (opcode != *isa32::OpcodeEnum::kCheriotCjal) &&
+      (opcode != *isa32::OpcodeEnum::kCheriotCjalCra) &&
       (opcode != *isa32::OpcodeEnum::kCheriotCjalrCra)) {
     inst->DecRef();
     return core_access_[current_core_].debug_interface->Step(1).status();
