@@ -705,7 +705,7 @@ void CheriotState::SignalReturnFromInterrupt() {
   // This way any code that is triggered by the interrupt return counter will
   // be able to access the interrupt info.
   counter_interrupt_returns_.Increment(1);
-  interrupt_info_list_.pop_back();
+  if (!interrupt_info_list_.empty()) interrupt_info_list_.pop_back();
 }
 
 // CheckForInterrupt is called whenever any relevant bits in the interrupt
