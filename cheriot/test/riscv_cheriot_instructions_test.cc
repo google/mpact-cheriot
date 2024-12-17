@@ -1452,6 +1452,8 @@ TEST_F(RiscVCheriotInstructionsTest, CSeal) {
     if ((o_type == OT::kInterruptInheritingSentry) ||
         (o_type == OT::kInterruptDisablingForwardSentry) ||
         (o_type == OT::kInterruptEnablingForwardSentry) ||
+        (o_type == OT::kInterruptDisablingBackwardSentry) ||
+        (o_type == OT::kInterruptEnablingBackwardSentry) ||
         (o_type == OT::kSealedExecutable6) ||
         (o_type == OT::kSealedExecutable7)) {
       EXPECT_TRUE(c3_reg()->tag());

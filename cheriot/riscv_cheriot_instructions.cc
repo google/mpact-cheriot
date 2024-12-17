@@ -518,6 +518,8 @@ void CheriotCSeal(const Instruction *instruction) {
     case CapReg::kInterruptInheritingSentry:
     case CapReg::kInterruptDisablingForwardSentry:
     case CapReg::kInterruptEnablingForwardSentry:
+    case CapReg::kInterruptDisablingBackwardSentry:
+    case CapReg::kInterruptEnablingBackwardSentry:
     case CapReg::kSealedExecutable6:
     case CapReg::kSealedExecutable7:
       permitted_otype = cs1->HasPermission(CapReg::kPermitExecute);
