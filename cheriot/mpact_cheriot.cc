@@ -243,6 +243,7 @@ bool HandleSimulatorTrap(bool is_interrupt, uint64_t trap_value, uint64_t ec,
 int main(int argc, char **argv) {
   absl::SetProgramUsageMessage(argv[0]);
   auto arg_vec = absl::ParseCommandLine(argc, argv);
+  int exit_code = 0;
 
   if (arg_vec.size() > 2) {
     std::cerr << "Only a single input file allowed" << std::endl;
@@ -342,12 +343,14 @@ int main(int argc, char **argv) {
     auto status = cheriot_top.tagged_watcher()->SetStoreWatchCallback(
         TaggedMemoryWatcher::AddressRange{
             tohost_addr, tohost_addr + 2 * sizeof(uint32_t) - 1},
-        [tagged_memory, tohost_addr, &db, &cheriot_top](uint64_t, int) {
+        [tagged_memory, tohost_addr, &db, &cheriot_top, &exit_code](uint64_t,
+                                                                    int) {
           if (db == nullptr) return;
           tagged_memory->Load(tohost_addr, db, nullptr, nullptr);
           uint32_t code = db->Get<uint32_t>(0);
           if (code & 0x1) {
             code >>= 1;
+            exit_code = code;
             std::cerr << absl::StrCat("Simulation halted: exit ",
                                       absl::Hex(code), "\n");
             (void)cheriot_top.Halt();
@@ -626,4 +629,5 @@ int main(int argc, char **argv) {
   delete memory_use_profiler;
   delete semihost;
   if (db != nullptr) db->DecRef();
+  return exit_code;
 }
