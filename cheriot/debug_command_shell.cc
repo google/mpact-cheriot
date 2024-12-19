@@ -195,7 +195,6 @@ DebugCommandShell::DebugCommandShell()
   exec    NAME                     - load commands from file 'NAME' and execute
                                      each line as a command. Lines starting with
                                      a '#' are treated as comments.
-  status                           - display current status.
   help                             - display this message.
 
   Special names:
