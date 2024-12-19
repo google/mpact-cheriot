@@ -90,6 +90,7 @@ constexpr char kC1[] = "c11";
 constexpr char kC2[] = "c12";
 constexpr char kC3[] = "c13";
 constexpr char kC4[] = "c14";
+constexpr char kC5[] = "c15";
 // Register number definitions.
 constexpr int kC1Num = 11;
 constexpr int kPccNum = 0b1'00000;
@@ -117,6 +118,7 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
              {kC2, &c2_reg_},
              {kC3, &c3_reg_},
              {kC4, &c4_reg_},
+             {kC5, &c5_reg_},
              {kCra, &cra_reg_}}) {
       *cap_reg_ptr = state_->GetRegister<CheriotRegister>(reg_name).first;
     }
@@ -219,6 +221,7 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
   CheriotRegister *c2_reg() { return c2_reg_; }
   CheriotRegister *c3_reg() { return c3_reg_; }
   CheriotRegister *c4_reg() { return c4_reg_; }
+  CheriotRegister *c5_reg() { return c5_reg_; }
   CheriotRegister *cra_reg() { return cra_reg_; }
   absl::BitGen &bitgen() { return bitgen_; }
   bool trap_taken() { return trap_taken_; }
@@ -236,6 +239,7 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
   CheriotRegister *c2_reg_;
   CheriotRegister *c3_reg_;
   CheriotRegister *c4_reg_;
+  CheriotRegister *c5_reg_;
   CheriotRegister *cra_reg_;
   absl::BitGen bitgen_;
   bool trap_taken_ = false;
@@ -935,8 +939,9 @@ TEST_F(RiscVCheriotInstructionsTest, CLc) {
   EXPECT_TRUE(*c3_reg() == *state()->memory_root());
 }
 
-// Load without global flag should clear global flag of loaded capability.
-TEST_F(RiscVCheriotInstructionsTest, CLcNoLoadGlobal) {
+// Load unsealed without global flag should clear global and load global flags
+// of loaded capability.
+TEST_F(RiscVCheriotInstructionsTest, CLcNoLoadGlobalUnsealed) {
   c4_reg()->ResetMemoryRoot();
   c4_reg()->ClearPermissions(PB::kPermitGlobal | PB::kPermitLoadGlobal);
   SetUpForLoadCapabilityTest(kMemAddress + 0x200, state()->memory_root());
@@ -950,6 +955,29 @@ TEST_F(RiscVCheriotInstructionsTest, CLcNoLoadGlobal) {
   EXPECT_FALSE(trap_taken());
   EXPECT_FALSE(*c3_reg() == *state()->memory_root());
   EXPECT_TRUE(*c3_reg() == *c4_reg());
+}
+
+// Load sealed without global flag should clear global flag of loaded
+// capability.
+TEST_F(RiscVCheriotInstructionsTest, CLcNoLoadGlobalSealed) {
+  c4_reg()->ResetMemoryRoot();
+  c4_reg()->ClearPermissions(PB::kPermitGlobal);
+  c4_reg()->set_address(0xdeadbeef);
+  CHECK_OK(c4_reg()->Seal(*state()->sealing_root(), kDataSeal10));
+  c5_reg()->ResetMemoryRoot();
+  CHECK_OK(c5_reg()->Seal(*state()->sealing_root(), kDataSeal10));
+  SetUpForLoadCapabilityTest(kMemAddress + 0x200, c5_reg());
+  AppendCapabilityOperands(inst(), {kC1, kC2}, {});
+  AppendCapabilityOperands(inst()->child(), {}, {kC3});
+  c1_reg()->ResetMemoryRoot();
+  c1_reg()->ClearPermissions(PB::kPermitLoadGlobal);
+  c1_reg()->set_address(kMemAddress);
+  c2_reg()->set_address(0x200);
+  inst()->Execute(nullptr);
+  EXPECT_FALSE(trap_taken());
+  EXPECT_FALSE(*c3_reg() == *state()->memory_root());
+  EXPECT_TRUE(*c3_reg() == *c4_reg()) << "c3_reg(): " << c3_reg()->AsString()
+                                      << "\nc4_reg(): " << c4_reg()->AsString();
 }
 
 // Load without mutable flag should clear mutable and store permissions of
@@ -997,13 +1025,9 @@ TEST_F(RiscVCheriotInstructionsTest, CLcNoLoadStoreCapability) {
   c2_reg()->set_address(0x200);
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
-  // Result should be equal to memory root, but without the valid tag and some
-  // permissions removed.
+  // Result should be equal to memory root, but without the valid tag.
   c4_reg()->ResetMemoryRoot();
   c4_reg()->set_address(0xdeadbeef);
-  c4_reg()->ClearPermissions(
-      PB::kPermitGlobal | PB::kPermitLoadGlobal | PB::kPermitLoadMutable |
-      PB::kPermitStoreLocalCapability | PB::kPermitStore);
   c4_reg()->Invalidate();
   EXPECT_TRUE(*c3_reg() == *c4_reg()) << "c3_reg(): " << c3_reg()->AsString()
                                       << "\nc4_reg(): " << c4_reg()->AsString();

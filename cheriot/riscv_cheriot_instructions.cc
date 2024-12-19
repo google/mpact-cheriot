@@ -401,23 +401,24 @@ void CheriotCLcChild(const Instruction *instruction) {
   auto *cd = GetCapDest(instruction, 0);
   cd->Expand(context->db->Get<uint32_t>(0), context->db->Get<uint32_t>(1),
              context->tag_db->Get<uint8_t>(0));
+  // If the source capability did not have load/store capability, invalidate.
+  if ((context->permissions & CapReg::kPermitLoadStoreCapability) == 0) {
+    cd->Invalidate();
+  }
   if (cd->tag()) {
     if ((context->permissions & CapReg::kPermitLoadGlobal) == 0) {
-      cd->ClearPermissions(CapReg::kPermitGlobal | CapReg::kPermitLoadGlobal);
+      cd->ClearPermissions(CapReg::kPermitGlobal);
+      if (!cd->IsSealed()) cd->ClearPermissions(CapReg::kPermitLoadGlobal);
     }
     if (!cd->IsSealed() &&
         ((context->permissions & CapReg::kPermitLoadMutable) == 0)) {
       cd->ClearPermissions(CapReg::kPermitStore | CapReg::kPermitLoadMutable);
     }
-    // If the source capability did not have load/store capability, invalidate.
-    if ((context->permissions & CapReg::kPermitLoadStoreCapability) == 0) {
-      cd->Invalidate();
-    }
     // If it's not a sealing cap, check for revocation.
-    if (cd->tag() &&
-        ((cd->permissions() & (CapReg::kPermitSeal | CapReg::kPermitUnseal |
-                               CapReg::kUserPerm0)) == 0)) {
-      if (state->MustRevoke(cd->base())) {
+    if ((cd->permissions() & (CapReg::kPermitSeal | CapReg::kPermitUnseal |
+                              CapReg::kUserPerm0)) == 0) {
+      auto granule_addr = cd->base() & ~((1ULL << CapReg::kGranuleShift) - 1);
+      if (state->MustRevoke(granule_addr)) {
         cd->Invalidate();
       }
     }
