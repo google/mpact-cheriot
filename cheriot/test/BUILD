@@ -541,3 +541,20 @@ cc_test(
         "@com_google_mpact-sim//mpact/sim/generic:instruction",
     ],
 )
+
+cc_test(
+    name = "cheriot_ibex_hw_revoker_test",
+    size = "small",
+    srcs = [
+        "cheriot_ibex_hw_revoker_test.cc",
+    ],
+    deps = [
+        "//cheriot:cheriot_ibex_hw_revoker",
+        "//cheriot:cheriot_state",
+        "@com_google_googletest//:gtest_main",
+        "@com_google_mpact-riscv//riscv:riscv_plic",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)

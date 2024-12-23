@@ -89,7 +89,7 @@ void CheriotLoadFilter::FilterCapability(uint64_t address) {
   db_->Set<uint32_t>(0, cap_reg_->address());
   db_->Set<uint32_t>(1, cap_reg_->Compress());
   tag_db_->Set<uint8_t>(0, cap_reg_->tag());
-  tagged_memory_->Store(cap_address_, db_, tag_db_);
+  tagged_memory_->Store(address, db_, tag_db_);
 }
 
 // Check if the capability must be revoked.

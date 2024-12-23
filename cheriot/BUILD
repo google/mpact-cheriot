@@ -639,6 +639,27 @@ cc_library(
 )
 
 cc_library(
+    name = "cheriot_ibex_hw_revoker",
+    srcs = [
+        "cheriot_ibex_hw_revoker.cc",
+    ],
+    hdrs = [
+        "cheriot_ibex_hw_revoker.h",
+    ],
+    deps = [
+        ":cheriot_state",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:check",
+        "@com_google_absl//absl/strings",
+        "@com_google_mpact-riscv//riscv:riscv_plic",
+        "@com_google_mpact-sim//mpact/sim/generic:core",
+        "@com_google_mpact-sim//mpact/sim/generic:counters",
+        "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/util/memory",
+    ],
+)
+
+cc_library(
     name = "instrumentation",
     srcs = [
         "cheriot_instrumentation_control.cc",
