@@ -251,14 +251,14 @@ void CheriotIbexHWRevoker::WriteGo() {
 
 void CheriotIbexHWRevoker::Revoke() {
   if (!sweep_in_progress_) return;
-  // Increment the epoch.
-  epoch_++;
   uint64_t cap_address = start_address_ + (current_cap_++ << 3);
   // Align address to the capability size.
   cap_address &= ~0b111ULL;
   ProcessCapability(cap_address);
   // Check to see if we have reached the end of the region.
   if (cap_address >= end_address_) {
+    // Increment the epoch.
+    epoch_++;
     sweep_in_progress_ = false;
     SetInterrupt(true);
   }

@@ -286,13 +286,13 @@ TEST_F(CheriotIbexHwRevokerTest, RevokeNone) {
   for (int i = 0; i < num; ++i) {
     AdvanceRevoker();
     EXPECT_EQ(GetLoadAddress(), kSweepBase + (i << 3));
-    EXPECT_EQ(GetEpoch(), ((i + 1) << 1) | 1);
+    EXPECT_EQ(GetEpoch(), 1);
     EXPECT_EQ(GetStatus(), 0);
   }
   // Step through the next capability. The sweep should be done.
   AdvanceRevoker();
   // Notice the in progress bit is cleared.
-  EXPECT_EQ(GetEpoch(), ((num + 1) << 1) | 0);
+  EXPECT_EQ(GetEpoch(), (1 << 1) | 0);
   // Interrupt status should be 0, as interrupt enable is off.
   EXPECT_EQ(GetStatus(), 0);
 }
