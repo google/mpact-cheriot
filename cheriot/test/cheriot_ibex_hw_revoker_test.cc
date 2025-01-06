@@ -230,7 +230,9 @@ class CheriotIbexHwRevokerTest : public ::testing::Test {
     cap_reg_->SetBounds(base, 0x10);
     db8_->Set<uint32_t>(0, cap_reg_->address());
     db8_->Set<uint32_t>(1, cap_reg_->Compress());
+    db8_->set_latency(0);
     db1_->Set<uint8_t>(0, true);
+    db1_->set_latency(0);
     heap_memory_->Store(address, db8_, db1_);
   }
 
