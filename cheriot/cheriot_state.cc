@@ -49,6 +49,7 @@ namespace sim {
 namespace cheriot {
 
 using EC = ::mpact::sim::riscv::ExceptionCode;
+using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
 using ::mpact::sim::riscv::IsaExtension;
 using ::mpact::sim::riscv::RiscVCounterCsr;
@@ -683,6 +684,38 @@ void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
   interrupt_info_list_.push_back(info);
 
   counter_interrupts_taken_.Increment(1);
+  // Check that executing the interrupt handler will not cause an interrupt. If
+  // it will, we need to halt instead. Also, verify that we are not trapping
+  // from the first instruction of the trap handler itself.
+  if ((epc == trap_target) || !pcc_->tag() ||
+      !pcc_->HasPermission(PB::kPermitExecute) ||
+      !pcc_->IsInBounds(trap_target, 4)) {
+    if (epc == trap_target) {
+      std::string trap_list;
+      int i = 0;
+      for (auto &info : interrupt_info_list_) {
+        absl::StrAppend(&trap_list, "    [", i++,
+                        "]: ", info.is_interrupt ? "Interrupt" : "Trap",
+                        " was taken", " at 0x",
+                        absl::Hex(info.epc, absl::kZeroPad8), " cause: 0x",
+                        absl::Hex(info.cause), " tval: 0x",
+                        absl::Hex(info.tval, absl::kZeroPad8), "\n");
+      }
+      LOG(FATAL) << absl::StrCat("Recursive trap at 0x", absl::Hex(epc), "\n",
+                                 trap_list, "\n");
+    } else {
+      LOG(FATAL) << absl::StrCat(
+          info.is_interrupt ? "Interrupt" : "Trap", " handler execution at 0x",
+          absl::Hex(trap_target),
+          " will cause an interrupt due to mtcc "
+          "value/tag/permissions/bounds violation!\n"
+          "mtcc: ",
+          pcc()->AsString(), "\n", "    ",
+          info.is_interrupt ? "Interrupt" : "Trap", " was taken at 0x",
+          absl::Hex(epc), " cause: 0x", absl::Hex(info.cause), " tval: 0x",
+          absl::Hex(info.tval), "\n");
+    }
+  }
 }
 
 // Called upon returning from an interrupt or exception.
