@@ -458,13 +458,6 @@ void CheriotState::StoreCapability(const Instruction *instruction,
 void CheriotState::LoadMemory(const Instruction *inst, uint64_t address,
                               DataBuffer *db, Instruction *child_inst,
                               ReferenceCount *context) {
-  // Check for alignment.
-  uint64_t mask = db->size<uint8_t>() - 1;
-  if ((address & mask) != 0) {
-    Trap(/*is_interrupt*/ false, address, *EC::kLoadAddressMisaligned,
-         inst == nullptr ? 0 : inst->address(), inst);
-    return;
-  }
   // Check for physical address violation.
   if (address < min_physical_address_ || address > max_physical_address_) {
     Trap(/*is_interrupt*/ false, address, *EC::kLoadAccessFault,
@@ -500,13 +493,6 @@ void CheriotState::LoadMemory(const Instruction *inst, DataBuffer *address_db,
 
 void CheriotState::StoreMemory(const Instruction *inst, uint64_t address,
                                DataBuffer *db) {
-  // Check for alignment.
-  uint64_t mask = db->size<uint8_t>() - 1;
-  if ((address & mask) != 0) {
-    Trap(/*is_interrupt*/ false, address, *EC::kStoreAddressMisaligned,
-         inst == nullptr ? 0 : inst->address(), inst);
-    return;
-  }
   // Check for physical address violation.
   if (address < min_physical_address_ || address > max_physical_address_) {
     Trap(/*is_interrupt*/ false, address, *EC::kStoreAccessFault,
