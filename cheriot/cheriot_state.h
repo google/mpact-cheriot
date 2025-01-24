@@ -170,6 +170,7 @@ using InterruptInfoList = std::deque<InterruptInfo>;
 class CheriotState : public generic::ArchState {
  public:
   static constexpr int kVersion0Dot5 = 50;
+  static constexpr int kVersion1Dot0 = 100;
   static int constexpr kCapRegQueueSizeMask = 0x11;
   static constexpr uint32_t kCheriExceptionCode = 0x1c;
   static constexpr char kCregPrefix[] = "c";
@@ -436,8 +437,8 @@ class CheriotState : public generic::ArchState {
  private:
   InterruptCode PickInterrupt(uint32_t interrupts);
   // Core version. Expressed as an integer where as version * 100. Thus
-  // version 1.0 is 100, and 1.5 is 150. Default is 0.5 (or 50).
-  int core_version_ = kVersion0Dot5;
+  // version 1.0 is 100, and 1.5 is 150. Default is 1.0 (or 100).
+  int core_version_ = kVersion1Dot0;
   // A map from register name to entry in the mtval register.
   absl::flat_hash_map<std::string, uint32_t> cap_index_map_;
   // These are root capabilities

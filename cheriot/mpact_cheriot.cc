@@ -82,7 +82,7 @@ using ::mpact::sim::util::InstructionProfiler;
 using ::mpact::sim::util::TaggedMemoryUseProfiler;
 
 // Flat to specify core version.
-ABSL_FLAG(int, core_version, 50, "Core version");
+ABSL_FLAG(int, core_version, 100, "Core version");
 // Flags for specifying interactive mode.
 ABSL_FLAG(bool, i, false, "Interactive mode");
 ABSL_FLAG(bool, interactive, false, "Interactive mode");

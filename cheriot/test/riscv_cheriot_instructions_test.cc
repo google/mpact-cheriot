@@ -100,7 +100,7 @@ constexpr uint32_t kMemAddress = 0x1000;
 
 constexpr int kDataSeal10 = 10;
 constexpr int kInstSizeNormal = 4;
-
+constexpr int kVersion0Dot5 = 50;
 constexpr int kVersion1Dot0 = 100;
 
 // Test fixture.
@@ -622,6 +622,8 @@ TEST_F(RiscVCheriotInstructionsTest, CJalNonCra) {
   AppendCapabilityOperands(inst(), {kC1}, {kC3});
   state()->pcc()->set_address(inst()->address());
   c1_reg()->set_address(0x200);
+  // Set core version to 0.5.
+  state()->set_core_version(kVersion0Dot5);
   // Set interrupt enable to true.
   state()->mstatus()->set_mie(1);
   state()->mstatus()->Submit();
@@ -723,6 +725,8 @@ TEST_F(RiscVCheriotInstructionsTest, CJalr) {
   c1_reg()->SetBounds(kInstAddress, 0x400);
   // Set offset.
   c2_reg()->set_address(0x100);
+  // Set core version to 0.5.
+  state()->set_core_version(kVersion0Dot5);
   // Set interrupt enable to true.
   state()->mstatus()->set_mie(1);
   state()->mstatus()->Submit();
