@@ -245,15 +245,12 @@ int main(int argc, char **argv) {
   auto arg_vec = absl::ParseCommandLine(argc, argv);
   int exit_code = 0;
 
-  if (arg_vec.size() > 2) {
-    std::cerr << "Only a single input file allowed" << std::endl;
-    return -1;
-  }
-  if (arg_vec.size() < 2) {
+  arg_vec.erase(arg_vec.begin());
+  if (arg_vec.empty()) {
     std::cerr << "Must specify input file" << std::endl;
     return -1;
   }
-  std::string full_file_name = arg_vec[1];
+  std::string full_file_name = arg_vec[0];
   std::string file_name =
       full_file_name.substr(full_file_name.find_last_of('/') + 1);
   std::string file_basename = file_name.substr(0, file_name.find_first_of('.'));
@@ -426,7 +423,7 @@ int main(int argc, char **argv) {
   auto *memory = static_cast<MemoryInterface *>(router);
   auto *semihost =
       new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32, memory, memory);
-
+  semihost->SetCmdLine(arg_vec);
   cheriot_top.state()->AddEbreakHandler([semihost](const Instruction *inst) {
     if (semihost->IsSemihostingCall(inst)) {
       semihost->OnEBreak(inst);
