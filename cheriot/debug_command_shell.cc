@@ -651,6 +651,8 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
           core_access_[current_core_].debug_interface);
       cheriot_interface->SetBreakOnControlFlowChange(false);
+      interrupt_listeners_[current_core_]->SetEnableExceptions(false);
+      interrupt_listeners_[current_core_]->SetEnableInterrupts(false);
       auto result =
           core_access_[current_core_].debug_interface->ClearAllSwBreakpoints();
       if (!result.ok()) {
@@ -710,6 +712,8 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
     // break list
     if (RE2::FullMatch(line_view, *list_break_re_)) {
       std::string bp_list;
+      absl::StrAppend(&bp_list, " index    active      address   symbol\n");
+      absl::StrAppend(&bp_list, " -------------------------------------\n");
       for (auto [index, address] : core_access_[current_core_].breakpoint_map) {
         bool active =
             core_access_[current_core_].debug_interface->HasBreakpoint(address);
@@ -720,11 +724,28 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
           if (res.ok()) symbol = std::move(res.value());
         }
         absl::StrAppend(&bp_list,
-                        absl::StrFormat("  %3d   %-8s   0x%08x   %s\n", index,
+                        absl::StrFormat("  %3d   %8s   0x%08x   %s\n", index,
                                         active ? "active" : "inactive", address,
                                         symbol.empty() ? "-" : symbol));
       }
-      os << absl::StrCat("Breakpoints:\n", bp_list, "\n");
+      auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+          core_access_[current_core_].debug_interface);
+      if (cheriot_interface->BreakOnControlFlowChange()) {
+        absl::StrAppend(&bp_list,
+                        absl::StrFormat("        %8s   0x%08s   %s\n", "active",
+                                        "--------", "$branch"));
+      }
+      if (interrupt_listeners_[current_core_]->AreExceptionsEnabled()) {
+        absl::StrAppend(&bp_list,
+                        absl::StrFormat("        %8s   0x%08s   %s\n", "active",
+                                        "--------", "$exception"));
+      }
+      if (interrupt_listeners_[current_core_]->AreInterruptsEnabled()) {
+        absl::StrAppend(&bp_list,
+                        absl::StrFormat("        %8s   0x%08s   %s\n", "active",
+                                        "--------", "$interrupt"));
+      }
+      os << bp_list << std::endl;
       continue;
     }
 

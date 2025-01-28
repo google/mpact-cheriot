@@ -17,6 +17,8 @@
 #ifndef MPACT_CHERIOT__RISCV_CHERIOT_I_INSTRUCTIONS_H_
 #define MPACT_CHERIOT__RISCV_CHERIOT_I_INSTRUCTIONS_H_
 
+#include <cstdint>
+
 #include "mpact/sim/generic/instruction.h"
 
 // This file contains the declarations of the instruction semantic functions
@@ -90,6 +92,11 @@ void RiscVISw(const Instruction *instruction);
 void RiscVISh(const Instruction *instruction);
 void RiscVISb(const Instruction *instruction);
 
+// Unimplemented instruction. This is executed when either the unimp or the
+// c.unimp instructions are issued. The instruction takes an unknown instruction
+// exception, but does not print a log message.
+// The instruction does not take any operands.
+void RiscVIUnimplemented(const Instruction *instruction);
 // The Fence instruction takes a single source operand (index 0) which consists
 // of an immediate value containing the right justified concatenation of the FM,
 // predecessor, and successor bit fields of the instruction.

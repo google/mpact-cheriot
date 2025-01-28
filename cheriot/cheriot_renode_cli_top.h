@@ -44,6 +44,7 @@ class CheriotRenodeCLITop : public util::renode::RenodeCLITop {
                                     AccessType access_type);
   absl::Status CLIClearDataWatchpoint(uint64_t address, AccessType access_type);
   void CLISetBreakOnControlFlowChange(bool value);
+  bool CLIBreakOnControlFlowChange();
 
   absl::StatusOr<int> CLISetActionPoint(
       uint64_t address, absl::AnyInvocable<void(uint64_t, int)> action);

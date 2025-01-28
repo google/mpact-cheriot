@@ -297,6 +297,7 @@ instruction group RiscVCheriotInst32[32] : Inst32Format {
   csrrwi_nr: I2Type : func3 == 0b101, rd == 0,  opcode == 0b111'0011;
   csrrsi_nw: I2Type : func3 == 0b110, i_uimm5 == 0, opcode == 0b111'0011;
   csrrci_nw: I2Type : func3 == 0b111, i_uimm5 == 0, opcode == 0b111'0011;
+  unimp    : IType  : func3 == 0b001, rs1 == 0, rd == 0, opcode == 0b111'0011;
   // RiscV32 Privileged instructions.
   mret    : Inst32Format  : bits == 0b001'1000'00010'00000'000'00000, opcode == 0b111'0011;
   wfi     : Inst32Format  : bits == 0b000'1000'00101'00000'000'00000, opcode == 0b111'0011;
@@ -492,4 +493,5 @@ instruction group RiscVCheriotInst16[16] : Inst16Format {
   cheriot_cjr       : CR : func4 == 0b1000, rs1 > 1, rs2 == 0, op == 0b10;
   cheriot_cjr_cra   : CR : func4 == 0b1000, rs1 == 1, rs2 == 0, op == 0b10;
   cheriot_cjalr_cra : CR : func4 == 0b1001, rs1 != 0, rs2 == 0, op == 0b10;
+  cunimp : Inst16Format : func3 == 0b000, bits == 0b0'00000'00000, op == 0b00;
 };

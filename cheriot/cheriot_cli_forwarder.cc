@@ -78,6 +78,10 @@ void CheriotCLIForwarder::SetBreakOnControlFlowChange(bool value) {
   cheriot_cli_top_->CLISetBreakOnControlFlowChange(value);
 }
 
+bool CheriotCLIForwarder::BreakOnControlFlowChange() {
+  return cheriot_cli_top_->CLIBreakOnControlFlowChange();
+}
+
 absl::Status CheriotCLIForwarder::Halt() { return cheriot_cli_top_->CLIHalt(); }
 
 absl::Status CheriotCLIForwarder::Halt(HaltReason halt_reason) {

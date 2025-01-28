@@ -118,6 +118,9 @@ class CheriotTop : public generic::Component, public CheriotDebugInterface {
   absl::Status ClearDataWatchpoint(uint64_t address,
                                    AccessType access_type) override;
   void SetBreakOnControlFlowChange(bool value) override;
+  bool BreakOnControlFlowChange() override {
+    return break_on_control_flow_change_;
+  }
 
   // If successful, returns a pointer to the instruction at the given address.
   // The instruction object is IncRef'ed, and the caller must DecRef the object

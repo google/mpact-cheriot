@@ -242,6 +242,21 @@ void RiscVWFI(const Instruction *instruction) {
   state->WFI(instruction);
 }
 
+void RiscVIUnimplemented(const Instruction *instruction) {
+  auto *state = static_cast<CheriotState *>(instruction->state());
+  // Get instruction word, as it needs to be used as trap value.
+  uint64_t address = instruction->address();
+  auto db = state->db_factory()->Allocate<uint32_t>(1);
+  state->DbgLoadMemory(address, db);
+  uint32_t inst_word = db->Get<uint32_t>(0);
+  db->DecRef();
+  // See if the instruction is interpreted as 32 or 16 bit instruction.
+  if ((inst_word & 0b11) != 0b11) inst_word &= 0xffff;
+  state->Trap(/*is_interrupt=*/false, /*trap_value=*/inst_word,
+              *EC::kIllegalInstruction,
+              /*epc=*/instruction->address(), instruction);
+}
+
 }  // namespace cheriot
 }  // namespace sim
 }  // namespace mpact

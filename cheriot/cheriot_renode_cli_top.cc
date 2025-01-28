@@ -65,6 +65,11 @@ void CheriotRenodeCLITop::CLISetBreakOnControlFlowChange(bool value) {
       [this, value]() { cheriot_top_->SetBreakOnControlFlowChange(value); });
 }
 
+bool CheriotRenodeCLITop::CLIBreakOnControlFlowChange() {
+  return DoWhenInControl<bool>(
+      [this]() -> bool { return cheriot_top_->BreakOnControlFlowChange(); });
+}
+
 absl::StatusOr<int> CheriotRenodeCLITop::CLISetActionPoint(
     uint64_t address, absl::AnyInvocable<void(uint64_t, int)> action) {
   return DoWhenInControl<absl::StatusOr<int>>([this, address, &action]() {

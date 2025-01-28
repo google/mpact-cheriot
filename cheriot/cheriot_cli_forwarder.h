@@ -69,6 +69,7 @@ class CheriotCLIForwarder : public CheriotDebugInterface {
   absl::Status DisableAction(uint64_t address, int id) override;
   // Enable breaking on control flow change.
   void SetBreakOnControlFlowChange(bool value) override;
+  bool BreakOnControlFlowChange() override;
   // Request that core stop running.
   absl::Status Halt() override;
   absl::Status Halt(HaltReason halt_reason) override;

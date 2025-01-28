@@ -57,6 +57,7 @@ class CheriotDebugInterface : public generic::CoreDebugInterface {
 
   // Enable/disable breaking on control flow change.
   virtual void SetBreakOnControlFlowChange(bool enabled) = 0;
+  virtual bool BreakOnControlFlowChange() = 0;
 };
 
 }  // namespace mpact::sim::cheriot
