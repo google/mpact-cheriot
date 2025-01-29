@@ -370,6 +370,8 @@ TEST_F(RiscVCheriotEncodingTest, ZicsrOpcodes) {
   enc_->ParseInstruction(kCsrci);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCsrrciNw);
+  enc_->ParseInstruction(kCsrw | 0xc00'00000);
+  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kUnimp);
 }
 
 TEST_F(RiscVCheriotEncodingTest, RV32MOpcodes) {
@@ -499,6 +501,8 @@ TEST_F(RiscVCheriotEncodingTest, RV32COpcodes) {
   enc_->ParseInstruction(kCebreak);
   EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0),
             OpcodeEnum::kCebreak);
+  enc_->ParseInstruction(0x0000);
+  EXPECT_EQ(enc_->GetOpcode(SlotEnum::kRiscv32Cheriot, 0), OpcodeEnum::kCunimp);
 }
 
 TEST_F(RiscVCheriotEncodingTest, RiscVCheriotOpcodes) {
