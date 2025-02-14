@@ -196,7 +196,7 @@ class RiscVCheriotFPCompareInstructionsTest
 
   // Helper function for testing mask vector-scalar/immediate instructions that
   // use the mask bit.
-  template <typename Vs2, typename Fs1>
+  template <typename Vs2, typename Fs1, typename ScalarReg = CheriotRegister>
   void BinaryMaskFPOpWithMaskTestHelperVX(
       absl::string_view name, int sew, Instruction *inst,
       std::function<uint8_t(Vs2, Fs1, bool)> operation) {
@@ -213,7 +213,7 @@ class RiscVCheriotFPCompareInstructionsTest
     Vs2 vs2_value[vs2_size * 8];
     auto vs2_span = Span<Vs2>(vs2_value);
     AppendVectorRegisterOperands({kVs2}, {});
-    AppendRegisterOperands({kFs1Name}, {});
+    AppendRegisterOperands<ScalarReg>({kFs1Name}, {});
     AppendVectorRegisterOperands({kVmask}, {kVd});
     // Initialize input values.
     FillArrayWithRandomValues<Vs2>(vs2_span);
@@ -308,7 +308,7 @@ class RiscVCheriotFPCompareInstructionsTest
   void BinaryMaskFPOpTestHelperVX(absl::string_view name, int sew,
                                   Instruction *inst,
                                   std::function<uint8_t(Vs2, Fs1)> operation) {
-    BinaryMaskFPOpWithMaskTestHelperVX<Vs2, Fs1>(
+    BinaryMaskFPOpWithMaskTestHelperVX<Vs2, Fs1, RVFpRegister>(
         name, sew, inst,
         [operation](Vs2 vs2, Fs1 fs1, bool mask_value) -> uint8_t {
           if (mask_value) {

@@ -293,7 +293,8 @@ class RiscVCheriotFPInstructionsTest
   // Floating point test needs to ensure to use the fp special values (inf, NaN
   // etc.) during testing, not just random values. This function handles vector
   // scalar instructions.
-  template <typename Vd, typename Vs2, typename Fs1>
+  template <typename Vd, typename Vs2, typename Fs1,
+            typename ScalarReg = CheriotRegister>
   void TernaryOpFPTestHelperVX(absl::string_view name, int sew,
                                Instruction *inst, int delta_position,
                                std::function<Vd(Vs2, Fs1, Vd)> operation) {
@@ -314,7 +315,7 @@ class RiscVCheriotFPInstructionsTest
     auto vs2_span = Span<Vs2>(vs2_value);
     auto vd_span = Span<Vd>(vd_value);
     AppendVectorRegisterOperands({kVs2}, {kVd});
-    AppendRegisterOperands({kFs1Name}, {});
+    AppendRegisterOperands<ScalarReg>({kFs1Name}, {});
     AppendVectorRegisterOperands({kVd, kVmask}, {kVd});
     SetVectorRegisterValues<uint8_t>(
         {{kVmaskName, Span<const uint8_t>(kA5Mask)}});
@@ -499,12 +500,12 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfadd) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfadd);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfadd_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float { return vs2 + vs1; });
   ResetInstruction();
   SetSemanticFunction(&Vfadd);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfadd_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double { return vs2 + vs1; });
 }
@@ -524,12 +525,12 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfsub) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfsub);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfsub_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float { return vs2 - vs1; });
   ResetInstruction();
   SetSemanticFunction(&Vfsub);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfsub_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double { return vs2 - vs1; });
 }
@@ -549,12 +550,12 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfrsub) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfrsub);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfrsub_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float { return vs1 - vs2; });
   ResetInstruction();
   SetSemanticFunction(&Vfrsub);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfrsub_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double { return vs1 - vs2; });
 }
@@ -571,7 +572,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwadd) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwadd);
-  BinaryOpFPTestHelperVX<double, float, float>(
+  BinaryOpFPTestHelperVX<double, float, float, RVFpRegister>(
       "Vfwadd_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> double {
         return static_cast<double>(vs2) + static_cast<double>(vs1);
@@ -590,7 +591,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwsub) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwsub);
-  BinaryOpFPTestHelperVX<double, float, float>(
+  BinaryOpFPTestHelperVX<double, float, float, RVFpRegister>(
       "Vfwsub_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> double {
         return static_cast<double>(vs2) - static_cast<double>(vs1);
@@ -609,7 +610,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwaddw) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwaddw);
-  BinaryOpFPTestHelperVX<double, double, float>(
+  BinaryOpFPTestHelperVX<double, double, float, RVFpRegister>(
       "Vfwaddw_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](double vs2, float vs1) -> double {
         return vs2 + static_cast<double>(vs1);
@@ -628,7 +629,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwsubw) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwsubw);
-  BinaryOpFPTestHelperVX<double, double, float>(
+  BinaryOpFPTestHelperVX<double, double, float, RVFpRegister>(
       "Vfwsubw_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](double vs2, float vs1) -> double {
         return vs2 - static_cast<double>(vs1);
@@ -650,12 +651,12 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmul) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfmul);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfmul_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float { return vs2 * vs1; });
   ResetInstruction();
   SetSemanticFunction(&Vfmul);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfmul_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double { return vs2 * vs1; });
 }
@@ -675,12 +676,12 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfdiv) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfdiv);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfdiv_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float { return vs2 / vs1; });
   ResetInstruction();
   SetSemanticFunction(&Vfdiv);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfdiv_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double { return vs2 / vs1; });
 }
@@ -700,12 +701,12 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfrdiv) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfrdiv);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfrdiv_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float { return vs1 / vs2; });
   ResetInstruction();
   SetSemanticFunction(&Vfrdiv);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfrdiv_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double { return vs1 / vs2; });
 }
@@ -722,7 +723,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwmul) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwmul);
-  BinaryOpFPTestHelperVX<double, float, float>(
+  BinaryOpFPTestHelperVX<double, float, float, RVFpRegister>(
       "Vfwmul_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> double {
         return static_cast<double>(vs2) * static_cast<double>(vs1);
@@ -748,14 +749,14 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmadd) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfmadd);
-  TernaryOpFPTestHelperVX<float, float, float>(
+  TernaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfmadd_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1, float vd) -> float {
         return std::fma(vs1, vd, vs2);
       });
   ResetInstruction();
   SetSemanticFunction(&Vfmadd);
-  TernaryOpFPTestHelperVX<double, double, double>(
+  TernaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfmadd_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1, double vd) -> double {
         return std::fma(vs1, vd, vs2);
@@ -781,14 +782,14 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfnmadd) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfnmadd);
-  TernaryOpFPTestHelperVX<float, float, float>(
+  TernaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfnmadd_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1, float vd) -> float {
         return OptimizationBarrier(std::fma(-vs1, vd, -vs2));
       });
   ResetInstruction();
   SetSemanticFunction(&Vfnmadd);
-  TernaryOpFPTestHelperVX<double, double, double>(
+  TernaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfnmadd_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1, double vd) -> double {
         return OptimizationBarrier(std::fma(-vs1, vd, -vs2));
@@ -814,14 +815,14 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmsub) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfmsub);
-  TernaryOpFPTestHelperVX<float, float, float>(
+  TernaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfmsub_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1, float vd) -> float {
         return OptimizationBarrier(std::fma(vs1, vd, -vs2));
       });
   ResetInstruction();
   SetSemanticFunction(&Vfmsub);
-  TernaryOpFPTestHelperVX<double, double, double>(
+  TernaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfmsub_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1, double vd) -> double {
         return OptimizationBarrier(std::fma(vs1, vd, -vs2));
@@ -847,14 +848,14 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfnmsub) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfnmsub);
-  TernaryOpFPTestHelperVX<float, float, float>(
+  TernaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfnmsub_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1, float vd) -> float {
         return OptimizationBarrier(std::fma(-vs1, vd, vs2));
       });
   ResetInstruction();
   SetSemanticFunction(&Vfnmsub);
-  TernaryOpFPTestHelperVX<double, double, double>(
+  TernaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfnmsub_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1, double vd) -> double {
         return OptimizationBarrier(std::fma(-vs1, vd, vs2));
@@ -880,14 +881,14 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmacc) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfmacc);
-  TernaryOpFPTestHelperVX<float, float, float>(
+  TernaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfmacc_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1, float vd) -> float {
         return OptimizationBarrier(std::fma(vs1, vs2, vd));
       });
   ResetInstruction();
   SetSemanticFunction(&Vfmacc);
-  TernaryOpFPTestHelperVX<double, double, double>(
+  TernaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfmacc_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1, double vd) -> double {
         return OptimizationBarrier(std::fma(vs1, vs2, vd));
@@ -913,14 +914,14 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfnmacc) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfnmacc);
-  TernaryOpFPTestHelperVX<float, float, float>(
+  TernaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfnmacc_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1, float vd) -> float {
         return OptimizationBarrier(std::fma(-vs1, vs2, -vd));
       });
   ResetInstruction();
   SetSemanticFunction(&Vfnmacc);
-  TernaryOpFPTestHelperVX<double, double, double>(
+  TernaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfnmacc_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1, double vd) -> double {
         return OptimizationBarrier(std::fma(-vs1, vs2, -vd));
@@ -946,14 +947,14 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmsac) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfmsac);
-  TernaryOpFPTestHelperVX<float, float, float>(
+  TernaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfmsac_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1, float vd) -> float {
         return OptimizationBarrier(std::fma(vs1, vs2, -vd));
       });
   ResetInstruction();
   SetSemanticFunction(&Vfmsac);
-  TernaryOpFPTestHelperVX<double, double, double>(
+  TernaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfmsac_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1, double vd) -> double {
         return OptimizationBarrier(std::fma(vs1, vs2, -vd));
@@ -979,14 +980,14 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfnmsac) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfnmsac);
-  TernaryOpFPTestHelperVX<float, float, float>(
+  TernaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfnmsac_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1, float vd) -> float {
         return OptimizationBarrier(std::fma(-vs1, vs2, vd));
       });
   ResetInstruction();
   SetSemanticFunction(&Vfnmsac);
-  TernaryOpFPTestHelperVX<double, double, double>(
+  TernaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfnmsac_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1, double vd) -> double {
         return OptimizationBarrier(std::fma(-vs1, vs2, vd));
@@ -1007,7 +1008,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwmacc) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwmacc);
-  TernaryOpFPTestHelperVX<double, float, float>(
+  TernaryOpFPTestHelperVX<double, float, float, RVFpRegister>(
       "Vfwmacc_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 64,
       [](float vs2, float vs1, double vd) -> double {
         double vs1d = static_cast<double>(vs1);
@@ -1030,7 +1031,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwnmacc) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwnmacc);
-  TernaryOpFPTestHelperVX<double, float, float>(
+  TernaryOpFPTestHelperVX<double, float, float, RVFpRegister>(
       "Vfwnmacc_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 64,
       [](float vs2, float vs1, double vd) -> double {
         double vs1d = static_cast<double>(vs1);
@@ -1053,7 +1054,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwmsac) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwmsac);
-  TernaryOpFPTestHelperVX<double, float, float>(
+  TernaryOpFPTestHelperVX<double, float, float, RVFpRegister>(
       "Vfwmsac_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 64,
       [](float vs2, float vs1, double vd) -> double {
         double vs1d = static_cast<double>(vs1);
@@ -1076,7 +1077,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfwnmsac) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfwnmsac);
-  TernaryOpFPTestHelperVX<double, float, float>(
+  TernaryOpFPTestHelperVX<double, float, float, RVFpRegister>(
       "Vfwnmsac_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 64,
       [](float vs2, float vs1, double vd) -> double {
         double vs1d = static_cast<double>(vs1);
@@ -1130,7 +1131,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfsgnj) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfsgnj);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfsgnj_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float {
         using Int = typename FPTypeInfo<float>::IntType;
@@ -1140,7 +1141,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfsgnj) {
       });
   ResetInstruction();
   SetSemanticFunction(&Vfsgnj);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfsgnj_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double {
         using Int = typename FPTypeInfo<double>::IntType;
@@ -1175,7 +1176,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfsgnjn) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfsgnjn);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfsgnjn_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float {
         using Int = typename FPTypeInfo<float>::IntType;
@@ -1185,7 +1186,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfsgnjn) {
       });
   ResetInstruction();
   SetSemanticFunction(&Vfsgnjn);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfsgnjn_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double {
         using Int = typename FPTypeInfo<double>::IntType;
@@ -1220,7 +1221,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfsgnjx) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfsgnjx);
-  BinaryOpFPTestHelperVX<float, float, float>(
+  BinaryOpFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfsgnjx_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> float {
         using Int = typename FPTypeInfo<float>::IntType;
@@ -1230,7 +1231,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfsgnjx) {
       });
   ResetInstruction();
   SetSemanticFunction(&Vfsgnjx);
-  BinaryOpFPTestHelperVX<double, double, double>(
+  BinaryOpFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfsgnjx_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> double {
         using Int = typename FPTypeInfo<double>::IntType;
@@ -1296,7 +1297,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmax) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfmax);
-  BinaryOpWithFflagsFPTestHelperVX<float, float, float>(
+  BinaryOpWithFflagsFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfmax_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> std::tuple<float, uint32_t> {
         using T = float;
@@ -1306,7 +1307,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmax) {
       });
   ResetInstruction();
   SetSemanticFunction(&Vfmax);
-  BinaryOpWithFflagsFPTestHelperVX<double, double, double>(
+  BinaryOpWithFflagsFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfmax_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> std::tuple<double, uint32_t> {
         using T = double;
@@ -1340,7 +1341,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmin) {
   // Vector-scalar.
   ResetInstruction();
   SetSemanticFunction(&Vfmin);
-  BinaryOpWithFflagsFPTestHelperVX<float, float, float>(
+  BinaryOpWithFflagsFPTestHelperVX<float, float, float, RVFpRegister>(
       "Vfmin_vx32", /*sew*/ 32, instruction_, /*delta_position*/ 32,
       [](float vs2, float vs1) -> std::tuple<float, uint32_t> {
         using T = float;
@@ -1350,7 +1351,7 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmin) {
       });
   ResetInstruction();
   SetSemanticFunction(&Vfmin);
-  BinaryOpWithFflagsFPTestHelperVX<double, double, double>(
+  BinaryOpWithFflagsFPTestHelperVX<double, double, double, RVFpRegister>(
       "Vfmin_vx64", /*sew*/ 64, instruction_, /*delta_position*/ 64,
       [](double vs2, double vs1) -> std::tuple<double, uint32_t> {
         using T = double;
@@ -1363,12 +1364,12 @@ TEST_F(RiscVCheriotFPInstructionsTest, Vfmin) {
 TEST_F(RiscVCheriotFPInstructionsTest, Vfmerge) {
   // Vector-scalar.
   SetSemanticFunction(&Vfmerge);
-  BinaryOpFPWithMaskTestHelperVX<float, float, float>(
+  BinaryOpFPWithMaskTestHelperVX<float, float, float, RVFpRegister>(
       "Vfmerge_vx32", /*sew*/ 32, instruction_, /*delta position*/ 32,
       [](float vs2, float vs1, bool mask) -> float {
         return mask ? vs1 : vs2;
       });
-  BinaryOpFPWithMaskTestHelperVX<double, double, double>(
+  BinaryOpFPWithMaskTestHelperVX<double, double, double, RVFpRegister>(
       "Vfmerge_vx64", /*sew*/ 64, instruction_, /*delta position*/ 64,
       [](double vs2, double vs1, bool mask) -> double {
         return mask ? vs1 : vs2;

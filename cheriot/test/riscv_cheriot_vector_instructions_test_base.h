@@ -179,28 +179,30 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
 
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the given instruction.
+  template <typename T = CheriotRegister>
   void AppendRegisterOperands(Instruction *inst,
                               const std::vector<std::string> &sources,
                               const std::vector<std::string> &destinations) {
     for (auto &reg_name : sources) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+      auto *reg = state_->GetRegister<T>(reg_name).first;
       inst->AppendSource(reg->CreateSourceOperand());
     }
     for (auto &reg_name : destinations) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+      auto *reg = state_->GetRegister<T>(reg_name).first;
       inst->AppendDestination(reg->CreateDestinationOperand(0));
     }
   }
 
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the default instruction.
+  template <typename T = CheriotRegister>
   void AppendRegisterOperands(const std::vector<std::string> &sources,
                               const std::vector<std::string> &destinations) {
-    AppendRegisterOperands(instruction_, sources, destinations);
+    AppendRegisterOperands<T>(instruction_, sources, destinations);
   }
 
   // Returns the value of the named vector register.
-  template <typename T>
+  template <typename T, typename RegisterType = CheriotRegister>
   T GetRegisterValue(absl::string_view vreg_name) {
     auto *reg = state_->GetRegister<CheriotRegister>(vreg_name).first;
     return reg->data_buffer()->Get<T>();
@@ -545,7 +547,8 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
 
   // Helper function for testing vector-scalar/immediate instructions that use
   // the value of the mask bit.
-  template <typename Vd, typename Vs2, typename Rs1>
+  template <typename Vd, typename Vs2, typename Rs1,
+            typename ScalarReg = CheriotRegister>
   void BinaryOpWithMaskTestHelperVX(
       absl::string_view name, int sew, Instruction *inst,
       std::function<Vd(Vs2, Rs1, bool)> operation) {
@@ -563,7 +566,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
     Vs2 vs2_value[vs2_size * 8];
     auto vs2_span = Span<Vs2>(vs2_value);
     AppendVectorRegisterOperands({kVs2}, {});
-    AppendRegisterOperands({kRs1Name}, {});
+    AppendRegisterOperands<ScalarReg>({kRs1Name}, {});
     AppendVectorRegisterOperands({kVmask}, {kVd});
     // Initialize input values.
     FillArrayWithRandomValues<Vs2>(vs2_span);
@@ -659,10 +662,11 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
 
   // Templated helper function that tests vector-scalar instructions that do
   // not use the value of the mask bit.
-  template <typename Vd, typename Vs2, typename Vs1>
+  template <typename Vd, typename Vs2, typename Vs1,
+            typename ScalarReg = CheriotRegister>
   void BinaryOpTestHelperVX(absl::string_view name, int sew, Instruction *inst,
                             std::function<Vd(Vs2, Vs1)> operation) {
-    BinaryOpWithMaskTestHelperVX<Vd, Vs2, Vs1>(
+    BinaryOpWithMaskTestHelperVX<Vd, Vs2, Vs1, ScalarReg>(
         name, sew, inst, [operation](Vs2 vs2, Vs1 vs1, bool mask_value) -> Vd {
           if (mask_value) {
             return operation(vs2, vs1);
@@ -810,7 +814,8 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
 
   // Helper function for testing vector-scalar/immediate instructions that use
   // the value of the mask bit.
-  template <typename Vd, typename Vs2, typename Rs1>
+  template <typename Vd, typename Vs2, typename Rs1,
+            typename ScalarReg = CheriotRegister>
   void TernaryOpWithMaskTestHelperVX(
       absl::string_view name, int sew, Instruction *inst,
       std::function<Vd(Vs2, Rs1, Vd, bool)> operation) {
@@ -831,7 +836,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
     Vs2 vs2_value[vs2_size * 8];
     auto vs2_span = Span<Vs2>(vs2_value);
     AppendVectorRegisterOperands({kVs2}, {});
-    AppendRegisterOperands({kRs1Name}, {});
+    AppendRegisterOperands<ScalarReg>({kRs1Name}, {});
     AppendVectorRegisterOperands({kVd, kVmask}, {kVd});
     // Initialize input values.
     FillArrayWithRandomValues<Vd>(vd_span);
@@ -940,10 +945,11 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
 
   // Templated helper function that tests vector-scalar instructions that do
   // not use the value of the mask bit.
-  template <typename Vd, typename Vs2, typename Rs1>
+  template <typename Vd, typename Vs2, typename Rs1,
+            typename ScalarReg = CheriotRegister>
   void TernaryOpTestHelperVX(absl::string_view name, int sew, Instruction *inst,
                              std::function<Vd(Vs2, Rs1, Vd)> operation) {
-    TernaryOpWithMaskTestHelperVX<Vd, Vs2, Rs1>(
+    TernaryOpWithMaskTestHelperVX<Vd, Vs2, Rs1, ScalarReg>(
         name, sew, inst,
         [operation](Vs2 vs2, Rs1 rs1, Vd vd, bool mask_value) -> Vd {
           if (mask_value) {
@@ -1070,7 +1076,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
 
   // Helper function for testing mask vector-scalar/immediate instructions that
   // use the mask bit.
-  template <typename Vs2, typename Rs1>
+  template <typename Vs2, typename Rs1, typename ScalarReg = CheriotRegister>
   void BinaryMaskOpWithMaskTestHelperVX(
       absl::string_view name, int sew, Instruction *inst,
       std::function<uint8_t(Vs2, Rs1, bool)> operation) {
@@ -1087,7 +1093,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
     Vs2 vs2_value[vs2_size * 8];
     auto vs2_span = Span<Vs2>(vs2_value);
     AppendVectorRegisterOperands({kVs2}, {});
-    AppendRegisterOperands({kRs1Name}, {});
+    AppendRegisterOperands<ScalarReg>({kRs1Name}, {});
     AppendVectorRegisterOperands({kVmask}, {kVd});
     // Initialize input values.
     FillArrayWithRandomValues<Vs2>(vs2_span);

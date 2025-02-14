@@ -596,7 +596,7 @@ TEST_F(RiscVCheriotFPUnaryInstructionsTest, Vfcvtxufv) {
 // Test vfmv.f.s instruction - move element 0 to scalar fp register.
 TEST_F(RiscVCheriotFPUnaryInstructionsTest, VfmvToScalar) {
   SetSemanticFunction(&Vfmvfs);
-  AppendRegisterOperands({}, {kFs1Name});
+  AppendRegisterOperands<RVFpRegister>({}, {kFs1Name});
   AppendVectorRegisterOperands({kVs2}, {});
   for (int byte_sew : {1, 2, 4, 8}) {
     int vlen = kVectorLengthInBytes / byte_sew;
@@ -636,7 +636,7 @@ TEST_F(RiscVCheriotFPUnaryInstructionsTest, VfmvToScalar) {
 // Test vfmv.f.s instruction - move scalar fp register to element 0.
 TEST_F(RiscVCheriotFPUnaryInstructionsTest, VfmvFromScalar) {
   SetSemanticFunction(&Vfmvsf);
-  AppendRegisterOperands({kFs1Name}, {});
+  AppendRegisterOperands<RVFpRegister>({kFs1Name}, {});
   AppendVectorRegisterOperands({}, {kVd});
   for (int byte_sew : {1, 2, 4, 8}) {
     int vlen = kVectorLengthInBytes / byte_sew;
