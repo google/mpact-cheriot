@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "cheriot/riscv_cheriot_vector.isa"
-#include "cheriot/riscv_cheriot_vector_fp.isa"
-#include "cheriot/riscv_cheriot_f.isa"
-#include "cheriot/riscv_cheriot.isa"
+#include "riscv_cheriot_vector.isa"
+#include "riscv_cheriot_vector_fp.isa"
+#include "riscv_cheriot_f.isa"
+#include "riscv_cheriot.isa"
 
 includes {
   #include "absl/functional/bind_front.h"

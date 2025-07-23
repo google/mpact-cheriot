@@ -38,7 +38,7 @@ decoder RiscVCheriotRVV {
   RiscVCheriotRVVInst16 = {RiscVCheriotInst16};
 };
 
-#include "cheriot/riscv_cheriot.bin_fmt"
-#include "cheriot/riscv_cheriot_f.bin_fmt"
-#include "cheriot/riscv_cheriot_vector.bin_fmt"
-#include "cheriot/riscv_cheriot_vector_fp.bin_fmt"
+#include "riscv_cheriot.bin_fmt"
+#include "riscv_cheriot_f.bin_fmt"
+#include "riscv_cheriot_vector.bin_fmt"
+#include "riscv_cheriot_vector_fp.bin_fmt"
