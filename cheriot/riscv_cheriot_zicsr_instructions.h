@@ -25,11 +25,11 @@ namespace cheriot {
 
 using ::mpact::sim::generic::Instruction;
 
-void RiscVZiCsrrw(Instruction *instruction);
-void RiscVZiCsrrs(Instruction *instruction);
-void RiscVZiCsrrc(Instruction *instruction);
-void RiscVZiCsrrwNr(Instruction *instruction);
-void RiscVZiCsrrNw(Instruction *instruction);
+void RiscVZiCsrrw(Instruction* instruction);
+void RiscVZiCsrrs(Instruction* instruction);
+void RiscVZiCsrrc(Instruction* instruction);
+void RiscVZiCsrrwNr(Instruction* instruction);
+void RiscVZiCsrrNw(Instruction* instruction);
 
 }  // namespace cheriot
 }  // namespace sim

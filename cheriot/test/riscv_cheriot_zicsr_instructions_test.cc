@@ -67,7 +67,7 @@ class ZicsrInstructionsTest : public testing::Test {
     instruction_->set_size(4);
     state_->set_on_trap([this](bool is_interrupt, uint64_t trap_value,
                                uint64_t exception_code, uint64_t epc,
-                               const Instruction *inst) {
+                               const Instruction* inst) {
       return TrapHandler(is_interrupt, trap_value, exception_code, epc, inst);
     });
   }
@@ -80,25 +80,25 @@ class ZicsrInstructionsTest : public testing::Test {
 
   // Appends the source and destination operands for the register names
   // given in the two vectors.
-  void AppendRegisterOperands(Instruction *inst,
+  void AppendRegisterOperands(Instruction* inst,
                               absl::Span<const std::string> sources,
                               absl::Span<const std::string> destinations) {
-    for (auto &reg_name : sources) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& reg_name : sources) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendSource(reg->CreateSourceOperand());
     }
-    for (auto &reg_name : destinations) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& reg_name : destinations) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendDestination(reg->CreateDestinationOperand(0));
     }
   }
 
   // Appends immediate source operands with the given values.
   template <typename T>
-  void AppendImmediateOperands(Instruction *inst,
-                               const std::vector<T> &values) {
+  void AppendImmediateOperands(Instruction* inst,
+                               const std::vector<T>& values) {
     for (auto value : values) {
-      auto *src = new ImmediateOperand<T>(value);
+      auto* src = new ImmediateOperand<T>(value);
       inst->AppendSource(src);
     }
   }
@@ -107,9 +107,9 @@ class ZicsrInstructionsTest : public testing::Test {
   // named register and sets it to the corresponding value.
   template <typename T>
   void SetRegisterValues(const std::vector<std::tuple<std::string, T>> values) {
-    for (auto &[reg_name, value] : values) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
-      auto *db = state_->db_factory()->Allocate<CheriotRegister::ValueType>(1);
+    for (auto& [reg_name, value] : values) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+      auto* db = state_->db_factory()->Allocate<CheriotRegister::ValueType>(1);
       db->Set<T>(0, value);
       reg->SetDataBuffer(db);
       db->DecRef();
@@ -124,7 +124,7 @@ class ZicsrInstructionsTest : public testing::Test {
   // Returns the value of the named register.
   template <typename T>
   T GetRegisterValue(absl::string_view reg_name) {
-    auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
     return reg->data_buffer()->Get<T>(0);
   }
 
@@ -132,23 +132,23 @@ class ZicsrInstructionsTest : public testing::Test {
   // information for checks.
   bool TrapHandler(bool is_interrupt, uint64_t trap_value,
                    uint64_t exception_code, uint64_t epc,
-                   const Instruction *inst);
+                   const Instruction* inst);
 
-  TaggedFlatDemandMemory *mem_;
-  RiscV32SimpleCsr *csr_;
-  CheriotState *state_;
-  Instruction *instruction_;
+  TaggedFlatDemandMemory* mem_;
+  RiscV32SimpleCsr* csr_;
+  CheriotState* state_;
+  Instruction* instruction_;
   bool trap_taken_ = false;
   bool trap_is_interrupt_ = false;
   uint64_t trap_value_ = 0;
   uint64_t trap_exception_code_ = 0;
   uint64_t trap_epc_ = 0;
-  const Instruction *trap_inst_ = nullptr;
+  const Instruction* trap_inst_ = nullptr;
 };
 
 bool ZicsrInstructionsTest::TrapHandler(bool is_interrupt, uint64_t trap_value,
                                         uint64_t exception_code, uint64_t epc,
-                                        const Instruction *inst) {
+                                        const Instruction* inst) {
   trap_taken_ = true;
   trap_is_interrupt_ = is_interrupt;
   trap_value_ = trap_value;
@@ -170,7 +170,7 @@ constexpr uint32_t kCsrValue2 = 0xa5a5a5a5;
 TEST_F(ZicsrInstructionsTest, RiscVZiCsrrw) {
   auto result = state_->csr_set()->GetCsr(kMScratchValue);
   CHECK_OK(result);
-  auto *csr = result.value();
+  auto* csr = result.value();
   CHECK_NE(csr, nullptr);
   csr->Set(kCsrValue1);
   SetRegisterValues<uint32_t>({{kX1, kCsrValue2}, {kX3, 0}});
@@ -190,7 +190,7 @@ TEST_F(ZicsrInstructionsTest, RiscVZiCsrrw) {
 TEST_F(ZicsrInstructionsTest, RiscVZiCsrrs) {
   auto result = state_->csr_set()->GetCsr(kMScratchValue);
   CHECK_OK(result);
-  auto *csr = result.value();
+  auto* csr = result.value();
   CHECK_NE(csr, nullptr);
   csr->Set(kCsrValue1);
   SetRegisterValues<uint32_t>({{kX1, kCsrValue2}, {kX3, 0}});
@@ -209,7 +209,7 @@ TEST_F(ZicsrInstructionsTest, RiscVZiCsrrs) {
 TEST_F(ZicsrInstructionsTest, RiscVZiCsrrc) {
   auto result = state_->csr_set()->GetCsr(kMScratchValue);
   CHECK_OK(result);
-  auto *csr = result.value();
+  auto* csr = result.value();
   CHECK_NE(csr, nullptr);
   csr->Set(kCsrValue1);
   SetRegisterValues<uint32_t>({{kX1, kCsrValue2}, {kX3, 0}});
@@ -228,7 +228,7 @@ TEST_F(ZicsrInstructionsTest, RiscVZiCsrrc) {
 TEST_F(ZicsrInstructionsTest, RiscVZiCsrrwNr) {
   auto result = state_->csr_set()->GetCsr(kMScratchValue);
   CHECK_OK(result);
-  auto *csr = result.value();
+  auto* csr = result.value();
   CHECK_NE(csr, nullptr);
   csr->Set(kCsrValue1);
   SetRegisterValues<uint32_t>({{kX1, kCsrValue2}, {kX3, 0}});
@@ -247,7 +247,7 @@ TEST_F(ZicsrInstructionsTest, RiscVZiCsrrwNr) {
 TEST_F(ZicsrInstructionsTest, RiscVZiCsrrNw) {
   auto result = state_->csr_set()->GetCsr(kMScratchValue);
   CHECK_OK(result);
-  auto *csr = result.value();
+  auto* csr = result.value();
   CHECK_NE(csr, nullptr);
   csr->Set(kCsrValue1);
   SetRegisterValues<uint32_t>({{kX1, kCsrValue2}, {kX3, 0}});

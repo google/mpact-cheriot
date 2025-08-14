@@ -43,7 +43,7 @@ class CheriotRVVIsaFactory
     : public isa32_rvv::RiscVCheriotRVVInstructionSetFactory {
  public:
   std::unique_ptr<isa32_rvv::RiscvCheriotRvvSlot> CreateRiscvCheriotRvvSlot(
-      ArchState *state) override {
+      ArchState* state) override {
     return std::make_unique<isa32_rvv::RiscvCheriotRvvSlot>(state);
   }
 };
@@ -55,37 +55,37 @@ class CheriotRVVDecoder : public generic::DecoderInterface {
   using SlotEnum = isa32_rvv::SlotEnum;
   using OpcodeEnum = isa32_rvv::OpcodeEnum;
 
-  CheriotRVVDecoder(CheriotState *state, util::MemoryInterface *memory);
+  CheriotRVVDecoder(CheriotState* state, util::MemoryInterface* memory);
   CheriotRVVDecoder() = delete;
   ~CheriotRVVDecoder() override;
 
   // This will always return a valid instruction that can be executed. In the
   // case of a decode error, the semantic function in the instruction object
   // instance will raise an internal simulator error when executed.
-  generic::Instruction *DecodeInstruction(uint64_t address) override;
+  generic::Instruction* DecodeInstruction(uint64_t address) override;
 
   // Return the number of opcodes supported by this decoder.
   int GetNumOpcodes() const override {
     return static_cast<int>(OpcodeEnum::kPastMaxValue);
   }
   // Return the name of the opcode at the given index.
-  const char *GetOpcodeName(int index) const override {
+  const char* GetOpcodeName(int index) const override {
     return isa32_rvv::kOpcodeNames[index];
   }
 
   // Getter.
-  isa32_rvv::RiscVCheriotRVVEncoding *cheriot_rvv_encoding() const {
+  isa32_rvv::RiscVCheriotRVVEncoding* cheriot_rvv_encoding() const {
     return cheriot_rvv_encoding_;
   }
 
  private:
-  CheriotState *state_;
-  util::MemoryInterface *memory_;
+  CheriotState* state_;
+  util::MemoryInterface* memory_;
   generic::DataBufferFactory db_factory_;
-  generic::DataBuffer *inst_db_;
-  isa32_rvv::RiscVCheriotRVVEncoding *cheriot_rvv_encoding_;
-  isa32_rvv::RiscVCheriotRVVInstructionSetFactory *cheriot_rvv_isa_factory_;
-  isa32_rvv::RiscVCheriotRVVInstructionSet *cheriot_rvv_isa_;
+  generic::DataBuffer* inst_db_;
+  isa32_rvv::RiscVCheriotRVVEncoding* cheriot_rvv_encoding_;
+  isa32_rvv::RiscVCheriotRVVInstructionSetFactory* cheriot_rvv_isa_factory_;
+  isa32_rvv::RiscVCheriotRVVInstructionSet* cheriot_rvv_isa_;
 };
 
 }  // namespace cheriot

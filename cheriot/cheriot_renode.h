@@ -56,8 +56,8 @@
 // a combined ReNode/CLI interface that manages the priorities and access of
 // ReNode and command line commands to the simulator control class.
 
-extern ::mpact::sim::util::renode::RenodeDebugInterface *CreateMpactSim(
-    std::string name, ::mpact::sim::util::MemoryInterface *renode_sysbus);
+extern ::mpact::sim::util::renode::RenodeDebugInterface* CreateMpactSim(
+    std::string name, ::mpact::sim::util::MemoryInterface* renode_sysbus);
 
 namespace mpact {
 namespace sim {
@@ -107,10 +107,10 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
 
   // Constructor takes a name and a memory interface that is used for memory
   // transactions routed to the system bus.
-  CheriotRenode(std::string name, MemoryInterface *renode_sysbus);
+  CheriotRenode(std::string name, MemoryInterface* renode_sysbus);
   ~CheriotRenode() override;
 
-  absl::StatusOr<uint64_t> LoadExecutable(const char *elf_file_name,
+  absl::StatusOr<uint64_t> LoadExecutable(const char* elf_file_name,
                                           bool for_symbols_only) override;
   // Step the core by num instructions.
   absl::StatusOr<int> Step(int num) override;
@@ -121,18 +121,18 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
   absl::Status WriteRegister(uint32_t reg_id, uint64_t value) override;
   // Get register data buffer call. Not implemented, stubbed out to return null.
   // Read/write the buffers to memory.
-  absl::StatusOr<size_t> ReadMemory(uint64_t address, void *buf,
+  absl::StatusOr<size_t> ReadMemory(uint64_t address, void* buf,
                                     size_t length) override;
-  absl::StatusOr<size_t> WriteMemory(uint64_t address, const void *buf,
+  absl::StatusOr<size_t> WriteMemory(uint64_t address, const void* buf,
                                      size_t length) override;
   // Return register information.
   int32_t GetRenodeRegisterInfoSize() const override;
-  absl::Status GetRenodeRegisterInfo(int32_t index, int32_t max_len, char *name,
-                                     RenodeCpuRegister &info) override;
+  absl::Status GetRenodeRegisterInfo(int32_t index, int32_t max_len, char* name,
+                                     RenodeCpuRegister& info) override;
 
   // Set configuration value.
-  absl::Status SetConfig(const char *config_names[],
-                         const char *config_values[], int size) override;
+  absl::Status SetConfig(const char* config_names[],
+                         const char* config_values[], int size) override;
 
   // Set IRQ value for supported IRQs. Supported irq_nums are:
   //          MachineSoftwareInterrupt = 0x3
@@ -141,31 +141,31 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
   // These correspond to the msip and meip bits of the mip register.
   absl::Status SetIrqValue(int32_t irq_num, bool irq_value) override;
 
-  absl::Status InitializeSimulator(const std::string &cpu_type);
+  absl::Status InitializeSimulator(const std::string& cpu_type);
 
  private:
   std::string name_;
-  MemoryInterface *renode_sysbus_ = nullptr;
-  TaggedMemoryInterface *data_memory_ = nullptr;
-  TaggedMemoryInterface *tagged_sysbus_ = nullptr;
-  CheriotState *cheriot_state_ = nullptr;
-  DecoderInterface *cheriot_decoder_ = nullptr;
-  CheriotTop *cheriot_top_ = nullptr;
-  RiscVArmSemihost *semihost_ = nullptr;
-  SingleInitiatorRouter *router_ = nullptr;
-  SingleInitiatorRouter *renode_router_ = nullptr;
+  MemoryInterface* renode_sysbus_ = nullptr;
+  TaggedMemoryInterface* data_memory_ = nullptr;
+  TaggedMemoryInterface* tagged_sysbus_ = nullptr;
+  CheriotState* cheriot_state_ = nullptr;
+  DecoderInterface* cheriot_decoder_ = nullptr;
+  CheriotTop* cheriot_top_ = nullptr;
+  RiscVArmSemihost* semihost_ = nullptr;
+  SingleInitiatorRouter* router_ = nullptr;
+  SingleInitiatorRouter* renode_router_ = nullptr;
   DataBufferFactory db_factory_;
-  AtomicMemory *atomic_memory_ = nullptr;
-  TaggedFlatDemandMemory *tagged_memory_ = nullptr;
-  RiscVClint *clint_ = nullptr;
-  SocketCLI *socket_cli_ = nullptr;
-  CheriotRenodeCLITop *cheriot_renode_cli_top_ = nullptr;
-  CheriotCLIForwarder *cheriot_cli_forwarder_ = nullptr;
-  ElfProgramLoader *program_loader_ = nullptr;
-  DebugCommandShell *cmd_shell_ = nullptr;
-  InstructionProfiler *inst_profiler_ = nullptr;
-  TaggedMemoryUseProfiler *mem_profiler_ = nullptr;
-  CheriotInstrumentationControl *instrumentation_control_ = nullptr;
+  AtomicMemory* atomic_memory_ = nullptr;
+  TaggedFlatDemandMemory* tagged_memory_ = nullptr;
+  RiscVClint* clint_ = nullptr;
+  SocketCLI* socket_cli_ = nullptr;
+  CheriotRenodeCLITop* cheriot_renode_cli_top_ = nullptr;
+  CheriotCLIForwarder* cheriot_cli_forwarder_ = nullptr;
+  ElfProgramLoader* program_loader_ = nullptr;
+  DebugCommandShell* cmd_shell_ = nullptr;
+  InstructionProfiler* inst_profiler_ = nullptr;
+  TaggedMemoryUseProfiler* mem_profiler_ = nullptr;
+  CheriotInstrumentationControl* instrumentation_control_ = nullptr;
   CheriotCpuType cpu_type_ = CheriotCpuType::kBase;
 };
 

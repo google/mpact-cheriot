@@ -40,7 +40,7 @@ static inline T Extract(T value, int msb, int lsb) {
   return (value >> shift) & mask;
 }
 
-CheriotRegister::CheriotRegister(generic::ArchState *state,
+CheriotRegister::CheriotRegister(generic::ArchState* state,
                                  absl::string_view name)
     : generic::Register<uint32_t>(state, name) {
   ResetNull();
@@ -327,7 +327,7 @@ bool CheriotRegister::IsSealed() const {
   }
 }
 
-absl::Status CheriotRegister::Seal(const CheriotRegister &source,
+absl::Status CheriotRegister::Seal(const CheriotRegister& source,
                                    uint32_t obj_type) {
   if (is_null_) {
     Expand(address(), 0, /*tag=*/false);
@@ -387,7 +387,7 @@ absl::Status CheriotRegister::Seal(const CheriotRegister &source,
   return status;
 }
 
-absl::Status CheriotRegister::Unseal(const CheriotRegister &source,
+absl::Status CheriotRegister::Unseal(const CheriotRegister& source,
                                      uint32_t obj_type) {
   if (is_null_) {
     Expand(address(), 0, /*tag=*/false);
@@ -442,7 +442,7 @@ bool CheriotRegister::IsBackwardSentry() const {
                        (object_type() == kInterruptDisablingBackwardSentry));
 }
 
-void CheriotRegister::CopyFrom(const CheriotRegister &other) {
+void CheriotRegister::CopyFrom(const CheriotRegister& other) {
   data_buffer()->CopyFrom(other.data_buffer());
   if (other.is_null_) {
     Expand(address(), 0, /*tag=*/false);
@@ -460,14 +460,14 @@ void CheriotRegister::CopyFrom(const CheriotRegister &other) {
   raw_ = other.raw_;
 }
 
-bool CheriotRegister::operator==(const CheriotRegister &other) const {
+bool CheriotRegister::operator==(const CheriotRegister& other) const {
   return (tag() == other.tag()) && (top() == other.top()) &&
          (base() == other.base()) && (permissions() == other.permissions()) &&
          (object_type() == other.object_type()) &&
          (reserved() == other.reserved());
 }
 
-bool CheriotRegister::IsMemoryEqual(const CheriotRegister &other) const {
+bool CheriotRegister::IsMemoryEqual(const CheriotRegister& other) const {
   return (address() == other.address()) && (Compress() == other.Compress());
 }
 

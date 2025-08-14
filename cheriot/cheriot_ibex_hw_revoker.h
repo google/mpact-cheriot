@@ -68,42 +68,42 @@ class CheriotIbexHWRevoker : public CounterValueSetInterface<uint64_t>,
   static constexpr uint32_t kInterruptEnableOffset = 0x0014;
 
   CheriotIbexHWRevoker() = delete;
-  CheriotIbexHWRevoker(const CheriotIbexHWRevoker &) = delete;
-  CheriotIbexHWRevoker &operator=(const CheriotIbexHWRevoker &) = delete;
-  CheriotIbexHWRevoker(RiscVPlicIrqInterface *plic_irq, uint64_t heap_base,
-                       uint64_t heap_size, TaggedMemoryInterface *heap_memory,
+  CheriotIbexHWRevoker(const CheriotIbexHWRevoker&) = delete;
+  CheriotIbexHWRevoker& operator=(const CheriotIbexHWRevoker&) = delete;
+  CheriotIbexHWRevoker(RiscVPlicIrqInterface* plic_irq, uint64_t heap_base,
+                       uint64_t heap_size, TaggedMemoryInterface* heap_memory,
                        uint64_t revocation_bits_base,
-                       MemoryInterface *revocation_memory);
+                       MemoryInterface* revocation_memory);
   CheriotIbexHWRevoker(uint64_t heap_base, uint64_t heap_size,
-                       TaggedMemoryInterface *heap_memory,
+                       TaggedMemoryInterface* heap_memory,
                        uint64_t revocation_bits_base,
-                       MemoryInterface *revocation_memory);
+                       MemoryInterface* revocation_memory);
   ~CheriotIbexHWRevoker();
   // Resets the interrupt controller.
   void Reset();
   // CounterValueSetInterface override. This is called when the value of the
   // bound counter is modified.
-  void SetValue(const uint64_t &val) override;
+  void SetValue(const uint64_t& val) override;
 
   // MemoryInterface overrides.
   // Non-vector load method.
-  void Load(uint64_t address, DataBuffer *db, DataBuffer *tags,
-            Instruction *inst, ReferenceCount *context) override;
-  void Load(uint64_t address, DataBuffer *db, Instruction *inst,
-            ReferenceCount *context) override;
+  void Load(uint64_t address, DataBuffer* db, DataBuffer* tags,
+            Instruction* inst, ReferenceCount* context) override;
+  void Load(uint64_t address, DataBuffer* db, Instruction* inst,
+            ReferenceCount* context) override;
   // Vector load method - this is stubbed out.
-  void Load(DataBuffer *address_db, DataBuffer *mask_db, int el_size,
-            DataBuffer *db, Instruction *inst,
-            ReferenceCount *context) override;
+  void Load(DataBuffer* address_db, DataBuffer* mask_db, int el_size,
+            DataBuffer* db, Instruction* inst,
+            ReferenceCount* context) override;
   // Non-vector store method.
-  void Store(uint64_t address, DataBuffer *db, DataBuffer *tags) override;
-  void Store(uint64_t address, DataBuffer *dbs) override;
+  void Store(uint64_t address, DataBuffer* db, DataBuffer* tags) override;
+  void Store(uint64_t address, DataBuffer* dbs) override;
   // Vector store method - this is stubbed out.
-  void Store(DataBuffer *address, DataBuffer *mask, int el_size,
-             DataBuffer *db) override;
+  void Store(DataBuffer* address, DataBuffer* mask, int el_size,
+             DataBuffer* db) override;
 
   // Getters & setters.
-  void set_plic_irq(RiscVPlicIrqInterface *plic_irq) { plic_irq_ = plic_irq; }
+  void set_plic_irq(RiscVPlicIrqInterface* plic_irq) { plic_irq_ = plic_irq; }
   int period() const { return period_; }
   void set_period(int period) { period_ = period; }
   int cap_count() const { return cap_count_; }
@@ -134,19 +134,19 @@ class CheriotIbexHWRevoker : public CounterValueSetInterface<uint64_t>,
   uint64_t current_cap_ = 0;
   // Sweep in progress.
   bool sweep_in_progress_ = false;
-  RiscVPlicIrqInterface *plic_irq_ = nullptr;
+  RiscVPlicIrqInterface* plic_irq_ = nullptr;
   // Heap range.
   uint64_t heap_base_ = 0;
   uint64_t heap_max_ = 0;
   // Memory interface to use for the tagged heap.
-  TaggedMemoryInterface *heap_memory_ = nullptr;
+  TaggedMemoryInterface* heap_memory_ = nullptr;
   // Memory interface to use for the revocation bits.
-  MemoryInterface *revocation_memory_ = nullptr;
+  MemoryInterface* revocation_memory_ = nullptr;
   // Data buffers.
-  DataBuffer *db_ = nullptr;
-  DataBuffer *tag_db_ = nullptr;
+  DataBuffer* db_ = nullptr;
+  DataBuffer* tag_db_ = nullptr;
   // Capability register.
-  CheriotRegister *cap_reg_ = nullptr;
+  CheriotRegister* cap_reg_ = nullptr;
   // Base address of the revocation bits.
   uint64_t revocation_bits_base_ = 0;
   // DB factory.

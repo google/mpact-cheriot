@@ -41,12 +41,12 @@ class CheriotVectorTrueTest : public testing::Test {
   }
 
   TaggedFlatDemandMemory memory_;
-  CheriotState *state_;
-  CheriotVectorState *vstate_;
+  CheriotState* state_;
+  CheriotVectorState* vstate_;
 };
 
 TEST_F(CheriotVectorTrueTest, Initial) {
-  auto *op = new CheriotVectorTrueOperand(state_);
+  auto* op = new CheriotVectorTrueOperand(state_);
   for (int i = 0; i < op->shape()[0]; ++i) {
     EXPECT_EQ(op->AsUint8(i), 0xff) << "element: " << i;
   }
@@ -54,8 +54,8 @@ TEST_F(CheriotVectorTrueTest, Initial) {
 }
 
 TEST_F(CheriotVectorTrueTest, Register) {
-  auto *op = new CheriotVectorTrueOperand(state_);
-  auto *reg = op->GetRegister(0);
+  auto* op = new CheriotVectorTrueOperand(state_);
+  auto* reg = op->GetRegister(0);
   auto span = reg->data_buffer()->Get<uint8_t>();
   for (int i = 0; i < op->shape()[0]; ++i) {
     EXPECT_EQ(span[i], 0xff) << "element: " << i;

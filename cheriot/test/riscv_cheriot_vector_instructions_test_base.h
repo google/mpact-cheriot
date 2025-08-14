@@ -124,7 +124,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
     child_instruction_ = new Instruction(kInstAddress, state_);
     child_instruction_->set_size(4);
     // Initialize a portion of memory with a known pattern.
-    auto *db = state_->db_factory()->Allocate(8192);
+    auto* db = state_->db_factory()->Allocate(8192);
     auto span = db->Get<uint8_t>();
     for (int i = 0; i < 8192; i++) {
       span[i] = i & 0xff;
@@ -162,10 +162,10 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // Creates immediate operands with the values from the vector and appends them
   // to the given instruction.
   template <typename T>
-  void AppendImmediateOperands(Instruction *inst,
-                               const std::vector<T> &values) {
+  void AppendImmediateOperands(Instruction* inst,
+                               const std::vector<T>& values) {
     for (auto value : values) {
-      auto *src = new ImmediateOperand<T>(value);
+      auto* src = new ImmediateOperand<T>(value);
       inst->AppendSource(src);
     }
   }
@@ -173,22 +173,22 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // Creates immediate operands with the values from the vector and appends them
   // to the default instruction.
   template <typename T>
-  void AppendImmediateOperands(const std::vector<T> &values) {
+  void AppendImmediateOperands(const std::vector<T>& values) {
     AppendImmediateOperands<T>(instruction_, values);
   }
 
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the given instruction.
   template <typename T = CheriotRegister>
-  void AppendRegisterOperands(Instruction *inst,
-                              const std::vector<std::string> &sources,
-                              const std::vector<std::string> &destinations) {
-    for (auto &reg_name : sources) {
-      auto *reg = state_->GetRegister<T>(reg_name).first;
+  void AppendRegisterOperands(Instruction* inst,
+                              const std::vector<std::string>& sources,
+                              const std::vector<std::string>& destinations) {
+    for (auto& reg_name : sources) {
+      auto* reg = state_->GetRegister<T>(reg_name).first;
       inst->AppendSource(reg->CreateSourceOperand());
     }
-    for (auto &reg_name : destinations) {
-      auto *reg = state_->GetRegister<T>(reg_name).first;
+    for (auto& reg_name : destinations) {
+      auto* reg = state_->GetRegister<T>(reg_name).first;
       inst->AppendDestination(reg->CreateDestinationOperand(0));
     }
   }
@@ -196,25 +196,25 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the default instruction.
   template <typename T = CheriotRegister>
-  void AppendRegisterOperands(const std::vector<std::string> &sources,
-                              const std::vector<std::string> &destinations) {
+  void AppendRegisterOperands(const std::vector<std::string>& sources,
+                              const std::vector<std::string>& destinations) {
     AppendRegisterOperands<T>(instruction_, sources, destinations);
   }
 
   // Returns the value of the named vector register.
   template <typename T, typename RegisterType = CheriotRegister>
   T GetRegisterValue(absl::string_view vreg_name) {
-    auto *reg = state_->GetRegister<CheriotRegister>(vreg_name).first;
+    auto* reg = state_->GetRegister<CheriotRegister>(vreg_name).first;
     return reg->data_buffer()->Get<T>();
   }
 
   // named register and sets it to the corresponding value.
   template <typename T, typename RegisterType = CheriotRegister>
   void SetRegisterValues(
-      const std::vector<tuple<std::string, const T>> &values) {
-    for (auto &[reg_name, value] : values) {
-      auto *reg = state_->GetRegister<RegisterType>(reg_name).first;
-      auto *db =
+      const std::vector<tuple<std::string, const T>>& values) {
+    for (auto& [reg_name, value] : values) {
+      auto* reg = state_->GetRegister<RegisterType>(reg_name).first;
+      auto* db =
           state_->db_factory()->Allocate<typename RegisterType::ValueType>(1);
       db->template Set<T>(0, value);
       reg->SetDataBuffer(db);
@@ -224,43 +224,43 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
 
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the given instruction.
-  void AppendVectorRegisterOperands(Instruction *inst,
-                                    const std::vector<int> &sources,
-                                    const std::vector<int> &destinations) {
-    for (auto &reg_no : sources) {
-      std::vector<RegisterBase *> reg_vec;
+  void AppendVectorRegisterOperands(Instruction* inst,
+                                    const std::vector<int>& sources,
+                                    const std::vector<int>& destinations) {
+    for (auto& reg_no : sources) {
+      std::vector<RegisterBase*> reg_vec;
       for (int i = 0; (i < 8) && (i + reg_no < 32); i++) {
         std::string reg_name = absl::StrCat("v", i + reg_no);
         reg_vec.push_back(
             state_->GetRegister<RVVectorRegister>(reg_name).first);
       }
-      auto *op = new RV32VectorSourceOperand(
-          absl::Span<RegisterBase *>(reg_vec), absl::StrCat("v", reg_no));
+      auto* op = new RV32VectorSourceOperand(absl::Span<RegisterBase*>(reg_vec),
+                                             absl::StrCat("v", reg_no));
       inst->AppendSource(op);
     }
-    for (auto &reg_no : destinations) {
-      std::vector<RegisterBase *> reg_vec;
+    for (auto& reg_no : destinations) {
+      std::vector<RegisterBase*> reg_vec;
       for (int i = 0; (i < 8) && (i + reg_no < 32); i++) {
         std::string reg_name = absl::StrCat("v", i + reg_no);
         reg_vec.push_back(
             state_->GetRegister<RVVectorRegister>(reg_name).first);
       }
-      auto *op = new RV32VectorDestinationOperand(
-          absl::Span<RegisterBase *>(reg_vec), 0, absl::StrCat("v", reg_no));
+      auto* op = new RV32VectorDestinationOperand(
+          absl::Span<RegisterBase*>(reg_vec), 0, absl::StrCat("v", reg_no));
       inst->AppendDestination(op);
     }
   }
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the default instruction.
-  void AppendVectorRegisterOperands(const std::vector<int> &sources,
-                                    const std::vector<int> &destinations) {
+  void AppendVectorRegisterOperands(const std::vector<int>& sources,
+                                    const std::vector<int>& destinations) {
     AppendVectorRegisterOperands(instruction_, sources, destinations);
   }
 
   // Returns the value of the named vector register.
   template <typename T>
   T GetVectorRegisterValue(absl::string_view reg_name) {
-    auto *reg = state_->GetRegister<RVVectorRegister>(reg_name).first;
+    auto* reg = state_->GetRegister<RVVectorRegister>(reg_name).first;
     return reg->data_buffer()->Get<T>(0);
   }
 
@@ -269,10 +269,10 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // value.
   template <typename T>
   void SetVectorRegisterValues(
-      const std::vector<tuple<std::string, Span<const T>>> &values) {
-    for (auto &[vreg_name, span] : values) {
-      auto *vreg = state_->GetRegister<RVVectorRegister>(vreg_name).first;
-      auto *db = state_->db_factory()->MakeCopyOf(vreg->data_buffer());
+      const std::vector<tuple<std::string, Span<const T>>>& values) {
+    for (auto& [vreg_name, span] : values) {
+      auto* vreg = state_->GetRegister<RVVectorRegister>(vreg_name).first;
+      auto* db = state_->db_factory()->MakeCopyOf(vreg->data_buffer());
       db->template Set<T>(span);
       vreg->SetDataBuffer(db);
       db->DecRef();
@@ -280,7 +280,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   }
 
   // Initializes the semantic function of the instruction object.
-  void SetSemanticFunction(Instruction *inst,
+  void SetSemanticFunction(Instruction* inst,
                            Instruction::SemanticFunction fcn) {
     inst->set_semantic_function(fcn);
   }
@@ -300,7 +300,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
 
   // Configure the vector unit according to the vtype and vlen values.
   void ConfigureVectorUnit(uint32_t vtype, uint32_t vlen) {
-    Instruction *inst = new Instruction(state_);
+    Instruction* inst = new Instruction(state_);
     AppendImmediateOperands<uint32_t>(inst, {vlen, vtype});
     SetSemanticFunction(inst, absl::bind_front(&Vsetvl, true, false));
     inst->Execute(nullptr);
@@ -325,14 +325,14 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // Fill the span with random values.
   template <typename T>
   void FillArrayWithRandomValues(absl::Span<T> span) {
-    for (auto &val : span) {
+    for (auto& val : span) {
       val = RandomValue<T>();
     }
   }
 
   // Helper function for testing unary vector-vector instructions.
   template <typename Vd, typename Vs2>
-  void UnaryOpTestHelperV(absl::string_view name, int sew, Instruction *inst,
+  void UnaryOpTestHelperV(absl::string_view name, int sew, Instruction* inst,
                           std::function<Vd(Vs2)> operation) {
     int byte_sew = sew / 8;
     if (byte_sew != sizeof(Vd) && byte_sew != sizeof(Vs2)) {
@@ -427,7 +427,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // of the mask bit.
   template <typename Vd, typename Vs2, typename Vs1>
   void BinaryOpWithMaskTestHelperVV(
-      absl::string_view name, int sew, Instruction *inst,
+      absl::string_view name, int sew, Instruction* inst,
       std::function<Vd(Vs2, Vs1, bool)> operation) {
     int byte_sew = sew / 8;
     if (byte_sew != sizeof(Vd) && byte_sew != sizeof(Vs2) &&
@@ -534,7 +534,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // Helper function for testing vector-vector instructions that do not
   // use the value of the mask bit.
   template <typename Vd, typename Vs2, typename Vs1>
-  void BinaryOpTestHelperVV(absl::string_view name, int sew, Instruction *inst,
+  void BinaryOpTestHelperVV(absl::string_view name, int sew, Instruction* inst,
                             std::function<Vd(Vs2, Vs1)> operation) {
     BinaryOpWithMaskTestHelperVV<Vd, Vs2, Vs1>(
         name, sew, inst, [operation](Vs2 vs2, Vs1 vs1, bool mask_value) -> Vd {
@@ -550,7 +550,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   template <typename Vd, typename Vs2, typename Rs1,
             typename ScalarReg = CheriotRegister>
   void BinaryOpWithMaskTestHelperVX(
-      absl::string_view name, int sew, Instruction *inst,
+      absl::string_view name, int sew, Instruction* inst,
       std::function<Vd(Vs2, Rs1, bool)> operation) {
     int byte_sew = sew / 8;
     if (byte_sew != sizeof(Vd) && byte_sew != sizeof(Vs2) &&
@@ -664,7 +664,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // not use the value of the mask bit.
   template <typename Vd, typename Vs2, typename Vs1,
             typename ScalarReg = CheriotRegister>
-  void BinaryOpTestHelperVX(absl::string_view name, int sew, Instruction *inst,
+  void BinaryOpTestHelperVX(absl::string_view name, int sew, Instruction* inst,
                             std::function<Vd(Vs2, Vs1)> operation) {
     BinaryOpWithMaskTestHelperVX<Vd, Vs2, Vs1, ScalarReg>(
         name, sew, inst, [operation](Vs2 vs2, Vs1 vs1, bool mask_value) -> Vd {
@@ -679,7 +679,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // of the mask bit.
   template <typename Vd, typename Vs2, typename Vs1>
   void TernaryOpWithMaskTestHelperVV(
-      absl::string_view name, int sew, Instruction *inst,
+      absl::string_view name, int sew, Instruction* inst,
       std::function<Vd(Vs2, Vs1, Vd, bool)> operation) {
     int byte_sew = sew / 8;
     if (byte_sew != sizeof(Vd) && byte_sew != sizeof(Vs2) &&
@@ -800,7 +800,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // Helper function for testing vector-vector instructions that do not
   // use the value of the mask bit.
   template <typename Vd, typename Vs2, typename Vs1>
-  void TernaryOpTestHelperVV(absl::string_view name, int sew, Instruction *inst,
+  void TernaryOpTestHelperVV(absl::string_view name, int sew, Instruction* inst,
                              std::function<Vd(Vs2, Vs1, Vd)> operation) {
     TernaryOpWithMaskTestHelperVV<Vd, Vs2, Vs1>(
         name, sew, inst,
@@ -817,7 +817,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   template <typename Vd, typename Vs2, typename Rs1,
             typename ScalarReg = CheriotRegister>
   void TernaryOpWithMaskTestHelperVX(
-      absl::string_view name, int sew, Instruction *inst,
+      absl::string_view name, int sew, Instruction* inst,
       std::function<Vd(Vs2, Rs1, Vd, bool)> operation) {
     int byte_sew = sew / 8;
     if (byte_sew != sizeof(Vd) && byte_sew != sizeof(Vs2) &&
@@ -947,7 +947,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // not use the value of the mask bit.
   template <typename Vd, typename Vs2, typename Rs1,
             typename ScalarReg = CheriotRegister>
-  void TernaryOpTestHelperVX(absl::string_view name, int sew, Instruction *inst,
+  void TernaryOpTestHelperVX(absl::string_view name, int sew, Instruction* inst,
                              std::function<Vd(Vs2, Rs1, Vd)> operation) {
     TernaryOpWithMaskTestHelperVX<Vd, Vs2, Rs1, ScalarReg>(
         name, sew, inst,
@@ -963,7 +963,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // use the mask bit.
   template <typename Vs2, typename Vs1>
   void BinaryMaskOpWithMaskTestHelperVV(
-      absl::string_view name, int sew, Instruction *inst,
+      absl::string_view name, int sew, Instruction* inst,
       std::function<uint8_t(Vs2, Vs1, bool)> operation) {
     int byte_sew = sew / 8;
     if (byte_sew != sizeof(Vs2) && byte_sew != sizeof(Vs1)) {
@@ -1062,7 +1062,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // not use the mask bit.
   template <typename Vs2, typename Vs1>
   void BinaryMaskOpTestHelperVV(absl::string_view name, int sew,
-                                Instruction *inst,
+                                Instruction* inst,
                                 std::function<uint8_t(Vs2, Vs1)> operation) {
     BinaryMaskOpWithMaskTestHelperVV<Vs2, Vs1>(
         name, sew, inst,
@@ -1078,7 +1078,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // use the mask bit.
   template <typename Vs2, typename Rs1, typename ScalarReg = CheriotRegister>
   void BinaryMaskOpWithMaskTestHelperVX(
-      absl::string_view name, int sew, Instruction *inst,
+      absl::string_view name, int sew, Instruction* inst,
       std::function<uint8_t(Vs2, Rs1, bool)> operation) {
     int byte_sew = sew / 8;
     if (byte_sew != sizeof(Vs2) && byte_sew != sizeof(Rs1)) {
@@ -1174,7 +1174,7 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
   // use the mask bit.
   template <typename Vs2, typename Vs1>
   void BinaryMaskOpTestHelperVX(absl::string_view name, int sew,
-                                Instruction *inst,
+                                Instruction* inst,
                                 std::function<uint8_t(Vs2, Vs1)> operation) {
     BinaryMaskOpWithMaskTestHelperVX<Vs2, Vs1>(
         name, sew, inst,
@@ -1215,25 +1215,25 @@ class RiscVCheriotVectorInstructionsTestBase : public testing::Test {
     }
   }
 
-  CheriotVectorState *rv_vector() const { return rv_vector_; }
-  absl::Span<RVVectorRegister *> vreg() {
-    return absl::Span<RVVectorRegister *>(vreg_);
+  CheriotVectorState* rv_vector() const { return rv_vector_; }
+  absl::Span<RVVectorRegister*> vreg() {
+    return absl::Span<RVVectorRegister*>(vreg_);
   }
-  absl::Span<CheriotRegister *> creg() {
-    return absl::Span<CheriotRegister *>(creg_);
+  absl::Span<CheriotRegister*> creg() {
+    return absl::Span<CheriotRegister*>(creg_);
   }
-  absl::BitGen &bitgen() { return bitgen_; }
-  Instruction *instruction() { return instruction_; }
+  absl::BitGen& bitgen() { return bitgen_; }
+  Instruction* instruction() { return instruction_; }
 
  protected:
-  CheriotRegister *creg_[32];
-  RVVectorRegister *vreg_[32];
-  RVFpRegister *freg_[32];
-  CheriotState *state_;
-  Instruction *instruction_;
-  Instruction *child_instruction_;
-  TaggedFlatDemandMemory *memory_;
-  CheriotVectorState *rv_vector_;
+  CheriotRegister* creg_[32];
+  RVVectorRegister* vreg_[32];
+  RVFpRegister* freg_[32];
+  CheriotState* state_;
+  Instruction* instruction_;
+  Instruction* child_instruction_;
+  TaggedFlatDemandMemory* memory_;
+  CheriotVectorState* rv_vector_;
   absl::BitGen bitgen_;
 };
 

@@ -26,11 +26,11 @@ namespace cheriot {
 
 using UIntReg = uint32_t;
 
-void RiscVPrivMRet(const Instruction *inst) {
-  auto *state = static_cast<CheriotState *>(inst->state());
+void RiscVPrivMRet(const Instruction* inst) {
+  auto* state = static_cast<CheriotState*>(inst->state());
   state->pcc()->CopyFrom(*state->mepcc());
   state->set_branch(true);
-  auto *mstatus = state->mstatus();
+  auto* mstatus = state->mstatus();
   // Set mstatus:mie to the value of mstatus:mpie.
   mstatus->set_mie(mstatus->mpie());
   // Set mstatus:mpie to 1.
@@ -40,9 +40,9 @@ void RiscVPrivMRet(const Instruction *inst) {
   state->SignalReturnFromInterrupt();
 }
 
-void RiscVPrivWfi(const Instruction *inst) {
+void RiscVPrivWfi(const Instruction* inst) {
   // WFI is treated as a no-op, unless the user sets a callback.
-  auto *state = static_cast<CheriotState *>(inst->state());
+  auto* state = static_cast<CheriotState*>(inst->state());
   state->WFI(inst);
 }
 

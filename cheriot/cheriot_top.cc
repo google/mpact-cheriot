@@ -65,8 +65,8 @@ using ::mpact::sim::util::Cache;
 using EC = ::mpact::sim::cheriot::ExceptionCode;
 using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 
-CheriotTop::CheriotTop(std::string name, CheriotState *state,
-                       DecoderInterface *decoder)
+CheriotTop::CheriotTop(std::string name, CheriotState* state,
+                       DecoderInterface* decoder)
     : Component(name),
       state_(state),
       cheriot_decoder_(decoder),
@@ -114,13 +114,13 @@ CheriotTop::~CheriotTop() {
 
 void CheriotTop::Initialize() {
   // Create the watchers.
-  auto *memory = static_cast<util::MemoryInterface *>(state_->tagged_memory());
+  auto* memory = static_cast<util::MemoryInterface*>(state_->tagged_memory());
   tagged_watcher_ = new util::TaggedMemoryWatcher(state_->tagged_memory());
   memory_watcher_ = new util::MemoryWatcher(memory);
   atomic_memory_ = new util::AtomicMemory(memory_watcher_);
   state_->set_tagged_memory(tagged_watcher_);
   state_->set_atomic_tagged_memory(atomic_memory_);
-  pcc_ = static_cast<CheriotRegister *>(
+  pcc_ = static_cast<CheriotRegister*>(
       state_->registers()->at(CheriotState::kPcName));
   // Register opcode counters.
   int num_opcodes = cheriot_decoder_->GetNumOpcodes();
@@ -150,7 +150,7 @@ void CheriotTop::Initialize() {
     RequestHalt(HaltReason::kSoftwareBreakpoint, nullptr);
   });
   // Set the software action callback.
-  state_->AddEbreakHandler([this](const Instruction *inst) {
+  state_->AddEbreakHandler([this](const Instruction* inst) {
     if (rv_ap_manager_->IsActionPointActive(inst->address())) {
       // Need to request a halt so that the action point can be stepped past
       // after executing the actions. However, an action may override the
@@ -185,13 +185,13 @@ void CheriotTop::Initialize() {
   // Branch trace.
   branch_trace_db_ = db_factory_.Allocate<BranchTraceEntry>(kBranchTraceSize);
   branch_trace_ =
-      reinterpret_cast<BranchTraceEntry *>(branch_trace_db_->raw_ptr());
+      reinterpret_cast<BranchTraceEntry*>(branch_trace_db_->raw_ptr());
   for (int i = 0; i < kBranchTraceSize; i++) {
     branch_trace_[i] = {0, 0, 0};
   }
 }
 
-void CheriotTop::ConfigureCache(Cache *&cache, Config<std::string> &config) {
+void CheriotTop::ConfigureCache(Cache*& cache, Config<std::string>& config) {
   if (cache != nullptr) {
     LOG(WARNING) << "Cache already configured - ignored";
     return;
@@ -207,7 +207,7 @@ void CheriotTop::ConfigureCache(Cache *&cache, Config<std::string> &config) {
   }
 }
 
-bool CheriotTop::ExecuteInstruction(Instruction *inst) {
+bool CheriotTop::ExecuteInstruction(Instruction* inst) {
   // Check that pcc has tag set.
   if (!pcc_->tag()) {
     state_->HandleCheriRegException(inst, inst->address(),
@@ -334,7 +334,7 @@ absl::StatusOr<int> CheriotTop::Step(int num) {
   uint64_t pc = next_pc;
   while (!halted_ && (count < num)) {
     SetPc(pc);
-    auto *inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
+    auto* inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
     // Set the next_pc to the next sequential instruction.
     next_pc = pc + inst->size();
     bool executed = false;
@@ -435,7 +435,7 @@ absl::Status CheriotTop::Run() {
     // the most recently executed instruction.
     uint64_t pc = next_pc;
     while (!halted_) {
-      auto *inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
+      auto* inst = cheriot_decode_cache_->GetDecodedInstruction(pc);
       SetPc(pc);
       next_pc = pc + inst->size();
       bool executed = false;
@@ -532,7 +532,7 @@ CheriotTop::GetLastHaltReason() {
   return halt_reason_;
 }
 
-absl::StatusOr<uint64_t> CheriotTop::ReadRegister(const std::string &name) {
+absl::StatusOr<uint64_t> CheriotTop::ReadRegister(const std::string& name) {
   auto iter = state_->registers()->find(name);
   // If the register was not found, see if it refers to a capability component.
   // Capability components are named c<n>.top, c<n>.base, etc.
@@ -545,7 +545,7 @@ absl::StatusOr<uint64_t> CheriotTop::ReadRegister(const std::string &name) {
         return absl::NotFoundError(
             absl::StrCat("Register '", name, "' not found"));
       }
-      auto *cap_reg = static_cast<CheriotRegister *>(iter->second);
+      auto* cap_reg = static_cast<CheriotRegister*>(iter->second);
       if (component == "top") return cap_reg->top();
       if (component == "base") return cap_reg->base();
       if (component == "length") return cap_reg->length();
@@ -561,7 +561,7 @@ absl::StatusOr<uint64_t> CheriotTop::ReadRegister(const std::string &name) {
   if (iter == state_->registers()->end()) {
     auto result = state_->csr_set()->GetCsr(name);
     if (result.ok()) {
-      auto *csr = *result;
+      auto* csr = *result;
       return csr->GetUint32();
     }
     // See if it is $branch_trace_head.
@@ -573,7 +573,7 @@ absl::StatusOr<uint64_t> CheriotTop::ReadRegister(const std::string &name) {
     }
   }
 
-  auto *db = (iter->second)->data_buffer();
+  auto* db = (iter->second)->data_buffer();
   uint64_t value;
   switch (db->size<uint8_t>()) {
     case 1:
@@ -594,7 +594,7 @@ absl::StatusOr<uint64_t> CheriotTop::ReadRegister(const std::string &name) {
   return value;
 }
 
-absl::Status CheriotTop::WriteRegister(const std::string &name,
+absl::Status CheriotTop::WriteRegister(const std::string& name,
                                        uint64_t value) {
   // The registers aren't protected by a mutex, so let's not write them while
   // the simulator is running.
@@ -608,7 +608,7 @@ absl::Status CheriotTop::WriteRegister(const std::string &name,
     std::string component;
     std::string cap_reg_name;
     if (RE2::FullMatch(name, *cap_reg_re_, &cap_reg_name, &component)) {
-      auto *cap_reg = static_cast<CheriotRegister *>(iter->second);
+      auto* cap_reg = static_cast<CheriotRegister*>(iter->second);
       if (component == "top") {
         value = std::min<uint64_t>(value, 0x1'0000'0000ULL);
         if (value < cap_reg->base()) {
@@ -660,7 +660,7 @@ absl::Status CheriotTop::WriteRegister(const std::string &name,
       return absl::NotFoundError(
           absl::StrCat("Register '", name, "' not found"));
     }
-    auto *csr = *result;
+    auto* csr = *result;
     csr->Set(static_cast<uint32_t>(value));
   }
 
@@ -671,7 +671,7 @@ absl::Status CheriotTop::WriteRegister(const std::string &name,
     halt_reason_ = *HaltReason::kNone;
   }
 
-  auto *db = (iter->second)->data_buffer();
+  auto* db = (iter->second)->data_buffer();
   switch (db->size<uint8_t>()) {
     case 1:
       db->Set<uint8_t>(0, static_cast<uint8_t>(value));
@@ -691,8 +691,8 @@ absl::Status CheriotTop::WriteRegister(const std::string &name,
   return absl::OkStatus();
 }
 
-absl::StatusOr<DataBuffer *> CheriotTop::GetRegisterDataBuffer(
-    const std::string &name) {
+absl::StatusOr<DataBuffer*> CheriotTop::GetRegisterDataBuffer(
+    const std::string& name) {
   // The registers aren't protected by a mutex, so let's not access them while
   // the simulator is running.
   if (run_status_ != RunStatus::kHalted) {
@@ -707,7 +707,7 @@ absl::StatusOr<DataBuffer *> CheriotTop::GetRegisterDataBuffer(
   return iter->second->data_buffer();
 }
 
-absl::StatusOr<size_t> CheriotTop::ReadMemory(uint64_t address, void *buffer,
+absl::StatusOr<size_t> CheriotTop::ReadMemory(uint64_t address, void* buffer,
                                               size_t length) {
   if (run_status_ != RunStatus::kHalted) {
     return absl::FailedPreconditionError("ReadMemory: Core must be halted");
@@ -716,7 +716,7 @@ absl::StatusOr<size_t> CheriotTop::ReadMemory(uint64_t address, void *buffer,
     return absl::InvalidArgumentError("Invalid memory address");
   }
   length = std::min(length, state_->max_physical_address() - address + 1);
-  auto *db = db_factory_.Allocate(length);
+  auto* db = db_factory_.Allocate(length);
   // Load bypassing any watch points/semihosting.
   state_->tagged_memory()->Load(address, db, nullptr, nullptr);
   std::memcpy(buffer, db->raw_ptr(), length);
@@ -724,7 +724,7 @@ absl::StatusOr<size_t> CheriotTop::ReadMemory(uint64_t address, void *buffer,
   return length;
 }
 
-absl::StatusOr<size_t> CheriotTop::ReadTagMemory(uint64_t address, void *buf,
+absl::StatusOr<size_t> CheriotTop::ReadTagMemory(uint64_t address, void* buf,
                                                  size_t length) {
   if (run_status_ != RunStatus::kHalted) {
     return absl::FailedPreconditionError("ReadTagMemory: Core must be halted");
@@ -734,7 +734,7 @@ absl::StatusOr<size_t> CheriotTop::ReadTagMemory(uint64_t address, void *buf,
   }
   uint64_t length64 = static_cast<uint64_t>(length);
   length = std::min(length64, state_->max_physical_address() - address + 1);
-  auto *tag_db = db_factory_.Allocate<uint8_t>(length);
+  auto* tag_db = db_factory_.Allocate<uint8_t>(length);
   state_->tagged_memory()->Load(address, nullptr, tag_db, nullptr, nullptr);
   std::memcpy(buf, tag_db->raw_ptr(), length);
   tag_db->DecRef();
@@ -742,7 +742,7 @@ absl::StatusOr<size_t> CheriotTop::ReadTagMemory(uint64_t address, void *buf,
 }
 
 absl::StatusOr<size_t> CheriotTop::WriteMemory(uint64_t address,
-                                               const void *buffer,
+                                               const void* buffer,
                                                size_t length) {
   if (run_status_ != RunStatus::kHalted) {
     return absl::FailedPreconditionError("WriteMemory: Core must be halted");
@@ -752,7 +752,7 @@ absl::StatusOr<size_t> CheriotTop::WriteMemory(uint64_t address,
   }
   uint64_t length64 = static_cast<uint64_t>(length);
   length = std::min(length64, state_->max_physical_address() - address + 1);
-  auto *db = db_factory_.Allocate(length);
+  auto* db = db_factory_.Allocate(length);
   std::memcpy(db->raw_ptr(), buffer, length);
   // Store bypassing any watch points/semihosting.
   state_->tagged_memory()->Store(address, db);
@@ -926,7 +926,7 @@ void CheriotTop::SetBreakOnControlFlowChange(bool value) {
   break_on_control_flow_change_ = value;
 }
 
-absl::StatusOr<Instruction *> CheriotTop::GetInstruction(uint64_t address) {
+absl::StatusOr<Instruction*> CheriotTop::GetInstruction(uint64_t address) {
   // If requesting the instruction at an action point, we need to write the
   // original instruction back to memory before getting the disassembly.
   bool inst_swap = rv_ap_manager_->IsActionPointActive(address);
@@ -935,7 +935,7 @@ absl::StatusOr<Instruction *> CheriotTop::GetInstruction(uint64_t address) {
         address);
   }
   // Get the decoded instruction.
-  Instruction *inst = cheriot_decode_cache_->GetDecodedInstruction(address);
+  Instruction* inst = cheriot_decode_cache_->GetDecodedInstruction(address);
   inst->IncRef();
   // Swap back if required.
   if (inst_swap) {
@@ -953,14 +953,14 @@ absl::StatusOr<std::string> CheriotTop::GetDisassembly(uint64_t address) {
 
   auto res = GetInstruction(address);
   if (!res.ok()) return res.status();
-  Instruction *inst = res.value();
+  Instruction* inst = res.value();
   auto disasm = inst != nullptr ? inst->AsString() : "Invalid instruction";
   inst->DecRef();
   return disasm;
 }
 
 void CheriotTop::RequestHalt(HaltReasonValueType halt_reason,
-                             const Instruction *inst) {
+                             const Instruction* inst) {
   // First set the halt_reason_, then the halt flag.
   halt_reason_ = halt_reason;
   halted_ = true;
@@ -972,7 +972,7 @@ void CheriotTop::RequestHalt(HaltReasonValueType halt_reason,
   }
 }
 
-void CheriotTop::RequestHalt(HaltReason halt_reason, const Instruction *inst) {
+void CheriotTop::RequestHalt(HaltReason halt_reason, const Instruction* inst) {
   RequestHalt(*halt_reason, inst);
 }
 
@@ -988,8 +988,8 @@ absl::Status CheriotTop::ResizeBranchTrace(size_t size) {
   if (absl::popcount(size) != 1) {
     return absl::InvalidArgumentError("Invalid size - must be a power of 2");
   }
-  auto *new_db = db_factory_.Allocate<BranchTraceEntry>(size);
-  auto *new_trace = reinterpret_cast<BranchTraceEntry *>(new_db->raw_ptr());
+  auto* new_db = db_factory_.Allocate<BranchTraceEntry>(size);
+  auto* new_trace = reinterpret_cast<BranchTraceEntry*>(new_db->raw_ptr());
   if (new_db == nullptr) {
     return absl::InternalError("Failed to allocate new branch trace buffer");
   }
@@ -1024,7 +1024,7 @@ absl::Status CheriotTop::ResizeBranchTrace(size_t size) {
 
 void CheriotTop::AddToBranchTrace(uint64_t from, uint64_t to) {
   // Get the most recent entry.
-  auto &entry = branch_trace_[branch_trace_head_];
+  auto& entry = branch_trace_[branch_trace_head_];
   // If the branch is the same as the previous, just increment its count.
   if ((from == entry.from) && (to == entry.to)) {
     entry.count++;
@@ -1036,14 +1036,14 @@ void CheriotTop::AddToBranchTrace(uint64_t from, uint64_t to) {
 }
 
 void CheriotTop::EnableStatistics() {
-  for (auto &[unused, counter_ptr] : counter_map()) {
+  for (auto& [unused, counter_ptr] : counter_map()) {
     if (counter_ptr->GetName() == "pc") continue;
     counter_ptr->SetIsEnabled(true);
   }
 }
 
 void CheriotTop::DisableStatistics() {
-  for (auto &[unused, counter_ptr] : counter_map()) {
+  for (auto& [unused, counter_ptr] : counter_map()) {
     if (counter_ptr->GetName() == "pc") continue;
     counter_ptr->SetIsEnabled(false);
   }

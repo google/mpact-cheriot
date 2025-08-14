@@ -52,16 +52,16 @@ class CheriotLoadFilter : public CounterValueSetInterface<uint64_t> {
   //                  the base of the region of memory to which revokable
   //                  capabilities may use as their base addresses.
   //   revocation_base: The base address of the revocation data area.
-  CheriotLoadFilter(TaggedMemoryInterface *tagged_memory, int period, int count,
+  CheriotLoadFilter(TaggedMemoryInterface* tagged_memory, int period, int count,
                     uint64_t base, uint64_t top, uint64_t cap_base,
                     uint64_t revocation_base);
   CheriotLoadFilter() = delete;
-  CheriotLoadFilter(const CheriotLoadFilter &) = delete;
-  CheriotLoadFilter &operator=(const CheriotLoadFilter &) = delete;
+  CheriotLoadFilter(const CheriotLoadFilter&) = delete;
+  CheriotLoadFilter& operator=(const CheriotLoadFilter&) = delete;
   ~CheriotLoadFilter() override;
 
   // Overridden method called by updates of a linked counter.
-  void SetValue(const uint64_t &value) override;
+  void SetValue(const uint64_t& value) override;
 
  private:
   // Loads the capability at the given address, checks for valid tag and
@@ -73,7 +73,7 @@ class CheriotLoadFilter : public CounterValueSetInterface<uint64_t> {
   bool MustRevoke(uint64_t address);
 
   // Memory interface to use for loads/stores.
-  TaggedMemoryInterface *tagged_memory_;
+  TaggedMemoryInterface* tagged_memory_;
   // Counter to keep track of the number of times SetValue is called.
   int update_counter_ = 0;
   int period_;
@@ -87,11 +87,11 @@ class CheriotLoadFilter : public CounterValueSetInterface<uint64_t> {
   // Current capability address.
   uint64_t cap_address_;
   // Capability register used to expand the loaded capability into.
-  CheriotRegister *cap_reg_;
+  CheriotRegister* cap_reg_;
   // Data buffer factory and data buffers used in loads/stores.
   DataBufferFactory db_factory_;
-  DataBuffer *db_;
-  DataBuffer *tag_db_;
+  DataBuffer* db_;
+  DataBuffer* tag_db_;
 };
 
 }  // namespace mpact::sim::cheriot

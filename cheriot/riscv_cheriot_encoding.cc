@@ -33,7 +33,7 @@ namespace isa32 {
 
 using Extractors = ::mpact::sim::cheriot::encoding::Extractors;
 
-RiscVCheriotEncoding::RiscVCheriotEncoding(CheriotState *state)
+RiscVCheriotEncoding::RiscVCheriotEncoding(CheriotState* state)
     : RiscVCheriotEncodingCommon(state) {
   source_op_getters_.emplace(*SourceOpEnum::kNone, []() { return nullptr; });
   dest_op_getters_.emplace(*DestOpEnum::kNone,
@@ -73,7 +73,7 @@ void RiscVCheriotEncoding::ParseInstruction(uint32_t inst_word) {
   format_ = format;
 }
 
-DestinationOperandInterface *RiscVCheriotEncoding::GetDestination(
+DestinationOperandInterface* RiscVCheriotEncoding::GetDestination(
     SlotEnum, int, OpcodeEnum opcode, DestOpEnum dest_op, int dest_no,
     int latency) {
   int index = static_cast<int>(dest_op);
@@ -87,7 +87,7 @@ DestinationOperandInterface *RiscVCheriotEncoding::GetDestination(
   return (iter->second)(latency);
 }
 
-SourceOperandInterface *RiscVCheriotEncoding::GetSource(SlotEnum, int,
+SourceOperandInterface* RiscVCheriotEncoding::GetSource(SlotEnum, int,
                                                         OpcodeEnum opcode,
                                                         SourceOpEnum source_op,
                                                         int source_no) {

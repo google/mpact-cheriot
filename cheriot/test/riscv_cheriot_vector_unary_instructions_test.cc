@@ -527,8 +527,8 @@ TEST_F(RiscVCheriotVectorUnaryInstructionsTest, Vmsif) {
 
 // Helper function for testing Viota instructions.
 template <typename T>
-void TestViota(RiscVCheriotVectorUnaryInstructionsTest *tester,
-               Instruction *inst) {
+void TestViota(RiscVCheriotVectorUnaryInstructionsTest* tester,
+               Instruction* inst) {
   // Set up vector unit.
   int byte_sew = sizeof(T);
   uint32_t vtype =
@@ -603,8 +603,8 @@ TEST_F(RiscVCheriotVectorUnaryInstructionsTest, Viota64) {
 
 // Helper function for testing Vid instructions.
 template <typename T>
-void TestVid(RiscVCheriotVectorUnaryInstructionsTest *tester,
-             Instruction *inst) {
+void TestVid(RiscVCheriotVectorUnaryInstructionsTest* tester,
+             Instruction* inst) {
   // Initialize the vector unit.
   int byte_sew = sizeof(T);
   uint32_t vtype =

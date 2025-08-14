@@ -24,7 +24,7 @@ class LibRenodeMpactCheriotSoTest : public ::testing::Test {
 
   ~LibRenodeMpactCheriotSoTest() { dlclose(lib_); }
 
-  void *lib_ = nullptr;
+  void* lib_ = nullptr;
 };
 
 TEST_F(LibRenodeMpactCheriotSoTest, Construct) {

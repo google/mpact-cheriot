@@ -28,14 +28,14 @@ using ::mpact::sim::generic::Instruction;
 // Each instruction takes rs1 as source operand 0, rs2 as source operand 1,
 // and rd as destination operand 0.
 
-void MMul(Instruction *instruction);
-void MMulh(Instruction *instruction);
-void MMulhu(Instruction *instruction);
-void MMulhsu(Instruction *instruction);
-void MDiv(Instruction *instruction);
-void MDivu(Instruction *instruction);
-void MRem(Instruction *instruction);
-void MRemu(Instruction *instruction);
+void MMul(Instruction* instruction);
+void MMulh(Instruction* instruction);
+void MMulhu(Instruction* instruction);
+void MMulhsu(Instruction* instruction);
+void MDiv(Instruction* instruction);
+void MDivu(Instruction* instruction);
+void MRem(Instruction* instruction);
+void MRemu(Instruction* instruction);
 
 }  // namespace cheriot
 }  // namespace sim

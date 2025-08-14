@@ -180,7 +180,7 @@ using ::mpact::sim::util::TaggedMemoryInterface;
 using ::mpact::sim::util::TaggedMemoryWatcher;
 
 // Static pointer to the top instance. Used by the control-C handler.
-static CheriotTop *top = nullptr;
+static CheriotTop* top = nullptr;
 
 // Control-c handler to interrupt any running simulation.
 static void sim_sigint_handler(int arg) {
@@ -196,8 +196,8 @@ static void sim_sigint_handler(int arg) {
 // debug command shell.
 static bool PrintRegisters(
     absl::string_view input,
-    const mpact::sim::cheriot::DebugCommandShell::CoreAccess &core_access,
-    std::string &output) {
+    const mpact::sim::cheriot::DebugCommandShell::CoreAccess& core_access,
+    std::string& output) {
   static const LazyRE2 reg_info_re{R"(\s*xyzreg\s+info\s*)"};
   if (!RE2::FullMatch(input, *reg_info_re)) return false;
 
@@ -219,7 +219,7 @@ static bool PrintRegisters(
 
 // Trap handler.
 bool HandleSimulatorTrap(bool is_interrupt, uint64_t trap_value, uint64_t ec,
-                         uint64_t epc, const Instruction *instruction) {
+                         uint64_t epc, const Instruction* instruction) {
   if (is_interrupt) return false;
   std::cerr << absl::StrCat(
       "Exception\n"
@@ -240,7 +240,7 @@ bool HandleSimulatorTrap(bool is_interrupt, uint64_t trap_value, uint64_t ec,
 }
 
 // Main function for the simulator.
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   absl::SetProgramUsageMessage(argv[0]);
   auto arg_vec = absl::ParseCommandLine(argc, argv);
   int exit_code = 0;
@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
       full_file_name.substr(full_file_name.find_last_of('/') + 1);
   std::string file_basename = file_name.substr(0, file_name.find_first_of('.'));
 
-  auto *tagged_memory =
+  auto* tagged_memory =
       new mpact::sim::util::TaggedFlatDemandMemory(kCapabilityGranule);
   // Load the elf segments into memory.
   mpact::sim::util::ElfProgramLoader elf_loader(tagged_memory);
@@ -265,10 +265,10 @@ int main(int argc, char **argv) {
               << "': " << load_result.status().message();
     return -1;
   }
-  auto *router = new mpact::sim::util::SingleInitiatorRouter("router");
-  TaggedMemoryInterface *data_memory =
-      static_cast<TaggedMemoryInterface *>(router);
-  TaggedMemoryUseProfiler *memory_use_profiler = nullptr;
+  auto* router = new mpact::sim::util::SingleInitiatorRouter("router");
+  TaggedMemoryInterface* data_memory =
+      static_cast<TaggedMemoryInterface*>(router);
+  TaggedMemoryUseProfiler* memory_use_profiler = nullptr;
   // Check to see if memory use profiling is enabled, and if so, set it up.
   if (absl::GetFlag(FLAGS_mem_profile)) {
     memory_use_profiler = new TaggedMemoryUseProfiler(data_memory);
@@ -277,19 +277,19 @@ int main(int argc, char **argv) {
     data_memory = memory_use_profiler;
   }
   CheriotState cheriot_state("CherIoT", data_memory,
-                             static_cast<AtomicMemoryOpInterface *>(router));
+                             static_cast<AtomicMemoryOpInterface*>(router));
   cheriot_state.set_core_version(absl::GetFlag(FLAGS_core_version));
 
-  DecoderInterface *decoder = nullptr;
+  DecoderInterface* decoder = nullptr;
   if (absl::GetFlag(FLAGS_rvv_fp)) {
     decoder = new CheriotRVVFPDecoder(&cheriot_state,
-                                      static_cast<MemoryInterface *>(router));
+                                      static_cast<MemoryInterface*>(router));
   } else if (absl::GetFlag(FLAGS_rvv_fp)) {
     decoder = new CheriotRVVDecoder(&cheriot_state,
-                                    static_cast<MemoryInterface *>(router));
+                                    static_cast<MemoryInterface*>(router));
   } else {
     decoder = new CheriotDecoder(&cheriot_state,
-                                 static_cast<MemoryInterface *>(router));
+                                 static_cast<MemoryInterface*>(router));
   }
 
   CheriotTop cheriot_top("Cheriot", &cheriot_state, decoder);
@@ -298,7 +298,7 @@ int main(int argc, char **argv) {
     ComponentValueEntry icache_value;
     icache_value.set_name("icache");
     icache_value.set_string_value(absl::GetFlag(FLAGS_icache));
-    auto *cfg = cheriot_top.GetConfig("icache");
+    auto* cfg = cheriot_top.GetConfig("icache");
     auto status = cfg->Import(&icache_value);
     if (!status.ok()) return -1;
   }
@@ -307,17 +307,17 @@ int main(int argc, char **argv) {
     ComponentValueEntry dcache_value;
     dcache_value.set_name("dcache");
     dcache_value.set_string_value(absl::GetFlag(FLAGS_dcache));
-    auto *cfg = cheriot_top.GetConfig("dcache");
+    auto* cfg = cheriot_top.GetConfig("dcache");
     auto status = cfg->Import(&dcache_value);
     if (!status.ok()) return -1;
     // Hook the cache into the memory port.
-    auto *dcache = cheriot_top.dcache();
+    auto* dcache = cheriot_top.dcache();
     dcache->set_memory(cheriot_top.state()->tagged_memory());
     cheriot_top.state()->set_tagged_memory(dcache);
   }
 
   // Enable instruction profiling if the flag is set.
-  InstructionProfiler *inst_profiler = nullptr;
+  InstructionProfiler* inst_profiler = nullptr;
   if (absl::GetFlag(FLAGS_inst_profile)) {
     inst_profiler = new InstructionProfiler(elf_loader, 2);
     cheriot_top.counter_pc()->AddListener(inst_profiler);
@@ -325,7 +325,7 @@ int main(int argc, char **argv) {
     cheriot_top.counter_pc()->SetIsEnabled(false);
   }
 
-  mpact::sim::generic::DataBuffer *db = nullptr;
+  mpact::sim::generic::DataBuffer* db = nullptr;
 
   // If tohost exists, add a memory watcher to look for exit signal.
   auto tohost_res = elf_loader.GetSymbol("tohost");
@@ -369,10 +369,10 @@ int main(int argc, char **argv) {
     std::cerr << "Error while initializing minstret/minstreth";
     return -1;
   }
-  auto *minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+  auto* minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState>*>(
       minstret_res.value());
-  auto *minstreth =
-      static_cast<RiscVCounterCsrHigh<CheriotState> *>(minstreth_res.value());
+  auto* minstreth =
+      static_cast<RiscVCounterCsrHigh<CheriotState>*>(minstreth_res.value());
   minstret->set_counter(cheriot_top.counter_num_instructions());
   minstreth->set_counter(cheriot_top.counter_num_instructions());
 
@@ -384,24 +384,24 @@ int main(int argc, char **argv) {
     std::cerr << "Error while initializing mcycle/mcycleh";
     return -1;
   }
-  auto *mcycle = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
-      mcycle_res.value());
-  auto *mcycleh =
-      static_cast<RiscVCounterCsrHigh<CheriotState> *>(mcycleh_res.value());
+  auto* mcycle =
+      static_cast<RiscVCounterCsr<uint32_t, CheriotState>*>(mcycle_res.value());
+  auto* mcycleh =
+      static_cast<RiscVCounterCsrHigh<CheriotState>*>(mcycleh_res.value());
   mcycle->set_counter(cheriot_top.counter_num_cycles());
   mcycleh->set_counter(cheriot_top.counter_num_cycles());
 
   // Set up the memory router with the appropriate targets.
-  ::mpact::sim::util::AtomicMemory *atomic_memory = nullptr;
+  ::mpact::sim::util::AtomicMemory* atomic_memory = nullptr;
   atomic_memory = new mpact::sim::util::AtomicMemory(tagged_memory);
 
-  auto *uart = new SimpleUart(cheriot_top.state());
+  auto* uart = new SimpleUart(cheriot_top.state());
 
   auto uart_base = absl::GetFlag(FLAGS_uart);
   auto clint_base = absl::GetFlag(FLAGS_clint);
   CHECK_OK(router->AddTarget<MemoryInterface>(uart, uart_base,
                                               uart_base + 0x100ULL - 1));
-  auto *clint = new RiscVClint(/*period=*/100, cheriot_top.state()->mip());
+  auto* clint = new RiscVClint(/*period=*/100, cheriot_top.state()->mip());
   cheriot_top.counter_num_cycles()->AddListener(clint);
   CHECK_OK(router->AddTarget<MemoryInterface>(clint, clint_base,
                                               clint_base + 0x10000ULL - 1));
@@ -409,8 +409,8 @@ int main(int argc, char **argv) {
   CHECK_OK(router->AddDefaultTarget<TaggedMemoryInterface>(tagged_memory));
 
   // Set up a dummy WFI handler.
-  cheriot_top.state()->set_on_wfi([](const Instruction *) { return true; });
-  cheriot_top.state()->set_on_ecall([](const Instruction *) { return false; });
+  cheriot_top.state()->set_on_wfi([](const Instruction*) { return true; });
+  cheriot_top.state()->set_on_ecall([](const Instruction*) { return false; });
   // Initialize the PC to the entry point.
   uint32_t entry_point = load_result.value();
   auto pcc_write = cheriot_top.WriteRegister("pcc", entry_point);
@@ -420,11 +420,11 @@ int main(int argc, char **argv) {
   }
 
   // Set up semihosting.
-  auto *memory = static_cast<MemoryInterface *>(router);
-  auto *semihost =
+  auto* memory = static_cast<MemoryInterface*>(router);
+  auto* semihost =
       new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32, memory, memory);
   semihost->SetCmdLine(arg_vec);
-  cheriot_top.state()->AddEbreakHandler([semihost](const Instruction *inst) {
+  cheriot_top.state()->AddEbreakHandler([semihost](const Instruction* inst) {
     if (semihost->IsSemihostingCall(inst)) {
       semihost->OnEBreak(inst);
       return true;
@@ -509,7 +509,7 @@ int main(int argc, char **argv) {
 
   // Determine if this is being run interactively or as a batch job.
   bool interactive = absl::GetFlag(FLAGS_i) || absl::GetFlag(FLAGS_interactive);
-  CheriotInstrumentationControl *cheriot_instrumentation_control = nullptr;
+  CheriotInstrumentationControl* cheriot_instrumentation_control = nullptr;
   if (interactive) {
     mpact::sim::cheriot::DebugCommandShell cmd_shell;
     cmd_shell.AddCore({&cheriot_top, [&elf_loader]() { return &elf_loader; },

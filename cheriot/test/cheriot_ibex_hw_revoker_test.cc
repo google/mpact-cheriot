@@ -65,35 +65,35 @@ class MockPlicSource : public RiscVPlicIrqInterface {
 class MemoryViewer : public TaggedMemoryInterface {
  public:
   MemoryViewer() = delete;
-  MemoryViewer(TaggedMemoryInterface *memory) : memory_(memory) {}
+  MemoryViewer(TaggedMemoryInterface* memory) : memory_(memory) {}
   ~MemoryViewer() override = default;
 
-  void Load(uint64_t address, DataBuffer *db, DataBuffer *tags,
-            Instruction *inst, ReferenceCount *context) override {
+  void Load(uint64_t address, DataBuffer* db, DataBuffer* tags,
+            Instruction* inst, ReferenceCount* context) override {
     ld_address_ = address;
     memory_->Load(address, db, tags, inst, context);
   }
-  void Load(uint64_t address, DataBuffer *db, Instruction *inst,
-            ReferenceCount *context) override {
+  void Load(uint64_t address, DataBuffer* db, Instruction* inst,
+            ReferenceCount* context) override {
     ld_address_ = address;
     memory_->Load(address, db, inst, context);
   }
-  void Load(DataBuffer *address_db, DataBuffer *mask_db, int el_size,
-            DataBuffer *db, Instruction *inst,
-            ReferenceCount *context) override {
+  void Load(DataBuffer* address_db, DataBuffer* mask_db, int el_size,
+            DataBuffer* db, Instruction* inst,
+            ReferenceCount* context) override {
     ld_address_ = address_db->Get<uint64_t>(0);
     memory_->Load(address_db, mask_db, el_size, db, inst, context);
   }
-  void Store(uint64_t address, DataBuffer *db, DataBuffer *tags) override {
+  void Store(uint64_t address, DataBuffer* db, DataBuffer* tags) override {
     st_address_ = address;
     memory_->Store(address, db, tags);
   }
-  void Store(uint64_t address, DataBuffer *db) override {
+  void Store(uint64_t address, DataBuffer* db) override {
     st_address_ = address;
     memory_->Store(address, db);
   }
-  void Store(DataBuffer *address_db, DataBuffer *mask_db, int el_size,
-             DataBuffer *db) override {
+  void Store(DataBuffer* address_db, DataBuffer* mask_db, int el_size,
+             DataBuffer* db) override {
     st_address_ = address_db->Get<uint64_t>(0);
     memory_->Store(address_db, mask_db, el_size, db);
   }
@@ -102,7 +102,7 @@ class MemoryViewer : public TaggedMemoryInterface {
   uint64_t st_address() const { return st_address_; }
 
  private:
-  TaggedMemoryInterface *memory_ = nullptr;
+  TaggedMemoryInterface* memory_ = nullptr;
   uint64_t ld_address_ = 0;
   uint64_t st_address_ = 0;
 };
@@ -237,7 +237,7 @@ class CheriotIbexHwRevokerTest : public ::testing::Test {
   }
 
   // Convenience method to read a capability from memory with the given base.
-  CheriotRegister *ReadCapability(uint64_t address) {
+  CheriotRegister* ReadCapability(uint64_t address) {
     heap_memory_->Load(address, db8_, db1_, nullptr, nullptr);
     cap_reg_->Expand(db8_->Get<uint32_t>(0), db8_->Get<uint32_t>(1),
                      db1_->Get<uint8_t>(0));
@@ -246,21 +246,21 @@ class CheriotIbexHwRevokerTest : public ::testing::Test {
 
   uint64_t GetLoadAddress() { return memory_viewer_->ld_address(); }
   uint64_t GetStoreAddress() { return memory_viewer_->st_address(); }
-  MockPlicSource *plic_irq() { return plic_irq_; }
+  MockPlicSource* plic_irq() { return plic_irq_; }
 
  private:
-  CheriotRegister *cap_reg_ = nullptr;
+  CheriotRegister* cap_reg_ = nullptr;
   DataBufferFactory db_factory_;
-  DataBuffer *db1_;
-  DataBuffer *db4_;
-  DataBuffer *db8_;
-  DataBuffer *db128_;
-  DataBuffer *cap_db_;
-  CheriotIbexHWRevoker *revoker_ = nullptr;
-  MockPlicSource *plic_irq_ = nullptr;
-  TaggedFlatDemandMemory *heap_memory_ = nullptr;
-  FlatDemandMemory *revocation_memory_ = nullptr;
-  MemoryViewer *memory_viewer_ = nullptr;
+  DataBuffer* db1_;
+  DataBuffer* db4_;
+  DataBuffer* db8_;
+  DataBuffer* db128_;
+  DataBuffer* cap_db_;
+  CheriotIbexHWRevoker* revoker_ = nullptr;
+  MockPlicSource* plic_irq_ = nullptr;
+  TaggedFlatDemandMemory* heap_memory_ = nullptr;
+  FlatDemandMemory* revocation_memory_ = nullptr;
+  MemoryViewer* memory_viewer_ = nullptr;
 };
 
 // Initial state should all be clear.
@@ -303,7 +303,7 @@ TEST_F(CheriotIbexHwRevokerTest, RevokeOne) {
   // Write a capability at the sweep base.
   for (auto offset = 0; offset < 0x100; offset += 0x8) {
     WriteCapability(kSweepBase + offset, kHeapBase + offset);
-    auto *cap = ReadCapability(kSweepBase);
+    auto* cap = ReadCapability(kSweepBase);
     EXPECT_TRUE(cap->tag());
   }
   // Revoke one capability.
@@ -324,7 +324,7 @@ TEST_F(CheriotIbexHwRevokerTest, RevokeOne) {
   EXPECT_EQ(GetStatus(), 0);
   // Verify that only the one revoked capability was invalidated.
   for (auto offset = 0; offset < 0x100; offset += 0x8) {
-    auto *cap = ReadCapability(kSweepBase + offset);
+    auto* cap = ReadCapability(kSweepBase + offset);
     if (offset == 0x20) {
       EXPECT_FALSE(cap->tag());
     } else {
@@ -337,7 +337,7 @@ TEST_F(CheriotIbexHwRevokerTest, RevokeWithInterrupt) {
   // Write a capability at the sweep base.
   for (auto offset = 0; offset < 0x100; offset += 0x8) {
     WriteCapability(kSweepBase + offset, kHeapBase + offset);
-    auto *cap = ReadCapability(kSweepBase);
+    auto* cap = ReadCapability(kSweepBase);
     EXPECT_TRUE(cap->tag());
   }
   // Revoke one capability.

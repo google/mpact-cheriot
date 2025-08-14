@@ -34,14 +34,14 @@ using ::mpact::sim::riscv::RiscVState;
 using ::mpact::sim::riscv::RVFpRegister;
 
 using SourceOpGetterMap =
-    absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface *()>>;
+    absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface*()>>;
 using DestOpGetterMap =
     absl::flat_hash_map<int,
-                        absl::AnyInvocable<DestinationOperandInterface *(int)>>;
+                        absl::AnyInvocable<DestinationOperandInterface*(int)>>;
 
 template <typename Enum, typename Extractors>
-void AddCheriotRVVFPSourceGetters(SourceOpGetterMap &getter_map,
-                                  RiscVCheriotEncodingCommon *common) {
+void AddCheriotRVVFPSourceGetters(SourceOpGetterMap& getter_map,
+                                  RiscVCheriotEncodingCommon* common) {
   Insert(getter_map, *Enum::kFs1, [common]() {
     int num = Extractors::VArith::ExtractRs1(common->inst_word());
     return GetRegisterSourceOp<RVFpRegister>(
@@ -50,8 +50,8 @@ void AddCheriotRVVFPSourceGetters(SourceOpGetterMap &getter_map,
 }
 
 template <typename Enum, typename Extractors>
-void AddCheriotRVVFPDestGetters(DestOpGetterMap &getter_map,
-                                RiscVCheriotEncodingCommon *common) {
+void AddCheriotRVVFPDestGetters(DestOpGetterMap& getter_map,
+                                RiscVCheriotEncodingCommon* common) {
   Insert(getter_map, *Enum::kFd, [common](int latency) {
     int num = Extractors::VArith::ExtractRd(common->inst_word());
     return GetRegisterDestinationOp<RVFpRegister>(

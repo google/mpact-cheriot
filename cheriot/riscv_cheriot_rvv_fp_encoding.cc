@@ -37,7 +37,7 @@ namespace isa32_rvv_fp {
 
 using Extractors = ::mpact::sim::cheriot::encoding_rvv_fp::Extractors;
 
-RiscVCheriotRVVFPEncoding::RiscVCheriotRVVFPEncoding(CheriotState *state)
+RiscVCheriotRVVFPEncoding::RiscVCheriotRVVFPEncoding(CheriotState* state)
     : RiscVCheriotEncodingCommon(state) {
   source_op_getters_.emplace(*SourceOpEnum::kNone, []() { return nullptr; });
   dest_op_getters_.emplace(*DestOpEnum::kNone,
@@ -87,7 +87,7 @@ void RiscVCheriotRVVFPEncoding::ParseInstruction(uint32_t inst_word) {
   format_ = format;
 }
 
-DestinationOperandInterface *RiscVCheriotRVVFPEncoding::GetDestination(
+DestinationOperandInterface* RiscVCheriotRVVFPEncoding::GetDestination(
     SlotEnum, int, OpcodeEnum opcode, DestOpEnum dest_op, int dest_no,
     int latency) {
   int index = static_cast<int>(dest_op);
@@ -101,7 +101,7 @@ DestinationOperandInterface *RiscVCheriotRVVFPEncoding::GetDestination(
   return (iter->second)(latency);
 }
 
-SourceOperandInterface *RiscVCheriotRVVFPEncoding::GetSource(
+SourceOperandInterface* RiscVCheriotRVVFPEncoding::GetSource(
     SlotEnum, int, OpcodeEnum opcode, SourceOpEnum source_op, int source_no) {
   int index = static_cast<int>(source_op);
   auto iter = source_op_getters_.find(index);

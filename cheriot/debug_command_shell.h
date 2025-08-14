@@ -61,12 +61,12 @@ class DebugCommandShell : public DebugCommandShellInterface {
   ~DebugCommandShell() override;
 
   // Add core access to the system. All cores must be added before calling Run.
-  void AddCore(const CoreAccess &core_access) override;
-  void AddCores(const std::vector<CoreAccess> &core_access) override;
+  void AddCore(const CoreAccess& core_access) override;
+  void AddCores(const std::vector<CoreAccess>& core_access) override;
 
   // The run method is the command interpreter. It parses the command strings,
   // executes the corresponding commands, displays results and error messages.
-  void Run(std::istream &is, std::ostream &os) override;
+  void Run(std::istream& is, std::ostream& os) override;
 
   // This adds a custom command to the command interpreter. Usage will be added
   // to the standard command usage. The callable will be called before the
@@ -101,7 +101,7 @@ class DebugCommandShell : public DebugCommandShellInterface {
           : callback_(std::move(callback)) {}
 
      private:
-      void SetValue(const int64_t &value) override { callback_(value); }
+      void SetValue(const int64_t& value) override { callback_(value); }
       absl::AnyInvocable<void(int64_t)> callback_;
     };
 
@@ -114,7 +114,7 @@ class DebugCommandShell : public DebugCommandShellInterface {
     static constexpr uint32_t kExceptionReturn =
         *HaltReason::kUserSpecifiedMin + 4;
 
-    explicit InterruptListener(CoreAccess *core_access);
+    explicit InterruptListener(CoreAccess* core_access);
     void SetEnableExceptions(bool value) { exceptions_enabled_ = value; }
     void SetEnableInterrupts(bool value) { interrupts_enabled_ = value; }
     bool AreExceptionsEnabled() const { return exceptions_enabled_; }
@@ -124,9 +124,9 @@ class DebugCommandShell : public DebugCommandShellInterface {
     void SetReturnValue(int64_t value);
     void SetTakenValue(int64_t value);
 
-    CoreAccess *core_access_;
-    CheriotState *state_ = nullptr;
-    CheriotDebugInterface *dbg_if_ = nullptr;
+    CoreAccess* core_access_;
+    CheriotState* state_ = nullptr;
+    CheriotDebugInterface* dbg_if_ = nullptr;
     bool interrupts_enabled_ = false;
     bool exceptions_enabled_ = false;
     Listener taken_listener_;
@@ -134,52 +134,52 @@ class DebugCommandShell : public DebugCommandShellInterface {
   };
 
   // Helper method to get the interrupt description.
-  std::string GetInterruptDescription(const InterruptInfo &info) const;
-  std::string GetExceptionDescription(const InterruptInfo &info) const;
+  std::string GetInterruptDescription(const InterruptInfo& info) const;
+  std::string GetExceptionDescription(const InterruptInfo& info) const;
 
   // Helper method for formatting single data buffer value.
-  std::string FormatSingleDbValue(generic::DataBuffer *db,
-                                  const std::string &format, int width,
+  std::string FormatSingleDbValue(generic::DataBuffer* db,
+                                  const std::string& format, int width,
                                   int index) const;
   // Helper method for formatting multiple data buffer values.
-  std::string FormatAllDbValues(generic::DataBuffer *db,
-                                const std::string &format, int width) const;
+  std::string FormatAllDbValues(generic::DataBuffer* db,
+                                const std::string& format, int width) const;
   // Helper method for writing single data buffer value.
   absl::Status WriteSingleValueToDb(absl::string_view str_value,
-                                    generic::DataBuffer *db, std::string format,
+                                    generic::DataBuffer* db, std::string format,
                                     int width, int index) const;
 
   // Helper method for processing read memory command.
-  std::string ReadMemory(int core, const std::string &str_value,
+  std::string ReadMemory(int core, const std::string& str_value,
                          absl::string_view format);
   // Helper method for processing write memory command.
-  std::string WriteMemory(int core, const std::string &str_value1,
-                          const std::string &format,
-                          const std::string &str_value2);
+  std::string WriteMemory(int core, const std::string& str_value1,
+                          const std::string& format,
+                          const std::string& str_value2);
   // Helper method used to parse a numeric string or use the string as a
   // symbol name for lookup in the loader.
   absl::StatusOr<uint64_t> GetValueFromString(int core,
-                                              const std::string &str_value,
+                                              const std::string& str_value,
                                               int radix);
 
   // Method to step over call instructions.
-  absl::Status StepOverCall(int core, std::ostream &os);
+  absl::Status StepOverCall(int core, std::ostream& os);
 
   // Returns true if the given register name is a known capability register.
-  bool IsCapabilityRegister(const std::string &reg_name) const;
+  bool IsCapabilityRegister(const std::string& reg_name) const;
   // Reads and formats a capability register.
   std::string FormatCapabilityRegister(int core,
-                                       const std::string &reg_name) const;
+                                       const std::string& reg_name) const;
   // Reads and formats a register.
-  std::string FormatRegister(int core, const std::string &reg_name) const;
+  std::string FormatRegister(int core, const std::string& reg_name) const;
   // Reads and formats $all registers - stored in reg_vec_.
   std::string FormatAllRegisters(int core) const;
 
   // Action point handling.
   std::string ListActionPoints();
-  std::string EnableActionPointN(const std::string &index_str);
-  std::string DisableActionPointN(const std::string &index_str);
-  std::string ClearActionPointN(const std::string &index_str);
+  std::string EnableActionPointN(const std::string& index_str);
+  std::string DisableActionPointN(const std::string& index_str);
+  std::string ClearActionPointN(const std::string& index_str);
   std::string ClearAllActionPoints();
 
   std::vector<CoreAccess> core_access_;
@@ -246,11 +246,11 @@ class DebugCommandShell : public DebugCommandShellInterface {
   absl::flat_hash_set<std::string> capability_registers_;
   std::vector<std::string> reg_vector_;
   absl::flat_hash_set<std::string> exec_file_names_;
-  std::deque<std::istream *> command_streams_;
+  std::deque<std::istream*> command_streams_;
   std::deque<std::string> previous_commands_;
   std::vector<absl::btree_map<int, ActionPointInfo>> core_action_point_info_;
   std::vector<int> core_action_point_id_;
-  std::vector<InterruptListener *> interrupt_listeners_;
+  std::vector<InterruptListener*> interrupt_listeners_;
 };
 
 }  // namespace cheriot

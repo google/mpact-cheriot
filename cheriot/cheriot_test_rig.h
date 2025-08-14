@@ -42,7 +42,7 @@ class CheriotTestRig : public generic::Component {
   ~CheriotTestRig() override;
   // Execute the instruction word specified in the instruction packet. Fill out
   // the fields in the execution packet accordingly.
-  absl::Status Execute(const test_rig::InstructionPacket &inst_packet, int fd);
+  absl::Status Execute(const test_rig::InstructionPacket& inst_packet, int fd);
   // Return the highest version of RVFI supported.
   int GetMaxSupportedVersion() { return 2; }
   // Set the version of RVFI to use.
@@ -53,9 +53,9 @@ class CheriotTestRig : public generic::Component {
 
  private:
   // Version specific instances of execute and reset.
-  absl::Status ExecuteV1(const test_rig::InstructionPacket &inst_packet,
+  absl::Status ExecuteV1(const test_rig::InstructionPacket& inst_packet,
                          int fd);
-  absl::Status ExecuteV2(const test_rig::InstructionPacket &inst_packet,
+  absl::Status ExecuteV2(const test_rig::InstructionPacket& inst_packet,
                          int fd);
   absl::Status ResetV1(uint8_t halt, int fd);
   absl::Status ResetV2(uint8_t halt, int fd);
@@ -63,7 +63,7 @@ class CheriotTestRig : public generic::Component {
   void ResetArch();
   // Callback when a trap is encountered.
   bool OnTrap(bool is_interrupt, uint64_t trap_value, uint64_t exception_code,
-              uint64_t epc, const Instruction *inst);
+              uint64_t epc, const Instruction* inst);
   // Callback when a memory load/store encountered.
   void OnLoad(uint64_t address, int size);
   void OnStore(uint64_t address, int size);
@@ -71,11 +71,11 @@ class CheriotTestRig : public generic::Component {
   uint32_t GetRegister(uint32_t reg_id);
 
   int trace_version_ = 1;
-  CheriotState *state_;
-  CheriotRegister *pcc_;
-  CheriotTestRigDecoder *cheriot_decoder_ = nullptr;
-  util::TaggedMemoryInterface *tagged_memory_ = nullptr;
-  util::TaggedMemoryWatcher *tagged_memory_watcher_ = nullptr;
+  CheriotState* state_;
+  CheriotRegister* pcc_;
+  CheriotTestRigDecoder* cheriot_decoder_ = nullptr;
+  util::TaggedMemoryInterface* tagged_memory_ = nullptr;
+  util::TaggedMemoryWatcher* tagged_memory_watcher_ = nullptr;
   // Instruction counter.
   generic::SimpleCounter<uint64_t> counter_num_instructions_;
   // Fields for capturing information during execution of an instruction that
@@ -88,10 +88,10 @@ class CheriotTestRig : public generic::Component {
   uint64_t mem_w_data_[4];
   // Handling data buffers for ld/st.
   generic::DataBufferFactory db_factory_;
-  generic::DataBuffer *db1_ = nullptr;
-  generic::DataBuffer *db2_ = nullptr;
-  generic::DataBuffer *db4_ = nullptr;
-  generic::DataBuffer *db8_ = nullptr;
+  generic::DataBuffer* db1_ = nullptr;
+  generic::DataBuffer* db2_ = nullptr;
+  generic::DataBuffer* db4_ = nullptr;
+  generic::DataBuffer* db8_ = nullptr;
 };
 
 }  // namespace mpact::sim::cheriot

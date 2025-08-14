@@ -18,7 +18,6 @@
 
 #include <cerrno>
 #include <cstdint>
-#include <cstring>
 #include <memory>
 
 #include "absl/flags/flag.h"
@@ -36,7 +35,7 @@ using ::mpact::sim::cheriot::test_rig::VersionPacket;
 
 ABSL_FLAG(int, trace_port, 0, "Trace port number");
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   absl::SetProgramUsageMessage(argv[0]);
   auto arg_vec = absl::ParseCommandLine(argc, argv);
 
@@ -74,7 +73,7 @@ int main(int argc, char **argv) {
   const sockaddr_in trace_address_in = {
       AF_INET, htons(absl::GetFlag(FLAGS_trace_port)), {INADDR_ANY}};
   int res =
-      bind(trace_socket, reinterpret_cast<const sockaddr *>(&trace_address_in),
+      bind(trace_socket, reinterpret_cast<const sockaddr*>(&trace_address_in),
            sizeof(trace_address_in));
   if (res != 0) {
     LOG(ERROR) << "Error connecting to trace_socket (" << res << ")\n";

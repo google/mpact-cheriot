@@ -102,7 +102,7 @@ class RiscVCheriotFPUnaryInstructionsTest
   template <typename T>
   void FillArrayWithRandomFPValues(absl::Span<T> span) {
     using UInt = typename FPTypeInfo<T>::IntType;
-    for (auto &val : span) {
+    for (auto& val : span) {
       UInt sign = absl::Uniform(absl::IntervalClosed, bitgen_, 0ULL, 1ULL);
       UInt exp = absl::Uniform(absl::IntervalClosedOpen, bitgen_, 0ULL,
                                1ULL << FPTypeInfo<T>::kExpSize);
@@ -110,14 +110,14 @@ class RiscVCheriotFPUnaryInstructionsTest
                                1ULL << FPTypeInfo<T>::kSigSize);
       UInt value = (sign & 1) << (FPTypeInfo<T>::kBitSize - 1) |
                    (exp << FPTypeInfo<T>::kSigSize) | sig;
-      val = *reinterpret_cast<T *>(&value);
+      val = *reinterpret_cast<T*>(&value);
     }
   }
 
   // Floating point test needs to ensure to use the fp special values (inf, NaN
   // etc.) during testing, not just random values.
   template <typename Vd, typename Vs2>
-  void UnaryOpFPTestHelperV(absl::string_view name, int sew, Instruction *inst,
+  void UnaryOpFPTestHelperV(absl::string_view name, int sew, Instruction* inst,
                             int delta_position,
                             std::function<Vd(Vs2)> operation) {
     int byte_sew = sew / 8;
@@ -142,17 +142,17 @@ class RiscVCheriotFPUnaryInstructionsTest
       using Vs2Int = typename FPTypeInfo<Vs2>::IntType;
       // Overwrite the first few values of the input data with infinities,
       // zeros, denormals and NaNs.
-      *reinterpret_cast<Vs2Int *>(&vs2_span[0]) = FPTypeInfo<Vs2>::kQNaN;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[1]) = FPTypeInfo<Vs2>::kSNaN;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[2]) = FPTypeInfo<Vs2>::kPosInf;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[3]) = FPTypeInfo<Vs2>::kNegInf;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[4]) = FPTypeInfo<Vs2>::kPosZero;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[5]) = FPTypeInfo<Vs2>::kNegZero;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[6]) = FPTypeInfo<Vs2>::kPosDenorm;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[7]) = FPTypeInfo<Vs2>::kNegDenorm;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[8]) = 0x0119515e;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[9]) = 0x0007fea3;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[10]) = 0x800bc58f;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[0]) = FPTypeInfo<Vs2>::kQNaN;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[1]) = FPTypeInfo<Vs2>::kSNaN;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[2]) = FPTypeInfo<Vs2>::kPosInf;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[3]) = FPTypeInfo<Vs2>::kNegInf;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[4]) = FPTypeInfo<Vs2>::kPosZero;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[5]) = FPTypeInfo<Vs2>::kNegZero;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[6]) = FPTypeInfo<Vs2>::kPosDenorm;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[7]) = FPTypeInfo<Vs2>::kNegDenorm;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[8]) = 0x0119515e;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[9]) = 0x0007fea3;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[10]) = 0x800bc58f;
       // Modify the first mask bits to use each of the special floating point
       // values.
       vreg_[kVmask]->data_buffer()->Set<uint8_t>(0, 0xff);
@@ -219,13 +219,13 @@ class RiscVCheriotFPUnaryInstructionsTest
                   auto op_val = operation(vs2_value[count]);
                   // Do separate comparison if the result is a NaN.
                   auto int_reg_val =
-                      *reinterpret_cast<typename FPTypeInfo<Vd>::IntType *>(
+                      *reinterpret_cast<typename FPTypeInfo<Vd>::IntType*>(
                           &reg_val);
                   auto int_op_val =
-                      *reinterpret_cast<typename FPTypeInfo<Vd>::IntType *>(
+                      *reinterpret_cast<typename FPTypeInfo<Vd>::IntType*>(
                           &op_val);
                   auto int_vs2_val =
-                      *reinterpret_cast<typename FPTypeInfo<Vs2>::IntType *>(
+                      *reinterpret_cast<typename FPTypeInfo<Vs2>::IntType*>(
                           &vs2_value[count]);
                   FPCompare<Vd>(
                       op_val, reg_val, delta_position,
@@ -259,7 +259,7 @@ class RiscVCheriotFPUnaryInstructionsTest
   // etc.) during testing, not just random values.
   template <typename Vd, typename Vs2>
   void UnaryOpWithFflagsFPTestHelperV(
-      absl::string_view name, int sew, Instruction *inst, int delta_position,
+      absl::string_view name, int sew, Instruction* inst, int delta_position,
       std::function<std::tuple<Vd, uint32_t>(Vs2)> operation) {
     using VdInt = typename FPTypeInfo<Vd>::IntType;
     using Vs2Int = typename FPTypeInfo<Vs2>::IntType;
@@ -276,7 +276,7 @@ class RiscVCheriotFPUnaryInstructionsTest
     Vs2 vs2_value[vs2_size * 8];
     auto vs2_span = Span<Vs2>(vs2_value);
     AppendVectorRegisterOperands({kVs2, kVmask}, {kVd});
-    auto *op = rv_fp_->fflags()->CreateSetDestinationOperand(0, "fflags");
+    auto* op = rv_fp_->fflags()->CreateSetDestinationOperand(0, "fflags");
     instruction_->AppendDestination(op);
     SetVectorRegisterValues<uint8_t>(
         {{kVmaskName, Span<const uint8_t>(kA5Mask)}});
@@ -286,17 +286,17 @@ class RiscVCheriotFPUnaryInstructionsTest
       FillArrayWithRandomFPValues<Vs2>(vs2_span);
       // Overwrite the first few values of the input data with infinities,
       // zeros, denormals and NaNs.
-      *reinterpret_cast<Vs2Int *>(&vs2_span[0]) = FPTypeInfo<Vs2>::kQNaN;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[1]) = FPTypeInfo<Vs2>::kSNaN;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[2]) = FPTypeInfo<Vs2>::kPosInf;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[3]) = FPTypeInfo<Vs2>::kNegInf;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[4]) = FPTypeInfo<Vs2>::kPosZero;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[5]) = FPTypeInfo<Vs2>::kNegZero;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[6]) = FPTypeInfo<Vs2>::kPosDenorm;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[7]) = FPTypeInfo<Vs2>::kNegDenorm;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[8]) = 0x0119515e;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[9]) = 0x0007fea3;
-      *reinterpret_cast<Vs2Int *>(&vs2_span[10]) = 0x800bc58f;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[0]) = FPTypeInfo<Vs2>::kQNaN;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[1]) = FPTypeInfo<Vs2>::kSNaN;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[2]) = FPTypeInfo<Vs2>::kPosInf;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[3]) = FPTypeInfo<Vs2>::kNegInf;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[4]) = FPTypeInfo<Vs2>::kPosZero;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[5]) = FPTypeInfo<Vs2>::kNegZero;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[6]) = FPTypeInfo<Vs2>::kPosDenorm;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[7]) = FPTypeInfo<Vs2>::kNegDenorm;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[8]) = 0x0119515e;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[9]) = 0x0007fea3;
+      *reinterpret_cast<Vs2Int*>(&vs2_span[10]) = 0x800bc58f;
       // Modify the first mask bits to use each of the special floating point
       // values.
       vreg_[kVmask]->data_buffer()->Set<uint8_t>(0, 0xff);
@@ -379,10 +379,10 @@ class RiscVCheriotFPUnaryInstructionsTest
                   }
                   fflags_test |= (rv_fp_->fflags()->AsUint32() | flag);
                   // Do separate comparison if the result is a NaN.
-                  auto int_reg_val = *reinterpret_cast<VdInt *>(&reg_val);
-                  auto int_op_val = *reinterpret_cast<VdInt *>(&op_val);
+                  auto int_reg_val = *reinterpret_cast<VdInt*>(&reg_val);
+                  auto int_op_val = *reinterpret_cast<VdInt*>(&op_val);
                   auto int_vs2_val =
-                      *reinterpret_cast<Vs2Int *>(&vs2_value[count]);
+                      *reinterpret_cast<Vs2Int*>(&vs2_value[count]);
                   FPCompare<Vd>(
                       op_val, reg_val, delta_position,
                       absl::StrCat(name, "[", count, "] op(", vs2_value[count],
@@ -413,8 +413,8 @@ class RiscVCheriotFPUnaryInstructionsTest
   }
 
  protected:
-  mpact::sim::riscv::RiscVFPState *rv_fp_ = nullptr;
-  RiscVCsrInterface *fflags_ = nullptr;
+  mpact::sim::riscv::RiscVFPState* rv_fp_ = nullptr;
+  RiscVCsrInterface* fflags_ = nullptr;
 };
 
 // Templated helper function for classifying fp numbers.
@@ -425,8 +425,7 @@ typename FPTypeInfo<T>::IntType VfclassVHelper(T val) {
     case FP_INFINITE:
       return std::signbit(val) ? 1 : 1 << 7;
     case FP_NAN: {
-      auto uint_val =
-          *reinterpret_cast<typename FPTypeInfo<T>::IntType *>(&val);
+      auto uint_val = *reinterpret_cast<typename FPTypeInfo<T>::IntType*>(&val);
       bool quiet_nan = (uint_val >> (FPTypeInfo<T>::kSigSize - 1)) & 1;
       return quiet_nan ? 1 << 9 : 1 << 8;
     }
@@ -481,7 +480,7 @@ TEST_F(RiscVCheriotFPUnaryInstructionsTest, Vfcvtfxv) {
 
 // Helper function for fp to integer conversions.
 template <typename F, typename I>
-std::tuple<I, uint32_t> ConvertHelper(F value, RiscVFPState *fp_state) {
+std::tuple<I, uint32_t> ConvertHelper(F value, RiscVFPState* fp_state) {
   constexpr F kMin = static_cast<F>(std::numeric_limits<I>::min());
   constexpr F kMax = static_cast<F>(std::numeric_limits<I>::max());
   ScopedFPStatus status(fp_state->host_fp_interface());
@@ -701,15 +700,15 @@ TEST_F(RiscVCheriotFPUnaryInstructionsTest, Vfncvtrodffw) {
         }
         using UIntD = typename FPTypeInfo<double>::IntType;
         using UIntF = typename FPTypeInfo<float>::IntType;
-        UIntD uval = *reinterpret_cast<UIntD *>(&vs2);
+        UIntD uval = *reinterpret_cast<UIntD*>(&vs2);
         int diff = FPTypeInfo<double>::kSigSize - FPTypeInfo<float>::kSigSize;
         UIntF bit = (uval & (FPTypeInfo<double>::kSigMask >> diff)) != 0;
         float res = static_cast<float>(vs2);
         // The narrowing conversion may have generated an infinity, so check
         // for infinity before doing rounding.
         if (std::isinf(res)) return res;
-        UIntF ures = *reinterpret_cast<UIntF *>(&res) | bit;
-        return *reinterpret_cast<float *>(&ures);
+        UIntF ures = *reinterpret_cast<UIntF*>(&res) | bit;
+        return *reinterpret_cast<float*>(&ures);
       });
 }
 
@@ -787,11 +786,11 @@ TEST_F(RiscVCheriotFPUnaryInstructionsTest, Vfncvtxufw) {
 
 // Helper function for testing approximate reciprocal instruction.
 template <typename T>
-inline T Vrecip7vTestHelper(T vs2, RiscVFPState *rv_fp) {
+inline T Vrecip7vTestHelper(T vs2, RiscVFPState* rv_fp) {
   using UInt = typename FPTypeInfo<T>::IntType;
   if (FPTypeInfo<T>::IsNaN(vs2)) {
     auto nan_value = FPTypeInfo<T>::kCanonicalNaN;
-    return *reinterpret_cast<T *>(&nan_value);
+    return *reinterpret_cast<T*>(&nan_value);
   }
   if (std::isinf(vs2)) {
     return std::signbit(vs2) ? -0.0 : 0.0;
@@ -799,9 +798,9 @@ inline T Vrecip7vTestHelper(T vs2, RiscVFPState *rv_fp) {
   if (vs2 == 0.0) {
     UInt value =
         std::signbit(vs2) ? FPTypeInfo<T>::kNegInf : FPTypeInfo<T>::kPosInf;
-    return *reinterpret_cast<T *>(&value);
+    return *reinterpret_cast<T*>(&value);
   }
-  UInt uint_vs2 = *reinterpret_cast<UInt *>(&vs2);
+  UInt uint_vs2 = *reinterpret_cast<UInt*>(&vs2);
   auto exp = (uint_vs2 & FPTypeInfo<T>::kExpMask) >> FPTypeInfo<T>::kSigSize;
   auto sig2 =
       (uint_vs2 & FPTypeInfo<T>::kSigMask) >> (FPTypeInfo<T>::kSigSize - 2);
@@ -813,7 +812,7 @@ inline T Vrecip7vTestHelper(T vs2, RiscVFPState *rv_fp) {
         return std::numeric_limits<T>::lowest();
       } else {
         UInt value = FPTypeInfo<T>::kNegInf;
-        return *reinterpret_cast<T *>(&value);
+        return *reinterpret_cast<T*>(&value);
       }
     } else {
       if ((rm == FPRoundingMode::kRoundTowardsZero) ||
@@ -821,17 +820,17 @@ inline T Vrecip7vTestHelper(T vs2, RiscVFPState *rv_fp) {
         return std::numeric_limits<T>::max();
       } else {
         UInt value = FPTypeInfo<T>::kPosInf;
-        return *reinterpret_cast<T *>(&value);
+        return *reinterpret_cast<T*>(&value);
       }
     }
   }
   ScopedFPStatus status(rv_fp->host_fp_interface(),
                         FPRoundingMode::kRoundTowardsZero);
   T value = 1.0 / vs2;
-  UInt uint_val = *reinterpret_cast<UInt *>(&value);
+  UInt uint_val = *reinterpret_cast<UInt*>(&value);
   UInt mask = FPTypeInfo<T>::kSigMask >> 7;
   uint_val = uint_val & ~mask;
-  return *reinterpret_cast<T *>(&uint_val);
+  return *reinterpret_cast<T*>(&uint_val);
 }
 
 // Test approximate reciprocal instruction.
@@ -846,18 +845,18 @@ TEST_F(RiscVCheriotFPUnaryInstructionsTest, Vfrec7v) {
 
 // Helper function for testing approximate reciprocal square root instruction.
 template <typename T>
-inline std::tuple<T, uint32_t> Vfrsqrt7vTestHelper(T vs2, RiscVFPState *rv_fp) {
+inline std::tuple<T, uint32_t> Vfrsqrt7vTestHelper(T vs2, RiscVFPState* rv_fp) {
   using UInt = typename FPTypeInfo<T>::IntType;
   T return_value;
   uint32_t fflags = 0;
   if (FPTypeInfo<T>::IsNaN(vs2) || (vs2 < 0.0)) {
     auto nan_value = FPTypeInfo<T>::kCanonicalNaN;
-    return_value = *reinterpret_cast<T *>(&nan_value);
+    return_value = *reinterpret_cast<T*>(&nan_value);
     fflags = static_cast<uint32_t>(FPExceptions::kInvalidOp);
   } else if (vs2 == 0.0) {
     UInt value =
         std::signbit(vs2) ? FPTypeInfo<T>::kNegInf : FPTypeInfo<T>::kPosInf;
-    return_value = *reinterpret_cast<T *>(&value);
+    return_value = *reinterpret_cast<T*>(&value);
     fflags = static_cast<uint32_t>(FPExceptions::kDivByZero);
   } else if (std::isinf(vs2)) {
     return_value = 0.0;
@@ -866,10 +865,10 @@ inline std::tuple<T, uint32_t> Vfrsqrt7vTestHelper(T vs2, RiscVFPState *rv_fp) {
     ScopedFPStatus status(rv_fp->host_fp_interface(),
                           FPRoundingMode::kRoundTowardsZero);
     T value = 1.0 / sqrt(vs2);
-    UInt uint_val = *reinterpret_cast<UInt *>(&value);
+    UInt uint_val = *reinterpret_cast<UInt*>(&value);
     UInt mask = FPTypeInfo<T>::kSigMask >> 7;
     uint_val = uint_val & ~mask;
-    return_value = *reinterpret_cast<T *>(&uint_val);
+    return_value = *reinterpret_cast<T*>(&uint_val);
   }
   return std::make_tuple(return_value, fflags);
 }
@@ -901,7 +900,7 @@ inline std::tuple<T, uint32_t> VfsqrtvTestHelper(T vs2) {
     if (!mpact::sim::generic::FPTypeInfo<T>::IsQNaN(vs2)) {
       flags = (uint32_t)FPExceptions::kInvalidOp;
     }
-    return std::make_tuple(*reinterpret_cast<const T *>(&val),
+    return std::make_tuple(*reinterpret_cast<const T*>(&val),
                            (uint32_t)FPExceptions::kInvalidOp);
   }
   T res = sqrt(vs2);

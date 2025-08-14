@@ -24,11 +24,11 @@ namespace mpact {
 namespace sim {
 namespace cheriot {
 
-CheriotVectorTrueOperand::CheriotVectorTrueOperand(CheriotState *state)
+CheriotVectorTrueOperand::CheriotVectorTrueOperand(CheriotState* state)
     : RV32VectorSourceOperand(
           state->GetRegister<RVVectorRegister>(kName).first) {
   // Ensure the value is all ones.
-  auto *reg = state->GetRegister<RVVectorRegister>(kName).first;
+  auto* reg = state->GetRegister<RVVectorRegister>(kName).first;
   auto data = reg->data_buffer()->Get<uint64_t>();
   for (int i = 0; i < data.size(); i++) {
     data[i] = std::numeric_limits<uint64_t>::max();

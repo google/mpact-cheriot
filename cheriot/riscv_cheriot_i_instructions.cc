@@ -32,8 +32,8 @@ namespace cheriot {
 
 using EC = ::mpact::sim::riscv::ExceptionCode;
 
-void RiscVIllegalInstruction(const Instruction *inst) {
-  auto *state = static_cast<CheriotState *>(inst->state());
+void RiscVIllegalInstruction(const Instruction* inst) {
+  auto* state = static_cast<CheriotState*>(inst->state());
   // Get instruction word, as it needs to be used as trap value.
   uint64_t address = inst->address();
   auto db = state->db_factory()->Allocate<uint32_t>(1);
@@ -61,59 +61,59 @@ using UIntReg =
     typename std::make_unsigned<typename RegisterType::ValueType>::type;
 using IntReg = typename std::make_signed<UIntReg>::type;
 
-void RiscVIAdd(const Instruction *instruction) {
+void RiscVIAdd(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, UIntReg, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a + b; });
 }
 
-void RiscVISub(const Instruction *instruction) {
+void RiscVISub(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, UIntReg, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a - b; });
 }
 
-void RiscVISlt(const Instruction *instruction) {
+void RiscVISlt(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, IntReg, IntReg>(
       instruction, [](IntReg a, IntReg b) { return a < b; });
 }
 
-void RiscVISltu(const Instruction *instruction) {
+void RiscVISltu(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, UIntReg, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a < b; });
 }
 
-void RiscVIAnd(const Instruction *instruction) {
+void RiscVIAnd(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, UIntReg, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a & b; });
 }
 
-void RiscVIOr(const Instruction *instruction) {
+void RiscVIOr(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, UIntReg, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a | b; });
 }
 
-void RiscVIXor(const Instruction *instruction) {
+void RiscVIXor(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, UIntReg, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a ^ b; });
 }
 
-void RiscVISll(const Instruction *instruction) {
+void RiscVISll(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, UIntReg, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a << (b & 0x1f); });
 }
 
-void RiscVISrl(const Instruction *instruction) {
+void RiscVISrl(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, UIntReg, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a >> (b & 0x1f); });
 }
 
-void RiscVISra(const Instruction *instruction) {
+void RiscVISra(const Instruction* instruction) {
   RVCheriotBinaryOp<RegisterType, IntReg, IntReg>(
       instruction, [](IntReg a, IntReg b) { return a >> (b & 0x1f); });
 }
 
 // Load upper immediate. It is assumed that the decoder already shifted the
 // immediate. Operates on 32 bit quantities, not XLEN bits.
-void RiscVILui(const Instruction *instruction) {
+void RiscVILui(const Instruction* instruction) {
   RVCheriotUnaryOp<RegisterType, uint32_t, uint32_t>(
       instruction, [](uint32_t lhs) { return lhs & ~0xfff; });
 }
@@ -121,129 +121,129 @@ void RiscVILui(const Instruction *instruction) {
 // RiscVIJal and RiscVIJalr are superseded by the capability versions CJal and
 // CJalr.
 
-void RiscVINop(const Instruction *instruction) {}
+void RiscVINop(const Instruction* instruction) {}
 
 // Register width integer types.
 using UIntReg =
     typename std::make_unsigned<typename RegisterType::ValueType>::type;
 using IntReg = typename std::make_signed<UIntReg>::type;
 
-void RiscVIBeq(const Instruction *instruction) {
+void RiscVIBeq(const Instruction* instruction) {
   RVCheriotBranchConditional<RegisterType, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a == b; });
 }
 
-void RiscVIBne(const Instruction *instruction) {
+void RiscVIBne(const Instruction* instruction) {
   RVCheriotBranchConditional<RegisterType, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a != b; });
 }
 
-void RiscVIBlt(const Instruction *instruction) {
+void RiscVIBlt(const Instruction* instruction) {
   RVCheriotBranchConditional<RegisterType, IntReg>(
       instruction, [](IntReg a, IntReg b) { return a < b; });
 }
 
-void RiscVIBltu(const Instruction *instruction) {
+void RiscVIBltu(const Instruction* instruction) {
   RVCheriotBranchConditional<RegisterType, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a < b; });
 }
 
-void RiscVIBge(const Instruction *instruction) {
+void RiscVIBge(const Instruction* instruction) {
   RVCheriotBranchConditional<RegisterType, IntReg>(
       instruction, [](IntReg a, IntReg b) { return a >= b; });
 }
 
-void RiscVIBgeu(const Instruction *instruction) {
+void RiscVIBgeu(const Instruction* instruction) {
   RVCheriotBranchConditional<RegisterType, UIntReg>(
       instruction, [](UIntReg a, UIntReg b) { return a >= b; });
 }
 
-void RiscVILd(const Instruction *instruction) {
+void RiscVILd(const Instruction* instruction) {
   RVCheriotLoad<RegisterType, uint64_t>(instruction);
 }
 
-void RiscVILw(const Instruction *instruction) {
+void RiscVILw(const Instruction* instruction) {
   RVCheriotLoad<RegisterType, int32_t>(instruction);
 }
 
-void RiscVILwChild(const Instruction *instruction) {
+void RiscVILwChild(const Instruction* instruction) {
   RVCheriotLoadChild<RegisterType, int32_t>(instruction);
 }
 
-void RiscVILh(const Instruction *instruction) {
+void RiscVILh(const Instruction* instruction) {
   RVCheriotLoad<RegisterType, int16_t>(instruction);
 }
 
-void RiscVILhChild(const Instruction *instruction) {
+void RiscVILhChild(const Instruction* instruction) {
   RVCheriotLoadChild<RegisterType, int16_t>(instruction);
 }
 
-void RiscVILhu(const Instruction *instruction) {
+void RiscVILhu(const Instruction* instruction) {
   RVCheriotLoad<RegisterType, uint16_t>(instruction);
 }
 
-void RiscVILhuChild(const Instruction *instruction) {
+void RiscVILhuChild(const Instruction* instruction) {
   RVCheriotLoadChild<RegisterType, uint16_t>(instruction);
 }
 
-void RiscVILb(const Instruction *instruction) {
+void RiscVILb(const Instruction* instruction) {
   RVCheriotLoad<RegisterType, int8_t>(instruction);
 }
 
-void RiscVILbChild(const Instruction *instruction) {
+void RiscVILbChild(const Instruction* instruction) {
   RVCheriotLoadChild<RegisterType, int8_t>(instruction);
 }
 
-void RiscVILbu(const Instruction *instruction) {
+void RiscVILbu(const Instruction* instruction) {
   RVCheriotLoad<RegisterType, uint8_t>(instruction);
 }
 
-void RiscVILbuChild(const Instruction *instruction) {
+void RiscVILbuChild(const Instruction* instruction) {
   RVCheriotLoadChild<RegisterType, uint8_t>(instruction);
 }
 
-void RiscVISd(const Instruction *instruction) {
+void RiscVISd(const Instruction* instruction) {
   RVCheriotStore<RegisterType, uint64_t>(instruction);
 }
 
-void RiscVISw(const Instruction *instruction) {
+void RiscVISw(const Instruction* instruction) {
   RVCheriotStore<RegisterType, uint32_t>(instruction);
 }
 
-void RiscVISh(const Instruction *instruction) {
+void RiscVISh(const Instruction* instruction) {
   RVCheriotStore<RegisterType, uint16_t>(instruction);
 }
 
-void RiscVISb(const Instruction *instruction) {
+void RiscVISb(const Instruction* instruction) {
   RVCheriotStore<RegisterType, uint8_t>(instruction);
 }
 
-void RiscVIFence(const Instruction *instruction) {
+void RiscVIFence(const Instruction* instruction) {
   uint32_t bits = instruction->Source(0)->AsUint32(0);
   int fm = (bits >> 8) & 0xf;
   int predecessor = (bits >> 4) & 0xf;
   int successor = bits & 0xf;
-  auto *state = static_cast<CheriotState *>(instruction->state());
+  auto* state = static_cast<CheriotState*>(instruction->state());
   state->Fence(instruction, fm, predecessor, successor);
 }
 
-void RiscVIEcall(const Instruction *instruction) {
-  auto *state = static_cast<CheriotState *>(instruction->state());
+void RiscVIEcall(const Instruction* instruction) {
+  auto* state = static_cast<CheriotState*>(instruction->state());
   state->ECall(instruction);
 }
 
-void RiscVIEbreak(const Instruction *instruction) {
-  auto *state = static_cast<CheriotState *>(instruction->state());
+void RiscVIEbreak(const Instruction* instruction) {
+  auto* state = static_cast<CheriotState*>(instruction->state());
   state->EBreak(instruction);
 }
 
-void RiscVWFI(const Instruction *instruction) {
-  auto *state = static_cast<CheriotState *>(instruction->state());
+void RiscVWFI(const Instruction* instruction) {
+  auto* state = static_cast<CheriotState*>(instruction->state());
   state->WFI(instruction);
 }
 
-void RiscVIUnimplemented(const Instruction *instruction) {
-  auto *state = static_cast<CheriotState *>(instruction->state());
+void RiscVIUnimplemented(const Instruction* instruction) {
+  auto* state = static_cast<CheriotState*>(instruction->state());
   // Get instruction word, as it needs to be used as trap value.
   uint64_t address = instruction->address();
   auto db = state->db_factory()->Allocate<uint32_t>(1);

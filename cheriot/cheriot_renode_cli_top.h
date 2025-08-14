@@ -35,9 +35,9 @@ namespace cheriot {
 // CherIoT CLI.
 class CheriotRenodeCLITop : public util::renode::RenodeCLITop {
  public:
-  CheriotRenodeCLITop(CheriotTop *cheriot_top, bool wait_for_cli);
+  CheriotRenodeCLITop(CheriotTop* cheriot_top, bool wait_for_cli);
 
-  absl::StatusOr<size_t> CLIReadTagMemory(uint64_t address, void *buf,
+  absl::StatusOr<size_t> CLIReadTagMemory(uint64_t address, void* buf,
                                           size_t length);
 
   absl::Status CLISetDataWatchpoint(uint64_t address, size_t length,
@@ -53,7 +53,7 @@ class CheriotRenodeCLITop : public util::renode::RenodeCLITop {
   absl::Status CLIDisableAction(uint64_t address, int id);
 
  private:
-  CheriotTop *cheriot_top_ = nullptr;
+  CheriotTop* cheriot_top_ = nullptr;
 };
 
 }  // namespace cheriot

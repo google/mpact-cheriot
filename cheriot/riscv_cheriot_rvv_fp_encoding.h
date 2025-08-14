@@ -42,7 +42,7 @@ using ::mpact::sim::cheriot::encoding_rvv_fp::FormatEnum;
 class RiscVCheriotRVVFPEncoding : public RiscVCheriotEncodingCommon,
                                   public RiscVCheriotRVVFpEncodingBase {
  public:
-  explicit RiscVCheriotRVVFPEncoding(CheriotState *state);
+  explicit RiscVCheriotRVVFPEncoding(CheriotState* state);
 
   // Parses an instruction and determines the opcode.
   void ParseInstruction(uint32_t inst_word);
@@ -57,19 +57,19 @@ class RiscVCheriotRVVFPEncoding : public RiscVCheriotEncodingCommon,
   FormatEnum GetFormat(SlotEnum, int) { return format_; }
 
   // There is no predicate, so return nullptr.
-  PredicateOperandInterface *GetPredicate(SlotEnum, int, OpcodeEnum,
+  PredicateOperandInterface* GetPredicate(SlotEnum, int, OpcodeEnum,
                                           PredOpEnum) override {
     return nullptr;
   }
 
   // Currently no resources modeled for RiscV CHERIoT.
-  ResourceOperandInterface *GetSimpleResourceOperand(
-      SlotEnum, int, OpcodeEnum, SimpleResourceVector &resource_vec,
+  ResourceOperandInterface* GetSimpleResourceOperand(
+      SlotEnum, int, OpcodeEnum, SimpleResourceVector& resource_vec,
       int end) override {
     return nullptr;
   }
 
-  ResourceOperandInterface *GetComplexResourceOperand(
+  ResourceOperandInterface* GetComplexResourceOperand(
       SlotEnum, int, OpcodeEnum, ComplexResourceEnum resource, int begin,
       int end) override {
     return nullptr;
@@ -77,12 +77,12 @@ class RiscVCheriotRVVFPEncoding : public RiscVCheriotEncodingCommon,
 
   // The following method returns a source operand that corresponds to the
   // particular operand field.
-  SourceOperandInterface *GetSource(SlotEnum, int, OpcodeEnum, SourceOpEnum op,
+  SourceOperandInterface* GetSource(SlotEnum, int, OpcodeEnum, SourceOpEnum op,
                                     int source_no) override;
 
   // The following method returns a destination operand that corresponds to the
   // particular operand field.
-  DestinationOperandInterface *GetDestination(SlotEnum, int, OpcodeEnum,
+  DestinationOperandInterface* GetDestination(SlotEnum, int, OpcodeEnum,
                                               DestOpEnum op, int dest_no,
                                               int latency) override;
   // This method returns latency for any destination operand for which the
@@ -94,9 +94,9 @@ class RiscVCheriotRVVFPEncoding : public RiscVCheriotEncodingCommon,
 
  private:
   using SourceOpGetterMap =
-      absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface *()>>;
+      absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface*()>>;
   using DestOpGetterMap = absl::flat_hash_map<
-      int, absl::AnyInvocable<DestinationOperandInterface *(int)>>;
+      int, absl::AnyInvocable<DestinationOperandInterface*(int)>>;
 
   SourceOpGetterMap source_op_getters_;
   DestOpGetterMap dest_op_getters_;

@@ -31,20 +31,20 @@ using ::mpact::sim::util::TaggedMemoryUseProfiler;
 
 class CheriotInstrumentationControl {
  public:
-  CheriotInstrumentationControl(DebugCommandShell *shell,
-                                CheriotTop *cheriot_top,
-                                TaggedMemoryUseProfiler *mem_profiler);
+  CheriotInstrumentationControl(DebugCommandShell* shell,
+                                CheriotTop* cheriot_top,
+                                TaggedMemoryUseProfiler* mem_profiler);
 
   bool PerformShellCommand(absl::string_view input,
-                           const DebugCommandShell::CoreAccess &core_access,
-                           std::string &output);
+                           const DebugCommandShell::CoreAccess& core_access,
+                           std::string& output);
 
   std::string Usage() const;
 
  private:
-  DebugCommandShell *shell_;
-  CheriotTop *top_ = nullptr;
-  TaggedMemoryUseProfiler *mem_profiler_;
+  DebugCommandShell* shell_;
+  CheriotTop* top_ = nullptr;
+  TaggedMemoryUseProfiler* mem_profiler_;
   LazyRE2 pattern_re_;
 };
 

@@ -368,6 +368,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest_main",
         "@com_google_mpact-sim//mpact/sim/generic:instruction",
+        "@com_google_mpact-sim//mpact/sim/generic:type_helpers",
     ],
 )
 
@@ -384,6 +385,7 @@ cc_test(
         "//cheriot:riscv_cheriot_vector",
         "@com_google_absl//absl/random",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest_main",
         "@com_google_mpact-riscv//riscv:riscv_state",
         "@com_google_mpact-sim//mpact/sim/generic:instruction",

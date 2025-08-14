@@ -35,13 +35,13 @@ using RunStatus = ::mpact::sim::generic::CoreDebugInterface::RunStatus;
 using HaltReasonValueType =
     ::mpact::sim::generic::CoreDebugInterface::HaltReasonValueType;
 
-CheriotCLIForwarder::CheriotCLIForwarder(CheriotRenodeCLITop *cheriot_cli_top)
+CheriotCLIForwarder::CheriotCLIForwarder(CheriotRenodeCLITop* cheriot_cli_top)
     : cheriot_cli_top_(cheriot_cli_top) {}
 
 // Forward the calls to the CheriotRenodeCLITop class - CLI methods.
 
 absl::StatusOr<size_t> CheriotCLIForwarder::ReadTagMemory(uint64_t address,
-                                                          void *buf,
+                                                          void* buf,
                                                           size_t length) {
   return cheriot_cli_top_->CLIReadTagMemory(address, buf, length);
 }
@@ -113,29 +113,29 @@ absl::StatusOr<HaltReasonValueType> CheriotCLIForwarder::GetLastHaltReason() {
 
 // Read/write the named registers.
 absl::StatusOr<uint64_t> CheriotCLIForwarder::ReadRegister(
-    const std::string &name) {
+    const std::string& name) {
   return cheriot_cli_top_->CLIReadRegister(name);
 }
 
-absl::Status CheriotCLIForwarder::WriteRegister(const std::string &name,
+absl::Status CheriotCLIForwarder::WriteRegister(const std::string& name,
                                                 uint64_t value) {
   return cheriot_cli_top_->CLIWriteRegister(name, value);
 }
 
-absl::StatusOr<DataBuffer *> CheriotCLIForwarder::GetRegisterDataBuffer(
-    const std::string &name) {
+absl::StatusOr<DataBuffer*> CheriotCLIForwarder::GetRegisterDataBuffer(
+    const std::string& name) {
   return cheriot_cli_top_->CLIGetRegisterDataBuffer(name);
 }
 
 // Read/write the buffers to memory.
 absl::StatusOr<size_t> CheriotCLIForwarder::ReadMemory(uint64_t address,
-                                                       void *buf,
+                                                       void* buf,
                                                        size_t length) {
   return cheriot_cli_top_->CLIReadMemory(address, buf, length);
 }
 
 absl::StatusOr<size_t> CheriotCLIForwarder::WriteMemory(uint64_t address,
-                                                        const void *buf,
+                                                        const void* buf,
                                                         size_t length) {
   return cheriot_cli_top_->CLIWriteMemory(address, buf, length);
 }
@@ -156,7 +156,7 @@ absl::Status CheriotCLIForwarder::ClearAllSwBreakpoints() {
   return cheriot_cli_top_->CLIClearAllSwBreakpoints();
 }
 
-absl::StatusOr<Instruction *> CheriotCLIForwarder::GetInstruction(
+absl::StatusOr<Instruction*> CheriotCLIForwarder::GetInstruction(
     uint64_t address) {
   return cheriot_cli_top_->CLIGetInstruction(address);
 }

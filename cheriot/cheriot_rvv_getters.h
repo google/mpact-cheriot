@@ -41,47 +41,47 @@ using ::mpact::sim::riscv::RV32VectorTrueOperand;
 using ::mpact::sim::riscv::RVVectorRegister;
 
 using SourceOpGetterMap =
-    absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface *()>>;
+    absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface*()>>;
 using DestOpGetterMap =
     absl::flat_hash_map<int,
-                        absl::AnyInvocable<DestinationOperandInterface *(int)>>;
+                        absl::AnyInvocable<DestinationOperandInterface*(int)>>;
 
 template <typename Enum, typename Extractors>
-void AddCheriotRVVSourceGetters(SourceOpGetterMap &getter_map,
-                                RiscVCheriotEncodingCommon *common) {
-  Insert(getter_map, *Enum::kConst1, []() -> SourceOperandInterface * {
+void AddCheriotRVVSourceGetters(SourceOpGetterMap& getter_map,
+                                RiscVCheriotEncodingCommon* common) {
+  Insert(getter_map, *Enum::kConst1, []() -> SourceOperandInterface* {
     return new IntLiteralOperand<1>();
   });
-  Insert(getter_map, *Enum::kConst2, []() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kConst2, []() -> SourceOperandInterface* {
     return new IntLiteralOperand<2>();
   });
-  Insert(getter_map, *Enum::kConst4, []() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kConst4, []() -> SourceOperandInterface* {
     return new IntLiteralOperand<4>();
   });
-  Insert(getter_map, *Enum::kConst8, []() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kConst8, []() -> SourceOperandInterface* {
     return new IntLiteralOperand<8>();
   });
-  Insert(getter_map, *Enum::kNf, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kNf, [common]() -> SourceOperandInterface* {
     auto imm = Extractors::VMem::ExtractNf(common->inst_word());
     return new ImmediateOperand<uint32_t>(imm);
   });
-  Insert(getter_map, *Enum::kSimm5, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kSimm5, [common]() -> SourceOperandInterface* {
     auto imm = Extractors::VArith::ExtractSimm5(common->inst_word());
     return new ImmediateOperand<uint32_t>(imm);
   });
-  Insert(getter_map, *Enum::kUimm5, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kUimm5, [common]() -> SourceOperandInterface* {
     auto imm = Extractors::VArith::ExtractUimm5(common->inst_word());
     return new ImmediateOperand<int32_t>(imm);
   });
-  Insert(getter_map, *Enum::kVd, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kVd, [common]() -> SourceOperandInterface* {
     auto num = Extractors::VArith::ExtractVd(common->inst_word());
     return GetVectorRegisterSourceOp<RVVectorRegister>(common->state(), num);
   });
-  Insert(getter_map, *Enum::kVm, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kVm, [common]() -> SourceOperandInterface* {
     auto vm = Extractors::VArith::ExtractVm(common->inst_word());
     return new ImmediateOperand<uint32_t>(vm);
   });
-  Insert(getter_map, *Enum::kVmask, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kVmask, [common]() -> SourceOperandInterface* {
     auto vm = Extractors::VArith::ExtractVm(common->inst_word());
     if (vm == 1) {
       // Unmasked, return the True mask.
@@ -90,36 +90,36 @@ void AddCheriotRVVSourceGetters(SourceOpGetterMap &getter_map,
     // Masked. Return the mask register.
     return GetVectorMaskRegisterSourceOp<RVVectorRegister>(common->state(), 0);
   });
-  Insert(getter_map, *Enum::kVmaskTrue, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kVmaskTrue, [common]() -> SourceOperandInterface* {
     return new CheriotVectorTrueOperand(common->state());
   });
-  Insert(getter_map, *Enum::kVs1, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kVs1, [common]() -> SourceOperandInterface* {
     auto num = Extractors::VArith::ExtractVs1(common->inst_word());
     return GetVectorRegisterSourceOp<RVVectorRegister>(common->state(), num);
   });
-  Insert(getter_map, *Enum::kVs2, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kVs2, [common]() -> SourceOperandInterface* {
     auto num = Extractors::VArith::ExtractVs2(common->inst_word());
     return GetVectorRegisterSourceOp<RVVectorRegister>(common->state(), num);
   });
-  Insert(getter_map, *Enum::kVs3, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kVs3, [common]() -> SourceOperandInterface* {
     auto num = Extractors::VMem::ExtractVs3(common->inst_word());
     return GetVectorRegisterSourceOp<RVVectorRegister>(common->state(), num);
   });
-  Insert(getter_map, *Enum::kZimm10, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kZimm10, [common]() -> SourceOperandInterface* {
     auto imm = Extractors::VConfig::ExtractZimm10(common->inst_word());
     return new ImmediateOperand<uint32_t>(imm);
   });
-  Insert(getter_map, *Enum::kZimm11, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kZimm11, [common]() -> SourceOperandInterface* {
     auto imm = Extractors::VConfig::ExtractZimm11(common->inst_word());
     return new ImmediateOperand<uint32_t>(imm);
   });
 }
 
 template <typename Enum, typename Extractors>
-void AddCheriotRVVDestGetters(DestOpGetterMap &getter_map,
-                              RiscVCheriotEncodingCommon *common) {
+void AddCheriotRVVDestGetters(DestOpGetterMap& getter_map,
+                              RiscVCheriotEncodingCommon* common) {
   Insert(getter_map, Enum::kVd,
-         [common](int latency) -> DestinationOperandInterface * {
+         [common](int latency) -> DestinationOperandInterface* {
            auto num = Extractors::VArith::ExtractVd(common->inst_word());
            return GetVectorRegisterDestinationOp<RVVectorRegister>(
                common->state(), latency, num);

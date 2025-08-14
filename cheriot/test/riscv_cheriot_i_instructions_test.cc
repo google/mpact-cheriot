@@ -73,7 +73,7 @@ class RVCheriotIInstructionTest : public testing::Test {
     creg_3_ = state_->GetRegister<CheriotRegister>(kC3).first;
     state_->set_on_trap([this](bool is_interrupt, uint64_t trap_value,
                                uint64_t exception_code, uint64_t epc,
-                               const Instruction *inst) {
+                               const Instruction* inst) {
       return TrapHandler(is_interrupt, trap_value, exception_code, epc, inst);
     });
   }
@@ -86,29 +86,29 @@ class RVCheriotIInstructionTest : public testing::Test {
 
   // Appends the source and destination operands for the register names
   // given in the two vectors.
-  void AppendRegisterOperands(Instruction *inst,
+  void AppendRegisterOperands(Instruction* inst,
                               absl::Span<const std::string> sources,
                               absl::Span<const std::string> destinations) {
-    for (auto &reg_name : sources) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& reg_name : sources) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendSource(reg->CreateSourceOperand());
     }
-    for (auto &reg_name : destinations) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& reg_name : destinations) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendDestination(reg->CreateDestinationOperand(0));
     }
   }
 
-  void AppendRegisterOperands(const std::vector<std::string> &sources,
-                              const std::vector<std::string> &destinations) {
+  void AppendRegisterOperands(const std::vector<std::string>& sources,
+                              const std::vector<std::string>& destinations) {
     AppendRegisterOperands(instruction_, sources, destinations);
   }
 
   // Appends immediate source operands with the given values.
   template <typename T>
-  void AppendImmediateOperands(const std::vector<T> &values) {
+  void AppendImmediateOperands(const std::vector<T>& values) {
     for (auto value : values) {
-      auto *src = new ImmediateOperand<T>(value);
+      auto* src = new ImmediateOperand<T>(value);
       instruction_->AppendSource(src);
     }
   }
@@ -117,8 +117,8 @@ class RVCheriotIInstructionTest : public testing::Test {
   // named register and sets it to the corresponding value.
   template <typename T>
   void SetRegisterValues(const std::vector<std::tuple<std::string, T>> values) {
-    for (auto &[reg_name, value] : values) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& [reg_name, value] : values) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       reg->set_address(value);
     }
   }
@@ -131,33 +131,33 @@ class RVCheriotIInstructionTest : public testing::Test {
   // Returns the value of the named register.
   template <typename T>
   T GetRegisterValue(std::string_view reg_name) {
-    auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
     return reg->address();
   }
   // Gets called on a trap.
   bool TrapHandler(bool is_interrupt, uint64_t trap_value,
                    uint64_t exception_code, uint64_t epc,
-                   const Instruction *inst);
+                   const Instruction* inst);
 
-  TaggedFlatDemandMemory *mem_;
-  CheriotState *state_;
-  Instruction *instruction_;
-  CheriotRegister *creg_1_;
-  CheriotRegister *creg_2_;
-  CheriotRegister *creg_3_;
+  TaggedFlatDemandMemory* mem_;
+  CheriotState* state_;
+  Instruction* instruction_;
+  CheriotRegister* creg_1_;
+  CheriotRegister* creg_2_;
+  CheriotRegister* creg_3_;
   bool trap_taken_ = false;
   bool trap_is_interrupt_ = false;
   uint64_t trap_value_ = 0;
   uint64_t trap_exception_code_ = 0;
   uint64_t trap_epc_ = 0;
-  const Instruction *trap_inst_ = nullptr;
+  const Instruction* trap_inst_ = nullptr;
 };
 
 bool RVCheriotIInstructionTest::TrapHandler(bool is_interrupt,
                                             uint64_t trap_value,
                                             uint64_t exception_code,
                                             uint64_t epc,
-                                            const Instruction *inst) {
+                                            const Instruction* inst) {
   trap_taken_ = true;
   trap_is_interrupt_ = is_interrupt;
   trap_value_ = trap_value;
@@ -489,7 +489,7 @@ TEST_F(RVCheriotIInstructionTest, RV32IBgeu) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILw) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -498,7 +498,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILw) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILw);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILwChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -519,7 +519,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILw) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILwTagViolation) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -528,7 +528,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILwTagViolation) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILw);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILwChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -549,7 +549,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILwTagViolation) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILwSealViolation) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -558,7 +558,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILwSealViolation) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILw);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILwChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -580,7 +580,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILwSealViolation) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILwPermitLoadViolation) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -589,7 +589,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILwPermitLoadViolation) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILw);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILwChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -611,7 +611,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILwPermitLoadViolation) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILwBoundsViolation) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -620,7 +620,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILwBoundsViolation) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILw);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILwChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -642,7 +642,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILwBoundsViolation) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILh) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -651,7 +651,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILh) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILh);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILhChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -672,7 +672,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILh) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILhu) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -681,7 +681,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILhu) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILhu);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILhuChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -702,7 +702,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILhu) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILb) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -711,7 +711,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILb) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILb);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILbChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -732,7 +732,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILb) {
 
 TEST_F(RVCheriotIInstructionTest, RV32ILbu) {
   // Initialize memory.
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   db->Set<uint32_t>(0, kMemValue);
   state_->StoreMemory(instruction_, kMemAddress + kOffset, db);
   db->DecRef();
@@ -741,7 +741,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ILbu) {
   AppendRegisterOperands({kC1}, {});
   AppendImmediateOperands<uint32_t>({kOffset});
   SetSemanticFunction(&::mpact::sim::cheriot::RiscVILbu);
-  auto *child = new Instruction(state_);
+  auto* child = new Instruction(state_);
   child->set_semantic_function(&::mpact::sim::cheriot::RiscVILbuChild);
   AppendRegisterOperands(child, {}, {kC3});
   instruction_->AppendChild(child);
@@ -772,7 +772,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ISw) {
   SetRegisterValues<uint32_t>({{kC1, kMemAddress}, {kC3, kMemValue}});
   instruction_->Execute(nullptr);
   EXPECT_FALSE(trap_taken_);
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   state_->LoadMemory(instruction_, kMemAddress + kOffset, db, nullptr, nullptr);
   EXPECT_EQ(db->Get<uint32_t>(0), kMemValue);
   db->DecRef();
@@ -787,7 +787,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ISwTagViolation) {
   SetRegisterValues<uint32_t>({{kC1, kMemAddress}, {kC3, kMemValue}});
   creg_1_->Invalidate();
   instruction_->Execute(nullptr);
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   state_->LoadMemory(instruction_, kMemAddress + kOffset, db, nullptr, nullptr);
   EXPECT_NE(db->Get<uint32_t>(0), kMemValue);
   db->DecRef();
@@ -809,7 +809,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ISwSealViolation) {
   SetRegisterValues<uint32_t>({{kC1, kMemAddress}, {kC3, kMemValue}});
   (void)creg_1_->Seal(*state_->sealing_root(), 9);
   instruction_->Execute(nullptr);
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   state_->LoadMemory(instruction_, kMemAddress + kOffset, db, nullptr, nullptr);
   EXPECT_NE(db->Get<uint32_t>(0), kMemValue);
   db->DecRef();
@@ -831,7 +831,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ISwPermitLoadViolation) {
   creg_1_->ClearPermissions(PB::kPermitStore);
   SetRegisterValues<uint32_t>({{kC1, kMemAddress}, {kC3, kMemValue}});
   instruction_->Execute(nullptr);
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   state_->LoadMemory(instruction_, kMemAddress + kOffset, db, nullptr, nullptr);
   EXPECT_NE(db->Get<uint32_t>(0), kMemValue);
   db->DecRef();
@@ -854,7 +854,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ISwBoundsViolation) {
   creg_1_->SetBounds(kMemAddress, kOffset - 0x100);
   creg_3_->ResetMemoryRoot();
   instruction_->Execute(nullptr);
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   state_->LoadMemory(instruction_, kMemAddress + kOffset, db, nullptr, nullptr);
   EXPECT_NE(db->Get<uint32_t>(0), kMemValue);
   db->DecRef();
@@ -877,7 +877,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ISh) {
   instruction_->Execute(nullptr);
   EXPECT_FALSE(trap_taken_);
 
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   state_->LoadMemory(instruction_, kMemAddress + kOffset, db, nullptr, nullptr);
   EXPECT_EQ(db->Get<uint32_t>(0), static_cast<uint16_t>(kMemValue));
   db->DecRef();
@@ -893,7 +893,7 @@ TEST_F(RVCheriotIInstructionTest, RV32ISb) {
   instruction_->Execute(nullptr);
   EXPECT_FALSE(trap_taken_);
 
-  auto *db = state_->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state_->db_factory()->Allocate<uint32_t>(1);
   state_->LoadMemory(instruction_, kMemAddress + kOffset, db, nullptr, nullptr);
   EXPECT_EQ(db->Get<uint32_t>(0), static_cast<uint8_t>(kMemValue));
   db->DecRef();

@@ -38,10 +38,10 @@ using RV_EC = ::mpact::sim::riscv::ExceptionCode;
 
 // Helper function for the atomic memory operation semantic functions.
 template <typename T>
-static inline void AInstructionHelper(Instruction *inst, Operation op,
+static inline void AInstructionHelper(Instruction* inst, Operation op,
                                       bool has_store_value) {
-  auto *state = static_cast<CheriotState *>(inst->state());
-  auto *atomic = state->atomic_tagged_memory();
+  auto* state = static_cast<CheriotState*>(inst->state());
+  auto* atomic = state->atomic_tagged_memory();
   // If the atomic memory operation interface is nullptr, this is an illegal
   // instruction.
   if (atomic == nullptr) {
@@ -51,14 +51,14 @@ static inline void AInstructionHelper(Instruction *inst, Operation op,
   }
   // Submit the memory operation.
   auto address = generic::GetInstructionSource<uint64_t>(inst, 0);
-  auto *db = inst->state()->db_factory()->Allocate<T>(1);
+  auto* db = inst->state()->db_factory()->Allocate<T>(1);
   db->set_latency(0);
   // Only access the operand if there is a value to be read.
   if (has_store_value) {
     db->template Set<T>(0, generic::GetInstructionSource<T>(inst, 1));
   }
   // This transfers ownership of db to context. Don't DecRef.
-  auto *context = new riscv::LoadContext(db);
+  auto* context = new riscv::LoadContext(db);
   auto status = state->atomic_tagged_memory()->PerformMemoryOp(
       address, op, db, inst->child(), context);
   // If the operation is unimplemented, this is an illegal instruction.
@@ -70,57 +70,57 @@ static inline void AInstructionHelper(Instruction *inst, Operation op,
   context->DecRef();
 }
 
-void ALrw(Instruction *instruction) {
+void ALrw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kLoadLinked,
                                /*has_store_value*/ false);
 }
 
-void AScw(Instruction *instruction) {
+void AScw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kStoreConditional,
                                /*has_store_value*/ true);
 }
 
-void AAmoswapw(Instruction *instruction) {
+void AAmoswapw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicSwap,
                                /*has_store_value*/ true);
 }
 
-void AAmoaddw(Instruction *instruction) {
+void AAmoaddw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicAdd,
                                /*has_store_value*/ true);
 }
 
-void AAmoandw(Instruction *instruction) {
+void AAmoandw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicAnd,
                                /*has_store_value*/ true);
 }
 
-void AAmoorw(Instruction *instruction) {
+void AAmoorw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicOr,
                                /*has_store_value*/ true);
 }
 
-void AAmoxorw(Instruction *instruction) {
+void AAmoxorw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicXor,
                                /*has_store_value*/ true);
 }
 
-void AAmomaxw(Instruction *instruction) {
+void AAmomaxw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicMax,
                                /*has_store_value*/ true);
 }
 
-void AAmomaxuw(Instruction *instruction) {
+void AAmomaxuw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicMaxu,
                                /*has_store_value*/ true);
 }
 
-void AAmominw(Instruction *instruction) {
+void AAmominw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicMin,
                                /*has_store_value*/ true);
 }
 
-void AAmominuw(Instruction *instruction) {
+void AAmominuw(Instruction* instruction) {
   AInstructionHelper<uint32_t>(instruction, Operation::kAtomicMinu,
                                /*has_store_value*/ true);
 }

@@ -157,8 +157,8 @@ CheriotDebugInfo::CheriotDebugInfo()
                            {*DebugRegisterEnum::kF30, kF30Name},
                            {*DebugRegisterEnum::kF31, kF31Name}}) {}
 
-CheriotDebugInfo *CheriotDebugInfo::Instance() {
-  static CheriotDebugInfo *instance_ = nullptr;
+CheriotDebugInfo* CheriotDebugInfo::Instance() {
+  static CheriotDebugInfo* instance_ = nullptr;
   if (instance_ == nullptr) {
     instance_ = new CheriotDebugInfo();
   }

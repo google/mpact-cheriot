@@ -34,8 +34,8 @@ using RV_EC = ::mpact::sim::riscv::ExceptionCode;
 
 using ::mpact::sim::generic::operator*;  // NOLINT: is used below (clang error).
 
-CheriotRVVFPDecoder::CheriotRVVFPDecoder(CheriotState *state,
-                                         util::MemoryInterface *memory)
+CheriotRVVFPDecoder::CheriotRVVFPDecoder(CheriotState* state,
+                                         util::MemoryInterface* memory)
     : state_(state), memory_(memory) {
   // Need a data buffer to load instructions from memory. Allocate a single
   // buffer that can be reused for each instruction word.
@@ -55,16 +55,16 @@ CheriotRVVFPDecoder::~CheriotRVVFPDecoder() {
   inst_db_->DecRef();
 }
 
-generic::Instruction *CheriotRVVFPDecoder::DecodeInstruction(uint64_t address) {
+generic::Instruction* CheriotRVVFPDecoder::DecodeInstruction(uint64_t address) {
   // First check that the address is aligned properly. If not, create and return
   // an instruction object that will raise an exception.
   if (address & 0x1) {
-    auto *inst = new generic::Instruction(0, state_);
+    auto* inst = new generic::Instruction(0, state_);
     inst->set_size(1);
     inst->SetDisassemblyString("Misaligned instruction address");
     inst->set_opcode(*isa32_rvv_fp::OpcodeEnum::kNone);
     inst->set_address(address);
-    inst->set_semantic_function([this](generic::Instruction *inst) {
+    inst->set_semantic_function([this](generic::Instruction* inst) {
       state_->Trap(/*is_interrupt*/ false, inst->address(),
                    *RV_EC::kInstructionAddressMisaligned, inst->address() ^ 0x1,
                    inst);
@@ -75,12 +75,12 @@ generic::Instruction *CheriotRVVFPDecoder::DecodeInstruction(uint64_t address) {
   // If the address is greater than the max address, return an instruction
   // that will raise an exception.
   if (address > state_->max_physical_address()) {
-    auto *inst = new generic::Instruction(0, state_);
+    auto* inst = new generic::Instruction(0, state_);
     inst->set_size(0);
     inst->SetDisassemblyString("Instruction access fault");
     inst->set_opcode(*isa32_rvv_fp::OpcodeEnum::kNone);
     inst->set_address(address);
-    inst->set_semantic_function([this](generic::Instruction *inst) {
+    inst->set_semantic_function([this](generic::Instruction* inst) {
       state_->Trap(/*is_interrupt*/ false, inst->address(),
                    *RV_EC::kInstructionAccessFault, inst->address(), nullptr);
     });
@@ -94,7 +94,7 @@ generic::Instruction *CheriotRVVFPDecoder::DecodeInstruction(uint64_t address) {
 
   // Call the isa decoder to obtain a new instruction object for the instruction
   // word that was parsed above.
-  auto *instruction =
+  auto* instruction =
       cheriot_rvv_fp_isa_->Decode(address, cheriot_rvv_fp_encoding_);
   return instruction;
 }

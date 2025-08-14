@@ -23,7 +23,7 @@ namespace cheriot {
 
 using ::mpact::sim::generic::operator*;  // NOLINT - used below.
 
-CheriotRenodeRegisterInfo *CheriotRenodeRegisterInfo::instance_ = nullptr;
+CheriotRenodeRegisterInfo* CheriotRenodeRegisterInfo::instance_ = nullptr;
 
 void CheriotRenodeRegisterInfo::InitializeRenodeRegisterInfo() {
   using DbgReg = DebugRegisterEnum;
@@ -69,19 +69,19 @@ CheriotRenodeRegisterInfo::CheriotRenodeRegisterInfo() {
   InitializeRenodeRegisterInfo();
 }
 
-const CheriotRenodeRegisterInfo::RenodeRegisterInfo &
+const CheriotRenodeRegisterInfo::RenodeRegisterInfo&
 CheriotRenodeRegisterInfo::GetRenodeRegisterInfo() {
   return Instance()->GetRenodeRegisterInfoPrivate();
 }
 
-CheriotRenodeRegisterInfo *CheriotRenodeRegisterInfo::Instance() {
+CheriotRenodeRegisterInfo* CheriotRenodeRegisterInfo::Instance() {
   if (instance_ == nullptr) {
     instance_ = new CheriotRenodeRegisterInfo();
   }
   return instance_;
 }
 
-const CheriotRenodeRegisterInfo::RenodeRegisterInfo &
+const CheriotRenodeRegisterInfo::RenodeRegisterInfo&
 CheriotRenodeRegisterInfo::GetRenodeRegisterInfoPrivate() {
   return renode_register_info_;
 }

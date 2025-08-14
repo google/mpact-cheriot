@@ -37,12 +37,12 @@ using ::mpact::sim::riscv::RiscVPlicIrqInterface;
 using ::mpact::sim::util::MemoryInterface;
 using ::mpact::sim::util::TaggedMemoryInterface;
 
-CheriotIbexHWRevoker::CheriotIbexHWRevoker(RiscVPlicIrqInterface *plic_irq,
+CheriotIbexHWRevoker::CheriotIbexHWRevoker(RiscVPlicIrqInterface* plic_irq,
                                            uint64_t heap_base,
                                            uint64_t heap_size,
-                                           TaggedMemoryInterface *heap_memory,
+                                           TaggedMemoryInterface* heap_memory,
                                            uint64_t revocation_bits_base,
-                                           MemoryInterface *revocation_memory)
+                                           MemoryInterface* revocation_memory)
     : plic_irq_(plic_irq),
       heap_base_(heap_base),
       heap_max_(heap_base + heap_size),
@@ -66,9 +66,9 @@ CheriotIbexHWRevoker::CheriotIbexHWRevoker(RiscVPlicIrqInterface *plic_irq,
 
 CheriotIbexHWRevoker::CheriotIbexHWRevoker(uint64_t heap_base,
                                            uint64_t heap_size,
-                                           TaggedMemoryInterface *heap_memory,
+                                           TaggedMemoryInterface* heap_memory,
                                            uint64_t revocation_bits_base,
-                                           MemoryInterface *revocation_memory)
+                                           MemoryInterface* revocation_memory)
     : CheriotIbexHWRevoker(nullptr, heap_base, heap_size, heap_memory,
                            revocation_bits_base, revocation_memory) {}
 
@@ -90,7 +90,7 @@ void CheriotIbexHWRevoker::Reset() {
 }
 
 // This is called by the counter using the CounterValueSetInterface interface.
-void CheriotIbexHWRevoker::SetValue(const uint64_t &val) {
+void CheriotIbexHWRevoker::SetValue(const uint64_t& val) {
   if (interrupt_status_) SetInterrupt(false);
   if (!sweep_in_progress_) return;
   num_calls_++;
@@ -101,16 +101,16 @@ void CheriotIbexHWRevoker::SetValue(const uint64_t &val) {
 }
 
 // Reads from the MMRs.
-void CheriotIbexHWRevoker::Load(uint64_t address, DataBuffer *db,
-                                DataBuffer *tags, Instruction *inst,
-                                ReferenceCount *context) {
+void CheriotIbexHWRevoker::Load(uint64_t address, DataBuffer* db,
+                                DataBuffer* tags, Instruction* inst,
+                                ReferenceCount* context) {
   if (tags != nullptr) std::memset(tags->raw_ptr(), 0, tags->size<uint8_t>());
   Load(address, db, inst, context);
 }
 
 // Reads from the MMRs.
-void CheriotIbexHWRevoker::Load(uint64_t address, DataBuffer *db,
-                                Instruction *inst, ReferenceCount *context) {
+void CheriotIbexHWRevoker::Load(uint64_t address, DataBuffer* db,
+                                Instruction* inst, ReferenceCount* context) {
   uint32_t offset = address & 0xffff;
   switch (db->size<uint8_t>()) {
     case 1:
@@ -148,21 +148,21 @@ void CheriotIbexHWRevoker::Load(uint64_t address, DataBuffer *db,
 }
 
 // Vector load is not supported.
-void CheriotIbexHWRevoker::Load(DataBuffer *address_db, DataBuffer *mask_db,
-                                int el_size, DataBuffer *db, Instruction *inst,
-                                ReferenceCount *context) {
+void CheriotIbexHWRevoker::Load(DataBuffer* address_db, DataBuffer* mask_db,
+                                int el_size, DataBuffer* db, Instruction* inst,
+                                ReferenceCount* context) {
   // This is left unimplemented. Vector load is not supported.
   LOG(FATAL) << "Vector load not supported";  // Crash OK
 }
 
 // Writes to the MMRs.
-void CheriotIbexHWRevoker::Store(uint64_t address, DataBuffer *db,
-                                 DataBuffer *tags) {
+void CheriotIbexHWRevoker::Store(uint64_t address, DataBuffer* db,
+                                 DataBuffer* tags) {
   Store(address, db);
 }
 
 // Writes to the MMRs.
-void CheriotIbexHWRevoker::Store(uint64_t address, DataBuffer *db) {
+void CheriotIbexHWRevoker::Store(uint64_t address, DataBuffer* db) {
   uint32_t offset = address & 0xffff;
   switch (db->size<uint8_t>()) {
     case 1:
@@ -180,8 +180,8 @@ void CheriotIbexHWRevoker::Store(uint64_t address, DataBuffer *db) {
 }
 
 // Vector accesses are not supported.
-void CheriotIbexHWRevoker::Store(DataBuffer *address, DataBuffer *mask,
-                                 int el_size, DataBuffer *db) {
+void CheriotIbexHWRevoker::Store(DataBuffer* address, DataBuffer* mask,
+                                 int el_size, DataBuffer* db) {
   // This is left unimplemented. Vector store is not supported.
   LOG(FATAL) << "Vector store not supported";  // Crash OK
 }

@@ -137,8 +137,8 @@ class CheriotLoadFilterTest : public ::testing::Test {
 
  protected:
   DataBufferFactory db_factory_;
-  DataBuffer *db_;
-  DataBuffer *tag_db_;
+  DataBuffer* db_;
+  DataBuffer* tag_db_;
   SimpleCounter<uint64_t> counter_;
   CheriotRegister cap_reg_;
   std::unique_ptr<TaggedMemoryInterface> memory_;

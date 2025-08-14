@@ -31,13 +31,13 @@ namespace mpact {
 namespace sim {
 namespace cheriot {
 
-CheriotRenodeCLITop::CheriotRenodeCLITop(CheriotTop *cheriot_top,
+CheriotRenodeCLITop::CheriotRenodeCLITop(CheriotTop* cheriot_top,
                                          bool wait_for_cli)
     : util::renode::RenodeCLITop(cheriot_top, wait_for_cli),
       cheriot_top_(cheriot_top) {}
 
 absl::StatusOr<size_t> CheriotRenodeCLITop::CLIReadTagMemory(uint64_t address,
-                                                             void *buf,
+                                                             void* buf,
                                                              size_t length) {
   return DoWhenInControl<absl::StatusOr<size_t>>(
       [this, address, buf, length]() {

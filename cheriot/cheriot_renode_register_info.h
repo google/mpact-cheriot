@@ -32,15 +32,15 @@ class CheriotRenodeRegisterInfo {
  public:
   using RenodeRegisterInfo = std::vector<util::renode::RenodeCpuRegister>;
 
-  static const RenodeRegisterInfo &GetRenodeRegisterInfo();
+  static const RenodeRegisterInfo& GetRenodeRegisterInfo();
 
  private:
   CheriotRenodeRegisterInfo();
-  static CheriotRenodeRegisterInfo *Instance();
+  static CheriotRenodeRegisterInfo* Instance();
   void InitializeRenodeRegisterInfo();
-  const RenodeRegisterInfo &GetRenodeRegisterInfoPrivate();
+  const RenodeRegisterInfo& GetRenodeRegisterInfoPrivate();
 
-  static CheriotRenodeRegisterInfo *instance_;
+  static CheriotRenodeRegisterInfo* instance_;
   RenodeRegisterInfo renode_register_info_;
 };
 

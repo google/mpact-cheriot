@@ -61,10 +61,10 @@
 #include "riscv//stoull_wrapper.h"
 #include "src/google/protobuf/text_format.h"
 
-::mpact::sim::util::renode::RenodeDebugInterface *CreateMpactSim(
+::mpact::sim::util::renode::RenodeDebugInterface* CreateMpactSim(
     std::string name, std::string cpu_type,
-    ::mpact::sim::util::MemoryInterface *renode_sysbus) {
-  auto *top = new ::mpact::sim::cheriot::CheriotRenode(name, renode_sysbus);
+    ::mpact::sim::util::MemoryInterface* renode_sysbus) {
+  auto* top = new ::mpact::sim::cheriot::CheriotRenode(name, renode_sysbus);
   auto status = top->InitializeSimulator(cpu_type);
   if (!status.ok()) {
     delete top;
@@ -112,7 +112,7 @@ constexpr std::string_view kRvvFpName = "Mpact.CheriotRvvFp";
 // Core version.
 constexpr std::string_view kCoreVersion = "coreVersion";
 
-CheriotRenode::CheriotRenode(std::string name, MemoryInterface *renode_sysbus)
+CheriotRenode::CheriotRenode(std::string name, MemoryInterface* renode_sysbus)
     : name_(name), renode_sysbus_(renode_sysbus) {}
 
 CheriotRenode::~CheriotRenode() {
@@ -181,7 +181,7 @@ CheriotRenode::~CheriotRenode() {
 }
 
 absl::StatusOr<uint64_t> CheriotRenode::LoadExecutable(
-    const char *elf_file_name, bool for_symbols_only) {
+    const char* elf_file_name, bool for_symbols_only) {
   program_loader_ = new ElfProgramLoader(this);
   uint64_t entry_pt = 0;
   if (for_symbols_only) {
@@ -205,12 +205,12 @@ absl::StatusOr<uint64_t> CheriotRenode::LoadExecutable(
     uint64_t tohost_addr = res.value().first;
     // Add to_host watchpoint that halts the execution when program exit is
     // signaled.
-    auto *db = cheriot_top_->state()->db_factory()->Allocate<uint32_t>(2);
+    auto* db = cheriot_top_->state()->db_factory()->Allocate<uint32_t>(2);
     auto status = cheriot_top_->tagged_watcher()->SetStoreWatchCallback(
         TaggedMemoryWatcher::AddressRange{
             tohost_addr, tohost_addr + 2 * sizeof(uint32_t) - 1},
         [this, tohost_addr, db](uint64_t addr, int sz) {
-          static DataBuffer *load_db = db;
+          static DataBuffer* load_db = db;
           if (load_db == nullptr) return;
           tagged_memory_->Load(tohost_addr, load_db, nullptr, nullptr);
           uint32_t code = load_db->Get<uint32_t>(0);
@@ -258,9 +258,9 @@ absl::StatusOr<HaltReasonValueType> CheriotRenode::GetLastHaltReason() {
 
 // Perform direct read of the memory through the renode router. The renode
 // router avoids routing the request back out to the sysbus.
-absl::StatusOr<size_t> CheriotRenode::ReadMemory(uint64_t address, void *buf,
+absl::StatusOr<size_t> CheriotRenode::ReadMemory(uint64_t address, void* buf,
                                                  size_t length) {
-  auto *db = db_factory_.Allocate<uint8_t>(length);
+  auto* db = db_factory_.Allocate<uint8_t>(length);
   renode_router_->Load(address, db, nullptr, nullptr);
   std::memcpy(buf, db->raw_ptr(), length);
   db->DecRef();
@@ -270,9 +270,9 @@ absl::StatusOr<size_t> CheriotRenode::ReadMemory(uint64_t address, void *buf,
 // Perform direct write of the memory through the renode router. The renode
 // router avoids routing the request back out to the sysbus.
 absl::StatusOr<size_t> CheriotRenode::WriteMemory(uint64_t address,
-                                                  const void *buf,
+                                                  const void* buf,
                                                   size_t length) {
-  auto *db = db_factory_.Allocate<uint8_t>(length);
+  auto* db = db_factory_.Allocate<uint8_t>(length);
   std::memcpy(db->raw_ptr(), buf, length);
   renode_router_->Store(address, db);
   db->DecRef();
@@ -306,16 +306,16 @@ int32_t CheriotRenode::GetRenodeRegisterInfoSize() const {
 }
 
 absl::Status CheriotRenode::GetRenodeRegisterInfo(int32_t index,
-                                                  int32_t max_len, char *name,
-                                                  RenodeCpuRegister &info) {
-  auto const &register_info =
+                                                  int32_t max_len, char* name,
+                                                  RenodeCpuRegister& info) {
+  auto const& register_info =
       CheriotRenodeRegisterInfo::GetRenodeRegisterInfo();
   if ((index < 0) || (index >= register_info.size())) {
     return absl::OutOfRangeError(
         absl::StrCat("Register info index (", index, ") out of range"));
   }
   info = register_info[index];
-  auto const &reg_map = CheriotDebugInfo::Instance()->debug_register_map();
+  auto const& reg_map = CheriotDebugInfo::Instance()->debug_register_map();
   auto ptr = reg_map.find(info.index);
   if (ptr == reg_map.end()) {
     name[0] = '\0';
@@ -325,7 +325,7 @@ absl::Status CheriotRenode::GetRenodeRegisterInfo(int32_t index,
   return absl::OkStatus();
 }
 
-static absl::StatusOr<uint64_t> ParseNumber(const std::string &number) {
+static absl::StatusOr<uint64_t> ParseNumber(const std::string& number) {
   if (number.empty()) {
     return absl::InvalidArgumentError("Empty number");
   }
@@ -344,8 +344,8 @@ static absl::StatusOr<uint64_t> ParseNumber(const std::string &number) {
   return res.value();
 }
 
-absl::Status CheriotRenode::SetConfig(const char *config_names[],
-                                      const char *config_values[], int size) {
+absl::Status CheriotRenode::SetConfig(const char* config_names[],
+                                      const char* config_values[], int size) {
   std::string icache_cfg;
   std::string dcache_cfg;
   uint64_t tagged_memory_base = 0;
@@ -443,7 +443,7 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
     instrumentation_control_ = new CheriotInstrumentationControl(
         cmd_shell_, cheriot_top_, mem_profiler_);
     cmd_shell_->AddCore(
-        {static_cast<CheriotDebugInterface *>(cheriot_cli_forwarder_),
+        {static_cast<CheriotDebugInterface*>(cheriot_cli_forwarder_),
          [this]() { return program_loader_; }, cheriot_state_});
     cmd_shell_->AddCommand(
         instrumentation_control_->Usage(),
@@ -462,7 +462,7 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
     ComponentValueEntry icache_value;
     icache_value.set_name("icache");
     icache_value.set_string_value(icache_cfg);
-    auto *cfg = cheriot_top_->GetConfig("icache");
+    auto* cfg = cheriot_top_->GetConfig("icache");
     auto status = cfg->Import(&icache_value);
     if (!status.ok()) return status;
   }
@@ -470,11 +470,11 @@ absl::Status CheriotRenode::SetConfig(const char *config_names[],
     ComponentValueEntry dcache_value;
     dcache_value.set_name("dcache");
     dcache_value.set_string_value(dcache_cfg);
-    auto *cfg = cheriot_top_->GetConfig("dcache");
+    auto* cfg = cheriot_top_->GetConfig("dcache");
     auto status = cfg->Import(&dcache_value);
     if (!status.ok()) return status;
     // Hook the cache into the memory port.
-    auto *dcache = cheriot_top_->dcache();
+    auto* dcache = cheriot_top_->dcache();
     dcache->set_tagged_memory(cheriot_top_->state()->tagged_memory());
     cheriot_top_->state()->set_tagged_memory(dcache);
   }
@@ -498,30 +498,30 @@ absl::Status CheriotRenode::SetIrqValue(int32_t irq_num, bool irq_value) {
   }
 }
 
-absl::Status CheriotRenode::InitializeSimulator(const std::string &cpu_type) {
+absl::Status CheriotRenode::InitializeSimulator(const std::string& cpu_type) {
   router_ = new mpact::sim::util::SingleInitiatorRouter(name_ + "_router");
   renode_router_ =
       new mpact::sim::util::SingleInitiatorRouter(name_ + "_renode_router");
-  auto *data_memory = static_cast<TaggedMemoryInterface *>(router_);
+  auto* data_memory = static_cast<TaggedMemoryInterface*>(router_);
   // Instantiate memory profiler, but disable it until the config information
   // has been received.
   mem_profiler_ = new TaggedMemoryUseProfiler(data_memory);
   data_memory = mem_profiler_;
   mem_profiler_->set_is_enabled(false);
   cheriot_state_ = new CheriotState(
-      "CherIoT", data_memory, static_cast<AtomicMemoryOpInterface *>(router_));
+      "CherIoT", data_memory, static_cast<AtomicMemoryOpInterface*>(router_));
   // First create the decoder according to the cpu type.
   if (cpu_type == kBaseName) {
     cheriot_decoder_ = new CheriotDecoder(
-        cheriot_state_, static_cast<MemoryInterface *>(router_));
+        cheriot_state_, static_cast<MemoryInterface*>(router_));
     cpu_type_ = CheriotCpuType::kBase;
   } else if (cpu_type == kRvvName) {
     cheriot_decoder_ = new CheriotRVVDecoder(
-        cheriot_state_, static_cast<MemoryInterface *>(router_));
+        cheriot_state_, static_cast<MemoryInterface*>(router_));
     cpu_type_ = CheriotCpuType::kRvv;
   } else if (cpu_type == kRvvFpName) {
     cheriot_decoder_ = new CheriotRVVFPDecoder(
-        cheriot_state_, static_cast<MemoryInterface *>(router_));
+        cheriot_state_, static_cast<MemoryInterface*>(router_));
     cpu_type_ = CheriotCpuType::kRvvFp;
   } else {
     return absl::NotFoundError(
@@ -538,10 +538,10 @@ absl::Status CheriotRenode::InitializeSimulator(const std::string &cpu_type) {
     return absl::InternalError(
         absl::StrCat(name_, ": Error while initializing minstret/minstreth\n"));
   }
-  auto *minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+  auto* minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState>*>(
       minstret_res.value());
-  auto *minstreth =
-      static_cast<RiscVCounterCsrHigh<CheriotState> *>(minstreth_res.value());
+  auto* minstreth =
+      static_cast<RiscVCounterCsrHigh<CheriotState>*>(minstreth_res.value());
   minstret->set_counter(cheriot_top_->counter_num_instructions());
   minstreth->set_counter(cheriot_top_->counter_num_instructions());
   // Initialize mcycle/mcycleh. Bind the instruction counter to those
@@ -552,10 +552,10 @@ absl::Status CheriotRenode::InitializeSimulator(const std::string &cpu_type) {
     return absl::InternalError(
         absl::StrCat(name_, ": Error while initializing mcycle/mcycleh\n"));
   }
-  auto *mcycle = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
-      mcycle_res.value());
-  auto *mcycleh =
-      static_cast<RiscVCounterCsrHigh<CheriotState> *>(mcycleh_res.value());
+  auto* mcycle =
+      static_cast<RiscVCounterCsr<uint32_t, CheriotState>*>(mcycle_res.value());
+  auto* mcycleh =
+      static_cast<RiscVCounterCsrHigh<CheriotState>*>(mcycleh_res.value());
   mcycle->set_counter(cheriot_top_->counter_num_cycles());
   mcycleh->set_counter(cheriot_top_->counter_num_cycles());
   // Set up the memory router with the system bus. Other devices are added once
@@ -586,10 +586,10 @@ absl::Status CheriotRenode::InitializeSimulator(const std::string &cpu_type) {
   // Set up semihosting.
   semihost_ =
       new RiscVArmSemihost(RiscVArmSemihost::BitWidth::kWord32,
-                           static_cast<MemoryInterface *>(router_),
-                           static_cast<MemoryInterface *>(renode_router_));
+                           static_cast<MemoryInterface*>(router_),
+                           static_cast<MemoryInterface*>(renode_router_));
   // Set up special handlers (ebreak, wfi, ecall).
-  cheriot_top_->state()->AddEbreakHandler([this](const Instruction *inst) {
+  cheriot_top_->state()->AddEbreakHandler([this](const Instruction* inst) {
     if (this->semihost_->IsSemihostingCall(inst)) {
       this->semihost_->OnEBreak(inst);
       return true;
@@ -600,9 +600,8 @@ absl::Status CheriotRenode::InitializeSimulator(const std::string &cpu_type) {
     }
     return false;
   });
-  cheriot_top_->state()->set_on_wfi([](const Instruction *) { return true; });
-  cheriot_top_->state()->set_on_ecall(
-      [](const Instruction *) { return false; });
+  cheriot_top_->state()->set_on_wfi([](const Instruction*) { return true; });
+  cheriot_top_->state()->set_on_ecall([](const Instruction*) { return false; });
   semihost_->set_exit_callback([this]() {
     this->cheriot_top_->RequestHalt(HaltReason::kProgramDone, nullptr);
   });

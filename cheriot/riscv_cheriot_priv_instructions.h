@@ -28,13 +28,13 @@ namespace cheriot {
 
 using ::mpact::sim::generic::Instruction;
 
-void RiscVPrivMRet(const Instruction *inst);
+void RiscVPrivMRet(const Instruction* inst);
 
-void RiscVPrivWfi(const Instruction *inst);
-void RiscVPrivSFenceVmaZZ(const Instruction *inst);
-void RiscVPrivSFenceVmaZN(const Instruction *inst);
-void RiscVPrivSFenceVmaNZ(const Instruction *inst);
-void RiscVPrivSFenceVmaNN(const Instruction *inst);
+void RiscVPrivWfi(const Instruction* inst);
+void RiscVPrivSFenceVmaZZ(const Instruction* inst);
+void RiscVPrivSFenceVmaZN(const Instruction* inst);
+void RiscVPrivSFenceVmaNZ(const Instruction* inst);
+void RiscVPrivSFenceVmaNN(const Instruction* inst);
 
 }  // namespace cheriot
 }  // namespace sim

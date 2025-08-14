@@ -39,7 +39,7 @@ using ::mpact::sim::riscv::RV32VectorSourceOperand;
 constexpr int kNumRegTable[8] = {8, 1, 2, 1, 4, 1, 2, 1};
 
 template <typename M, typename E, typename G>
-inline void Insert(M &map, E entry, G getter) {
+inline void Insert(M& map, E entry, G getter) {
   if (!map.contains(static_cast<int>(entry))) {
     map.insert(std::make_pair(static_cast<int>(entry), getter));
   } else {
@@ -49,52 +49,52 @@ inline void Insert(M &map, E entry, G getter) {
 
 // Generic helper functions to create register operands.
 template <typename RegType>
-inline DestinationOperandInterface *GetRegisterDestinationOp(
-    CheriotState *state, std::string name, int latency) {
-  auto *reg = state->GetRegister<RegType>(name).first;
+inline DestinationOperandInterface* GetRegisterDestinationOp(
+    CheriotState* state, std::string name, int latency) {
+  auto* reg = state->GetRegister<RegType>(name).first;
   return reg->CreateDestinationOperand(latency);
 }
 
 template <typename RegType>
-inline DestinationOperandInterface *GetRegisterDestinationOp(
-    CheriotState *state, std::string name, int latency, std::string op_name) {
-  auto *reg = state->GetRegister<RegType>(name).first;
+inline DestinationOperandInterface* GetRegisterDestinationOp(
+    CheriotState* state, std::string name, int latency, std::string op_name) {
+  auto* reg = state->GetRegister<RegType>(name).first;
   return reg->CreateDestinationOperand(latency, op_name);
 }
 
 template <typename T>
-inline DestinationOperandInterface *GetCSRSetBitsDestinationOp(
-    CheriotState *state, std::string name, int latency, std::string op_name) {
+inline DestinationOperandInterface* GetCSRSetBitsDestinationOp(
+    CheriotState* state, std::string name, int latency, std::string op_name) {
   auto result = state->csr_set()->GetCsr(name);
   if (!result.ok()) {
     LOG(ERROR) << "No such CSR '" << name << "'";
     return nullptr;
   }
-  auto *csr = result.value();
-  auto *op = csr->CreateSetDestinationOperand(latency, op_name);
+  auto* csr = result.value();
+  auto* op = csr->CreateSetDestinationOperand(latency, op_name);
   return op;
 }
 
 template <typename RegType>
-inline SourceOperandInterface *GetRegisterSourceOp(CheriotState *state,
+inline SourceOperandInterface* GetRegisterSourceOp(CheriotState* state,
                                                    std::string name) {
-  auto *reg = state->GetRegister<RegType>(name).first;
-  auto *op = reg->CreateSourceOperand();
+  auto* reg = state->GetRegister<RegType>(name).first;
+  auto* op = reg->CreateSourceOperand();
   return op;
 }
 
 template <typename RegType>
-inline SourceOperandInterface *GetRegisterSourceOp(CheriotState *state,
+inline SourceOperandInterface* GetRegisterSourceOp(CheriotState* state,
                                                    std::string name,
                                                    std::string op_name) {
-  auto *reg = state->GetRegister<RegType>(name).first;
-  auto *op = reg->CreateSourceOperand(op_name);
+  auto* reg = state->GetRegister<RegType>(name).first;
+  auto* op = reg->CreateSourceOperand(op_name);
   return op;
 }
 
 template <typename RegType>
-inline void GetVRegGroup(CheriotState *state, int reg_num,
-                         std::vector<generic::RegisterBase *> *vreg_group) {
+inline void GetVRegGroup(CheriotState* state, int reg_num,
+                         std::vector<generic::RegisterBase*>* vreg_group) {
   // The number of registers in a vector register group depends on the register
   // index: 0, 8, 16, 24 each have 8 registers, 4, 12, 20, 28 each have 4,
   // 2, 6, 10, 14, 18, 22, 26, 30 each have two, and all odd numbered register
@@ -106,53 +106,53 @@ inline void GetVRegGroup(CheriotState *state, int reg_num,
   }
 }
 template <typename RegType>
-inline SourceOperandInterface *GetVectorRegisterSourceOp(CheriotState *state,
+inline SourceOperandInterface* GetVectorRegisterSourceOp(CheriotState* state,
                                                          int reg_num) {
-  std::vector<generic::RegisterBase *> vreg_group;
+  std::vector<generic::RegisterBase*> vreg_group;
   GetVRegGroup<RegType>(state, reg_num, &vreg_group);
-  auto *v_src_op = new RV32VectorSourceOperand(
-      absl::Span<generic::RegisterBase *>(vreg_group),
+  auto* v_src_op = new RV32VectorSourceOperand(
+      absl::Span<generic::RegisterBase*>(vreg_group),
       absl::StrCat(CheriotState::kVregPrefix, reg_num));
   return v_src_op;
 }
 
 template <typename RegType>
-inline DestinationOperandInterface *GetVectorRegisterDestinationOp(
-    CheriotState *state, int latency, int reg_num) {
-  std::vector<generic::RegisterBase *> vreg_group;
+inline DestinationOperandInterface* GetVectorRegisterDestinationOp(
+    CheriotState* state, int latency, int reg_num) {
+  std::vector<generic::RegisterBase*> vreg_group;
   GetVRegGroup<RegType>(state, reg_num, &vreg_group);
-  auto *v_dst_op = new RV32VectorDestinationOperand(
-      absl::Span<generic::RegisterBase *>(vreg_group), latency,
+  auto* v_dst_op = new RV32VectorDestinationOperand(
+      absl::Span<generic::RegisterBase*>(vreg_group), latency,
       absl::StrCat(CheriotState::kVregPrefix, reg_num));
   return v_dst_op;
 }
 
 template <typename RegType>
-inline SourceOperandInterface *GetVectorMaskRegisterSourceOp(
-    CheriotState *state, int reg_num) {
+inline SourceOperandInterface* GetVectorMaskRegisterSourceOp(
+    CheriotState* state, int reg_num) {
   // Mask register groups only have a single register.
-  std::vector<generic::RegisterBase *> vreg_group;
+  std::vector<generic::RegisterBase*> vreg_group;
   vreg_group.push_back(state
                            ->GetRegister<RegType>(
                                absl::StrCat(CheriotState::kVregPrefix, reg_num))
                            .first);
-  auto *v_src_op = new RV32VectorSourceOperand(
-      absl::Span<generic::RegisterBase *>(vreg_group),
+  auto* v_src_op = new RV32VectorSourceOperand(
+      absl::Span<generic::RegisterBase*>(vreg_group),
       absl::StrCat(CheriotState::kVregPrefix, reg_num));
   return v_src_op;
 }
 
 template <typename RegType>
-inline DestinationOperandInterface *GetVectorMaskRegisterDestinationOp(
-    CheriotState *state, int latency, int reg_num) {
+inline DestinationOperandInterface* GetVectorMaskRegisterDestinationOp(
+    CheriotState* state, int latency, int reg_num) {
   // Mask register groups only have a single register.
-  std::vector<generic::RegisterBase *> vreg_group;
+  std::vector<generic::RegisterBase*> vreg_group;
   vreg_group.push_back(state
                            ->GetRegister<RegType>(
                                absl::StrCat(CheriotState::kVregPrefix, reg_num))
                            .first);
-  auto *v_dst_op = new RV32VectorDestinationOperand(
-      absl::Span<generic::RegisterBase *>(vreg_group), latency,
+  auto* v_dst_op = new RV32VectorDestinationOperand(
+      absl::Span<generic::RegisterBase*>(vreg_group), latency,
       absl::StrCat(CheriotState::kVregPrefix, reg_num));
   return v_dst_op;
 }

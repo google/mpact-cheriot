@@ -101,10 +101,10 @@ class CheriotRegister : public generic::Register<uint32_t> {
   static constexpr int kReserved[2] = {31, 31};
 
   // Constructor. Default constructors and assignment are disabled.
-  CheriotRegister(generic::ArchState *state, absl::string_view name);
+  CheriotRegister(generic::ArchState* state, absl::string_view name);
   CheriotRegister() = delete;
-  CheriotRegister(const CheriotRegister &) = delete;
-  CheriotRegister &operator=(const CheriotRegister &) = delete;
+  CheriotRegister(const CheriotRegister&) = delete;
+  CheriotRegister& operator=(const CheriotRegister&) = delete;
 
   // These functions set the capability register to a known state, either the
   // null capability, or one of the three root capabilities. All capabilities
@@ -139,8 +139,8 @@ class CheriotRegister : public generic::Register<uint32_t> {
   bool IsRepresentable() const;
   // Seal (unseal) the current capability based on permissions and address field
   // in source. Returns ok status if the operation is successful.
-  absl::Status Seal(const CheriotRegister &source, uint32_t obj_type);
-  absl::Status Unseal(const CheriotRegister &source, uint32_t obj_type);
+  absl::Status Seal(const CheriotRegister& source, uint32_t obj_type);
+  absl::Status Unseal(const CheriotRegister& source, uint32_t obj_type);
   // Returns true if the capability is sealed, i.e., that the object type is set
   // to a valid, non-reserved object type.
   bool IsSealed() const;
@@ -162,10 +162,10 @@ class CheriotRegister : public generic::Register<uint32_t> {
            (top() >= (uint64_t)cap_address + (uint64_t)size);
   }
   // Copy fields from other capability register.
-  void CopyFrom(const CheriotRegister &other);
+  void CopyFrom(const CheriotRegister& other);
   // Equal operator.
-  bool operator==(const CheriotRegister &other) const;
-  bool IsMemoryEqual(const CheriotRegister &other) const;
+  bool operator==(const CheriotRegister& other) const;
+  bool IsMemoryEqual(const CheriotRegister& other) const;
   // Text representation.
   std::string AsString() const;
   // Update address with change to base and top as needed.

@@ -46,13 +46,13 @@ class RiscVCheriotRVVEncodingTest : public testing::Test {
     delete state_;
   }
 
-  TaggedFlatDemandMemory *mem_;
-  CheriotState *state_;
-  RiscVCheriotRVVEncoding *enc_;
+  TaggedFlatDemandMemory* mem_;
+  CheriotState* state_;
+  RiscVCheriotRVVEncoding* enc_;
 };
 
 TEST_F(RiscVCheriotRVVEncodingTest, SourceOperands) {
-  auto &getters = enc_->source_op_getters();
+  auto& getters = enc_->source_op_getters();
   for (int i = *SourceOpEnum::kNone; i < *SourceOpEnum::kPastMaxValue; ++i) {
     EXPECT_TRUE(getters.contains(i)) << "No source operand for enum value " << i
                                      << " (" << kSourceOpNames[i] << ")";
@@ -60,7 +60,7 @@ TEST_F(RiscVCheriotRVVEncodingTest, SourceOperands) {
 }
 
 TEST_F(RiscVCheriotRVVEncodingTest, DestOperands) {
-  auto &getters = enc_->dest_op_getters();
+  auto& getters = enc_->dest_op_getters();
   for (int i = *DestOpEnum::kNone; i < *DestOpEnum::kPastMaxValue; ++i) {
     EXPECT_TRUE(getters.contains(i)) << "No dest operand for enum value " << i
                                      << " (" << kDestOpNames[i] << ")";

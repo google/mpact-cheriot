@@ -42,40 +42,40 @@ using ::mpact::sim::generic::Instruction;
 using ::mpact::sim::generic::RegisterBase;
 
 // Helper to get capability destination registers.
-static inline CapReg *GetCapDest(const Instruction *instruction, int i) {
-  return static_cast<CapReg *>(
-      std::any_cast<RegisterBase *>(instruction->Destination(i)->GetObject()));
+static inline CapReg* GetCapDest(const Instruction* instruction, int i) {
+  return static_cast<CapReg*>(
+      std::any_cast<RegisterBase*>(instruction->Destination(i)->GetObject()));
 }
 
 // Writing an integer result requires invalidating the capability and setting
 // it to null.
 template <typename Result>
-static inline void WriteCapIntResult(const Instruction *instruction, int i,
+static inline void WriteCapIntResult(const Instruction* instruction, int i,
                                      Result value) {
-  auto *cap_reg = GetCapDest(instruction, i);
+  auto* cap_reg = GetCapDest(instruction, i);
   cap_reg->data_buffer()->Set<Result>(0, value);
   cap_reg->Invalidate();
   cap_reg->set_is_null();
 }
 
 template <typename T>
-inline T ReadCsr(RiscVCsrInterface *) {}
+inline T ReadCsr(RiscVCsrInterface*) {}
 
 template <>
-inline uint32_t ReadCsr<uint32_t>(RiscVCsrInterface *csr) {
+inline uint32_t ReadCsr<uint32_t>(RiscVCsrInterface* csr) {
   return csr->AsUint32();
 }
 template <>
-inline uint64_t ReadCsr<uint64_t>(RiscVCsrInterface *csr) {
+inline uint64_t ReadCsr<uint64_t>(RiscVCsrInterface* csr) {
   return csr->AsUint64();
 }
 
 // Helper function to check that the CSR permission is valid. If not, throw
 // an illegal instruction exception.
-bool CheckCsrPermission(int csr_index, Instruction *instruction,
+bool CheckCsrPermission(int csr_index, Instruction* instruction,
                         bool is_write) {
   auto required_mode = (csr_index >> 8) & 0x3;
-  auto *state = static_cast<CheriotState *>(instruction->state());
+  auto* state = static_cast<CheriotState*>(instruction->state());
   auto current_mode = PrivilegeMode::kMachine;
   // If the register isn't available in CHERIoT, throw an exception.
   if (required_mode == *PrivilegeMode::kSupervisor) {
@@ -116,9 +116,9 @@ bool CheckCsrPermission(int csr_index, Instruction *instruction,
 
 // Read the CSR, write a new value back.
 template <typename T>
-static inline void RVZiCsrrw(Instruction *instruction) {
+static inline void RVZiCsrrw(Instruction* instruction) {
   // Get a handle to the state instance.
-  auto state = static_cast<CheriotState *>(instruction->state());
+  auto state = static_cast<CheriotState*>(instruction->state());
   // Get the csr index.
   int csr_index = instruction->Source(1)->AsInt32(0);
   if (!CheckCsrPermission(csr_index, instruction, /*is_write=*/true)) return;
@@ -134,7 +134,7 @@ static inline void RVZiCsrrw(Instruction *instruction) {
   }
   // Get the new value.
   T new_value = generic::GetInstructionSource<T>(instruction, 0);
-  auto *csr = result.value();
+  auto* csr = result.value();
   // Update the register.
   auto csr_val = ReadCsr<T>(csr);
   WriteCapIntResult(instruction, 0, csr_val);
@@ -144,9 +144,9 @@ static inline void RVZiCsrrw(Instruction *instruction) {
 
 // Read the CSR, set the bits specified by the new value and write back.
 template <typename T>
-static inline void RVZiCsrrs(Instruction *instruction) {
+static inline void RVZiCsrrs(Instruction* instruction) {
   // Get a handle to the state instance.
-  auto state = static_cast<CheriotState *>(instruction->state());
+  auto state = static_cast<CheriotState*>(instruction->state());
   // Get the csr index.
   int csr_index = instruction->Source(1)->AsInt32(0);
   if (!CheckCsrPermission(csr_index, instruction, /*is_write=*/true)) return;
@@ -162,7 +162,7 @@ static inline void RVZiCsrrs(Instruction *instruction) {
   }
   // Get the new value.
   T new_value = generic::GetInstructionSource<T>(instruction, 0);
-  auto *csr = result.value();
+  auto* csr = result.value();
   // Update the register.
   auto csr_val = ReadCsr<T>(csr);
   WriteCapIntResult(instruction, 0, csr_val);
@@ -172,9 +172,9 @@ static inline void RVZiCsrrs(Instruction *instruction) {
 
 // Read the CSR, clear the bits specified by the new value and write back.
 template <typename T>
-static inline void RVZiCsrrc(Instruction *instruction) {
+static inline void RVZiCsrrc(Instruction* instruction) {
   // Get a handle to the state instance.
-  auto state = static_cast<CheriotState *>(instruction->state());
+  auto state = static_cast<CheriotState*>(instruction->state());
   // Get the csr index.
   int csr_index = instruction->Source(1)->AsInt32(0);
   if (!CheckCsrPermission(csr_index, instruction, /*is_write=*/true)) return;
@@ -190,7 +190,7 @@ static inline void RVZiCsrrc(Instruction *instruction) {
   }
   // Get the new value.
   T new_value = generic::GetInstructionSource<T>(instruction, 0);
-  auto *csr = result.value();
+  auto* csr = result.value();
   // Write the current value of the CSR to the destination register.
   auto csr_val = ReadCsr<T>(csr);
   WriteCapIntResult(instruction, 0, csr_val);
@@ -200,9 +200,9 @@ static inline void RVZiCsrrc(Instruction *instruction) {
 
 // Do not read the CSR, just write the new value back.
 template <typename T>
-static inline void RVZiCsrrwNr(Instruction *instruction) {
+static inline void RVZiCsrrwNr(Instruction* instruction) {
   // Get a handle to the state instance.
-  auto state = static_cast<CheriotState *>(instruction->state());
+  auto state = static_cast<CheriotState*>(instruction->state());
   // Get the csr index.
   int csr_index = instruction->Source(1)->AsInt32(0);
   if (!CheckCsrPermission(csr_index, instruction, /*is_write=*/true)) return;
@@ -215,7 +215,7 @@ static inline void RVZiCsrrwNr(Instruction *instruction) {
                                ": ", result.status().message());
     return;
   }
-  auto *csr = result.value();
+  auto* csr = result.value();
   // Write the new value to the csr.
   T new_value = generic::GetInstructionSource<T>(instruction, 0);
   csr->Write(new_value);
@@ -223,9 +223,9 @@ static inline void RVZiCsrrwNr(Instruction *instruction) {
 
 // Do not write a value back to the CSR, just read it.
 template <typename T>
-static inline void RVZiCsrrNw(Instruction *instruction) {
+static inline void RVZiCsrrNw(Instruction* instruction) {
   // Get a handle to the state instance.
-  auto state = static_cast<CheriotState *>(instruction->state());
+  auto state = static_cast<CheriotState*>(instruction->state());
   // Get the csr index.
   int csr_index = instruction->Source(0)->AsInt32(0);
   if (!CheckCsrPermission(csr_index, instruction, /*is_write=*/false)) return;
@@ -239,7 +239,7 @@ static inline void RVZiCsrrNw(Instruction *instruction) {
     return;
   }
   // Get the CSR object.
-  auto *csr = result.value();
+  auto* csr = result.value();
   auto csr_val = ReadCsr<T>(csr);
   WriteCapIntResult(instruction, 0, csr_val);
 }
@@ -248,21 +248,21 @@ using RegisterType = CheriotRegister;
 using UintReg = RegisterType::ValueType;
 
 // Read the CSR, write a new value back.
-void RiscVZiCsrrw(Instruction *instruction) { RVZiCsrrw<UintReg>(instruction); }
+void RiscVZiCsrrw(Instruction* instruction) { RVZiCsrrw<UintReg>(instruction); }
 
 // Read the CSR, set the bits specified by the new value and write back.
-void RiscVZiCsrrs(Instruction *instruction) { RVZiCsrrs<UintReg>(instruction); }
+void RiscVZiCsrrs(Instruction* instruction) { RVZiCsrrs<UintReg>(instruction); }
 
 // Read the CSR, clear the bits specified by the new value and write back.
-void RiscVZiCsrrc(Instruction *instruction) { RVZiCsrrc<UintReg>(instruction); }
+void RiscVZiCsrrc(Instruction* instruction) { RVZiCsrrc<UintReg>(instruction); }
 
 // Do not read the CSR, just write the new value back.
-void RiscVZiCsrrwNr(Instruction *instruction) {
+void RiscVZiCsrrwNr(Instruction* instruction) {
   RVZiCsrrwNr<UintReg>(instruction);
 }
 
 // Do not write a value back to the CSR, just read it.
-void RiscVZiCsrrNw(Instruction *instruction) {
+void RiscVZiCsrrNw(Instruction* instruction) {
   RVZiCsrrNw<UintReg>(instruction);
 }
 

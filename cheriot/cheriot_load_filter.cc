@@ -20,7 +20,7 @@
 
 namespace mpact::sim::cheriot {
 
-CheriotLoadFilter::CheriotLoadFilter(TaggedMemoryInterface *tagged_memory,
+CheriotLoadFilter::CheriotLoadFilter(TaggedMemoryInterface* tagged_memory,
                                      int period, int count, uint64_t base,
                                      uint64_t top, uint64_t cap_base,
                                      uint64_t revocation_base)
@@ -53,7 +53,7 @@ CheriotLoadFilter::~CheriotLoadFilter() {
 
 // This is called when the linked counter increments. We are not interested
 // in the value of the counter, just the number of increments.
-void CheriotLoadFilter::SetValue(const uint64_t &) {
+void CheriotLoadFilter::SetValue(const uint64_t&) {
   if (++update_counter_ >= period_) {
     update_counter_ = 0;
     // Once triggered, perform count_ filter loads/stores.

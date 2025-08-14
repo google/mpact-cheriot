@@ -34,23 +34,23 @@ using ::mpact::sim::generic::Instruction;
 // memory to access, the second is the acquire bit, and the third, the release
 // bit. The instruction has a single destination operand which is the register
 // to write the result to.
-void ALrw(Instruction *instruction);
+void ALrw(Instruction* instruction);
 // The following instructions take 4 source operands and one destination
 // operand. The first source is the register holding the address of the
 // memory to access, the second is the register value used in the memory
 // operation (to store, swap, etc), the third is the acquire bit, and the
 // fourth, the release bit. The instruction has a single destination operand
 // which is the register to write the result to.
-void AScw(Instruction *instruction);
-void AAmoswapw(Instruction *instruction);
-void AAmoaddw(Instruction *instruction);
-void AAmoandw(Instruction *instruction);
-void AAmoorw(Instruction *instruction);
-void AAmoxorw(Instruction *instruction);
-void AAmomaxw(Instruction *instruction);
-void AAmomaxuw(Instruction *instruction);
-void AAmominw(Instruction *instruction);
-void AAmominuw(Instruction *instruction);
+void AScw(Instruction* instruction);
+void AAmoswapw(Instruction* instruction);
+void AAmoaddw(Instruction* instruction);
+void AAmoandw(Instruction* instruction);
+void AAmoorw(Instruction* instruction);
+void AAmoxorw(Instruction* instruction);
+void AAmomaxw(Instruction* instruction);
+void AAmomaxuw(Instruction* instruction);
+void AAmominw(Instruction* instruction);
+void AAmominuw(Instruction* instruction);
 
 }  // namespace cheriot
 }  // namespace sim

@@ -29,14 +29,14 @@ class CheriotState;
 
 class RiscVCheriotEncodingCommon {
  public:
-  explicit RiscVCheriotEncodingCommon(CheriotState *state) : state_(state) {}
+  explicit RiscVCheriotEncodingCommon(CheriotState* state) : state_(state) {}
 
   // Accessors.
-  CheriotState *state() const { return state_; }
+  CheriotState* state() const { return state_; }
   uint32_t inst_word() const { return inst_word_; }
 
  protected:
-  CheriotState *state_;
+  CheriotState* state_;
   uint32_t inst_word_;
 };
 

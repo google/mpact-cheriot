@@ -54,17 +54,17 @@ using CapReg = CheriotRegister;
 using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 
 // Get the destination capability register.
-static inline CapReg *GetCapDest(const Instruction *instruction, int i) {
-  return static_cast<CapReg *>(
-      std::any_cast<RegisterBase *>(instruction->Destination(i)->GetObject()));
+static inline CapReg* GetCapDest(const Instruction* instruction, int i) {
+  return static_cast<CapReg*>(
+      std::any_cast<RegisterBase*>(instruction->Destination(i)->GetObject()));
 }
 
 // Writing an integer result requires invalidating the capability and setting
 // it to null.
 template <typename Result>
-static inline void WriteCapIntResult(const Instruction *instruction, int i,
+static inline void WriteCapIntResult(const Instruction* instruction, int i,
                                      Result value) {
-  auto *cap_reg = GetCapDest(instruction, i);
+  auto* cap_reg = GetCapDest(instruction, i);
   cap_reg->data_buffer()->Set<Result>(0, value);
   cap_reg->Invalidate();
   cap_reg->set_is_null();
@@ -103,7 +103,7 @@ inline std::tuple<To, uint32_t> CvtHelper(From value) {
 // Generic helper function for floating op instructions that do not require
 // NaN boxing since they produce non fp-values, but set fflags.
 template <typename Result, typename From, typename To>
-inline void RVCheriotConvertFloatWithFflagsOp(const Instruction *instruction) {
+inline void RVCheriotConvertFloatWithFflagsOp(const Instruction* instruction) {
   constexpr To kMax = std::numeric_limits<To>::max();
   constexpr To kMin = std::numeric_limits<To>::min();
 
@@ -113,7 +113,7 @@ inline void RVCheriotConvertFloatWithFflagsOp(const Instruction *instruction) {
   uint32_t rm = generic::GetInstructionSource<uint32_t>(instruction, 1);
   // Dynamic rounding mode will get rounding mode from the global state.
   if (rm == *FPRoundingMode::kDynamic) {
-    auto *rv_fp = static_cast<CheriotState *>(instruction->state())->rv_fp();
+    auto* rv_fp = static_cast<CheriotState*>(instruction->state())->rv_fp();
     if (!rv_fp->rounding_mode_valid()) {
       LOG(ERROR) << "Invalid rounding mode";
       return;
@@ -135,7 +135,7 @@ inline void RVCheriotConvertFloatWithFflagsOp(const Instruction *instruction) {
     auto constexpr kSigSize = FPTypeInfo<From>::kSigSize;
     auto constexpr kSigMask = FPTypeInfo<From>::kSigMask;
     auto constexpr kBitSize = FPTypeInfo<From>::kBitSize;
-    FromUint lhs_u = *reinterpret_cast<FromUint *>(&lhs);
+    FromUint lhs_u = *reinterpret_cast<FromUint*>(&lhs);
     const bool sign = (lhs_u & (1ULL << (kBitSize - 1))) != 0;
     FromUint exp = kExpMask & lhs_u;
     int exp_value = exp >> kSigSize;
@@ -294,7 +294,7 @@ inline void RVCheriotConvertFloatWithFflagsOp(const Instruction *instruction) {
   Result dest_value = static_cast<Result>(signed_value);
   WriteCapIntResult(instruction, 0, dest_value);
   if (flags) {
-    auto *flag_db = instruction->Destination(1)->AllocateDataBuffer();
+    auto* flag_db = instruction->Destination(1)->AllocateDataBuffer();
     flag_db->Set<uint32_t>(0, flags);
     flag_db->Submit();
   }
@@ -303,7 +303,7 @@ inline void RVCheriotConvertFloatWithFflagsOp(const Instruction *instruction) {
 // Helper function to read a NaN boxed source value, converting it to NaN if
 // it isn't formatted properly.
 template <typename RegValue, typename Argument>
-inline Argument GetNaNBoxedSource(const Instruction *instruction, int arg) {
+inline Argument GetNaNBoxedSource(const Instruction* instruction, int arg) {
   if (sizeof(RegValue) <= sizeof(Argument)) {
     return generic::GetInstructionSource<Argument>(instruction, arg);
   } else {
@@ -313,7 +313,7 @@ inline Argument GetNaNBoxedSource(const Instruction *instruction, int arg) {
     UInt uval = static_cast<UInt>(val);
     UInt mask = std::numeric_limits<UInt>::max() << (sizeof(Argument) * 8);
     if (((mask & uval) != mask)) {
-      return *reinterpret_cast<const Argument *>(
+      return *reinterpret_cast<const Argument*>(
           &FPTypeInfo<Argument>::kCanonicalNaN);
     }
     return generic::GetInstructionSource<Argument>(instruction, arg);
@@ -321,13 +321,13 @@ inline Argument GetNaNBoxedSource(const Instruction *instruction, int arg) {
 }
 
 template <typename Register, typename Result, typename Argument>
-inline void RiscVBinaryOp(const Instruction *instruction,
+inline void RiscVBinaryOp(const Instruction* instruction,
                           std::function<Result(Argument, Argument)> operation) {
   using RegValue = typename Register::ValueType;
   Argument lhs = generic::GetInstructionSource<Argument>(instruction, 0);
   Argument rhs = generic::GetInstructionSource<Argument>(instruction, 1);
   Result dest_value = operation(lhs, rhs);
-  auto *reg = static_cast<generic::RegisterDestinationOperand<RegValue> *>(
+  auto* reg = static_cast<generic::RegisterDestinationOperand<RegValue>*>(
                   instruction->Destination(0))
                   ->GetRegister();
   reg->data_buffer()->template Set<Result>(0, dest_value);
@@ -338,7 +338,7 @@ inline void RiscVBinaryOp(const Instruction *instruction,
 template <typename Register, typename Result, typename Argument1,
           typename Argument2>
 inline void RVCheriotBinaryOp(
-    const Instruction *instruction,
+    const Instruction* instruction,
     std::function<Result(Argument1, Argument2)> operation) {
   Argument1 lhs = generic::GetInstructionSource<Argument1>(instruction, 0);
   Argument2 rhs = generic::GetInstructionSource<Argument2>(instruction, 1);
@@ -348,7 +348,7 @@ inline void RVCheriotBinaryOp(
 
 template <typename Register, typename Result, typename Argument>
 inline void RVCheriotBinaryOp(
-    const Instruction *instruction,
+    const Instruction* instruction,
     std::function<Result(Argument, Argument)> operation) {
   Argument lhs = generic::GetInstructionSource<Argument>(instruction, 0);
   Argument rhs = generic::GetInstructionSource<Argument>(instruction, 1);
@@ -357,7 +357,7 @@ inline void RVCheriotBinaryOp(
 }
 
 template <typename Register, typename Result>
-inline void RVCheriotBinaryOp(const Instruction *instruction,
+inline void RVCheriotBinaryOp(const Instruction* instruction,
                               std::function<Result(Result, Result)> operation) {
   Result lhs = generic::GetInstructionSource<Result>(instruction, 0);
   Result rhs = generic::GetInstructionSource<Result>(instruction, 1);
@@ -367,7 +367,7 @@ inline void RVCheriotBinaryOp(const Instruction *instruction,
 
 // Generic helper function for unary instructions.
 template <typename Register, typename Result, typename Argument>
-inline void RVCheriotUnaryOp(const Instruction *instruction,
+inline void RVCheriotUnaryOp(const Instruction* instruction,
                              std::function<Result(Argument)> operation) {
   auto lhs = generic::GetInstructionSource<Argument>(instruction, 0);
   Result dest_value = operation(lhs);
@@ -377,7 +377,7 @@ inline void RVCheriotUnaryOp(const Instruction *instruction,
 // Helper function for conditional branches.
 template <typename RegisterType, typename ValueType>
 static inline void RVCheriotBranchConditional(
-    const Instruction *instruction,
+    const Instruction* instruction,
     std::function<bool(ValueType, ValueType)> cond) {
   using UIntType =
       typename std::make_unsigned<typename RegisterType::ValueType>::type;
@@ -386,8 +386,8 @@ static inline void RVCheriotBranchConditional(
   if (cond(a, b)) {
     UIntType offset = generic::GetInstructionSource<UIntType>(instruction, 2);
     UIntType target = offset + instruction->address();
-    auto *state = static_cast<CheriotState *>(instruction->state());
-    auto *pcc = state->pcc();
+    auto* state = static_cast<CheriotState*>(instruction->state());
+    auto* pcc = state->pcc();
     if (!pcc->HasPermission(PB::kPermitExecute)) {
       state->HandleCheriRegException(
           instruction, pcc->address(),
@@ -401,18 +401,18 @@ static inline void RVCheriotBranchConditional(
 
 // Generic helper function for load instructions.
 template <typename Register, typename ValueType>
-inline void RVCheriotLoad(const Instruction *instruction) {
+inline void RVCheriotLoad(const Instruction* instruction) {
   using RegVal = typename Register::ValueType;
   using URegVal = typename std::make_unsigned<RegVal>::type;
   // Bet the capability.
-  auto *cap_reg = static_cast<CheriotRegister *>(
-      static_cast<generic::RegisterSourceOperand<RegVal> *>(
+  auto* cap_reg = static_cast<CheriotRegister*>(
+      static_cast<generic::RegisterSourceOperand<RegVal>*>(
           instruction->Source(0))
           ->GetRegister());
   URegVal base = cap_reg->address();
   RegVal offset = generic::GetInstructionSource<RegVal>(instruction, 1);
   URegVal address = base + offset;
-  auto *state = static_cast<CheriotState *>(instruction->state());
+  auto* state = static_cast<CheriotState*>(instruction->state());
   // Check for tag unset.
   if (!cap_reg->tag()) {
     state->HandleCheriRegException(instruction, instruction->address(),
@@ -439,10 +439,10 @@ inline void RVCheriotLoad(const Instruction *instruction) {
                                    cap_reg);
     return;
   }
-  auto *value_db =
+  auto* value_db =
       instruction->state()->db_factory()->Allocate(sizeof(ValueType));
   value_db->set_latency(0);
-  auto *context = new riscv::LoadContext(value_db);
+  auto* context = new riscv::LoadContext(value_db);
   state->LoadMemory(instruction, address, value_db, instruction->child(),
                     context);
   context->DecRef();
@@ -450,12 +450,12 @@ inline void RVCheriotLoad(const Instruction *instruction) {
 
 // Generic helper function for load instructions' "child instruction".
 template <typename Register, typename ValueType>
-inline void RVCheriotLoadChild(const Instruction *instruction) {
+inline void RVCheriotLoadChild(const Instruction* instruction) {
   using RegVal = typename Register::ValueType;
   using URegVal = typename std::make_unsigned<RegVal>::type;
   using SRegVal = typename std::make_signed<URegVal>::type;
-  riscv::LoadContext *context =
-      static_cast<riscv::LoadContext *>(instruction->context());
+  riscv::LoadContext* context =
+      static_cast<riscv::LoadContext*>(instruction->context());
   if (std::is_signed<ValueType>::value) {
     SRegVal value = static_cast<SRegVal>(context->value_db->Get<ValueType>(0));
     WriteCapIntResult(instruction, 0, value);
@@ -467,20 +467,20 @@ inline void RVCheriotLoadChild(const Instruction *instruction) {
 
 // Generic helper function for store instructions.
 template <typename RegisterType, typename ValueType>
-inline void RVCheriotStore(const Instruction *instruction) {
+inline void RVCheriotStore(const Instruction* instruction) {
   using URegVal =
       typename std::make_unsigned<typename RegisterType::ValueType>::type;
   using SRegVal = typename std::make_signed<URegVal>::type;
   ValueType value = generic::GetInstructionSource<ValueType>(instruction, 2);
-  auto *cap_reg = static_cast<CheriotRegister *>(
+  auto* cap_reg = static_cast<CheriotRegister*>(
       static_cast<
-          generic::RegisterSourceOperand<typename RegisterType::ValueType> *>(
+          generic::RegisterSourceOperand<typename RegisterType::ValueType>*>(
           instruction->Source(0))
           ->GetRegister());
   URegVal base = cap_reg->address();
   SRegVal offset = generic::GetInstructionSource<SRegVal>(instruction, 1);
   URegVal address = base + offset;
-  auto *state = static_cast<CheriotState *>(instruction->state());
+  auto* state = static_cast<CheriotState*>(instruction->state());
   // Check for tag unset.
   if (!cap_reg->tag()) {
     state->HandleCheriRegException(instruction, instruction->address(),
@@ -507,7 +507,7 @@ inline void RVCheriotStore(const Instruction *instruction) {
                                    cap_reg);
     return;
   }
-  auto *db = state->db_factory()->Allocate(sizeof(ValueType));
+  auto* db = state->db_factory()->Allocate(sizeof(ValueType));
   db->Set<ValueType>(0, value);
   state->StoreMemory(instruction, address, db);
   db->DecRef();
@@ -518,12 +518,12 @@ inline void RVCheriotStore(const Instruction *instruction) {
 // not really executing an fp operation that requires rounding.
 template <typename RegValue, typename Result, typename Argument>
 inline void RVCheriotBinaryNaNBoxOp(
-    const Instruction *instruction,
+    const Instruction* instruction,
     std::function<Result(Argument, Argument)> operation) {
   Argument lhs = GetNaNBoxedSource<RegValue, Argument>(instruction, 0);
   Argument rhs = GetNaNBoxedSource<RegValue, Argument>(instruction, 1);
   Result dest_value = operation(lhs, rhs);
-  auto *reg = static_cast<generic::RegisterDestinationOperand<RegValue> *>(
+  auto* reg = static_cast<generic::RegisterDestinationOperand<RegValue>*>(
                   instruction->Destination(0))
                   ->GetRegister();
   // Check to see if we need to NaN box the result.
@@ -532,7 +532,7 @@ inline void RVCheriotBinaryNaNBoxOp(
     // bits have to be set to all ones.
     using UReg = typename std::make_unsigned<RegValue>::type;
     using UInt = typename FPTypeInfo<Result>::UIntType;
-    auto dest_u_value = *reinterpret_cast<UInt *>(&dest_value);
+    auto dest_u_value = *reinterpret_cast<UInt*>(&dest_value);
     UReg reg_value = std::numeric_limits<UReg>::max();
     int shift = 8 * (sizeof(RegValue) - sizeof(Result));
     reg_value = (reg_value << shift) | dest_u_value;
@@ -545,11 +545,11 @@ inline void RVCheriotBinaryNaNBoxOp(
 // Generic helper function for unary instructions with NaN boxing.
 template <typename DstRegValue, typename SrcRegValue, typename Result,
           typename Argument>
-inline void RVCheriotUnaryNaNBoxOp(const Instruction *instruction,
+inline void RVCheriotUnaryNaNBoxOp(const Instruction* instruction,
                                    std::function<Result(Argument)> operation) {
   Argument lhs = GetNaNBoxedSource<SrcRegValue, Argument>(instruction, 0);
   Result dest_value = operation(lhs);
-  auto *reg = static_cast<generic::RegisterDestinationOperand<DstRegValue> *>(
+  auto* reg = static_cast<generic::RegisterDestinationOperand<DstRegValue>*>(
                   instruction->Destination(0))
                   ->GetRegister();
   // Check to see if we need to NaN box the result.
@@ -558,7 +558,7 @@ inline void RVCheriotUnaryNaNBoxOp(const Instruction *instruction,
     // bits have to be set to all ones.
     using UReg = typename std::make_unsigned<DstRegValue>::type;
     using UInt = typename FPTypeInfo<Result>::UIntType;
-    auto dest_u_value = *reinterpret_cast<UInt *>(&dest_value);
+    auto dest_u_value = *reinterpret_cast<UInt*>(&dest_value);
     UReg reg_value = std::numeric_limits<UReg>::max();
     int shift = 8 * (sizeof(DstRegValue) - sizeof(Result));
     reg_value = (reg_value << shift) | dest_u_value;
@@ -574,14 +574,14 @@ inline void RVCheriotUnaryNaNBoxOp(const Instruction *instruction,
 template <typename DstRegValue, typename SrcRegValue, typename Result,
           typename Argument>
 inline void RVCheriotUnaryFloatNaNBoxOp(
-    const Instruction *instruction, std::function<Result(Argument)> operation) {
+    const Instruction* instruction, std::function<Result(Argument)> operation) {
   using ResUint = typename FPTypeInfo<Result>::UIntType;
   Argument lhs = GetNaNBoxedSource<SrcRegValue, Argument>(instruction, 0);
   // Get the rounding mode.
   int rm_value = generic::GetInstructionSource<int>(instruction, 1);
 
   // If the rounding mode is dynamic, read it from the current state.
-  auto *rv_fp = static_cast<CheriotState *>(instruction->state())->rv_fp();
+  auto* rv_fp = static_cast<CheriotState*>(instruction->state())->rv_fp();
   if (rm_value == *FPRoundingMode::kDynamic) {
     if (!rv_fp->rounding_mode_valid()) {
       LOG(ERROR) << "Invalid rounding mode";
@@ -595,21 +595,21 @@ inline void RVCheriotUnaryFloatNaNBoxOp(
     dest_value = operation(lhs);
   }
   if (std::isnan(dest_value) && std::signbit(dest_value)) {
-    ResUint res_value = *reinterpret_cast<ResUint *>(&dest_value);
+    ResUint res_value = *reinterpret_cast<ResUint*>(&dest_value);
     res_value &= FPTypeInfo<Result>::kInfMask;
-    dest_value = *reinterpret_cast<Result *>(&res_value);
+    dest_value = *reinterpret_cast<Result*>(&res_value);
   }
-  auto *dest = instruction->Destination(0);
-  auto *reg_dest =
-      static_cast<generic::RegisterDestinationOperand<DstRegValue> *>(dest);
-  auto *reg = reg_dest->GetRegister();
+  auto* dest = instruction->Destination(0);
+  auto* reg_dest =
+      static_cast<generic::RegisterDestinationOperand<DstRegValue>*>(dest);
+  auto* reg = reg_dest->GetRegister();
   // Check to see if we need to NaN box the result.
   if (sizeof(DstRegValue) > sizeof(Result)) {
     // If the floating point Value is narrower than the register, the upper
     // bits have to be set to all ones.
     using UReg = typename std::make_unsigned<DstRegValue>::type;
     using UInt = typename FPTypeInfo<Result>::UIntType;
-    auto dest_u_value = *reinterpret_cast<UInt *>(&dest_value);
+    auto dest_u_value = *reinterpret_cast<UInt*>(&dest_value);
     UReg reg_value = std::numeric_limits<UReg>::max();
     int shift = 8 * (sizeof(DstRegValue) - sizeof(Result));
     reg_value = (reg_value << shift) | dest_u_value;
@@ -622,13 +622,13 @@ inline void RVCheriotUnaryFloatNaNBoxOp(
 // Generic helper function for floating op instructions that do not require
 // NaN boxing since they produce non fp-values.
 template <typename Result, typename Argument>
-inline void RVCheriotUnaryFloatOp(const Instruction *instruction,
+inline void RVCheriotUnaryFloatOp(const Instruction* instruction,
                                   std::function<Result(Argument)> operation) {
   Argument lhs = generic::GetInstructionSource<Argument>(instruction, 0);
   // Get the rounding mode.
   int rm_value = generic::GetInstructionSource<int>(instruction, 1);
 
-  auto *rv_fp = static_cast<CheriotState *>(instruction->state())->rv_fp();
+  auto* rv_fp = static_cast<CheriotState*>(instruction->state())->rv_fp();
   // If the rounding mode is dynamic, read it from the current state.
   if (rm_value == *FPRoundingMode::kDynamic) {
     if (!rv_fp->rounding_mode_valid()) {
@@ -642,11 +642,11 @@ inline void RVCheriotUnaryFloatOp(const Instruction *instruction,
     ScopedFPStatus set_fp_status(rv_fp->host_fp_interface(), rm_value);
     dest_value = operation(lhs);
   }
-  auto *dest = instruction->Destination(0);
+  auto* dest = instruction->Destination(0);
   using UInt = typename FPTypeInfo<Result>::UIntType;
-  auto *reg_dest =
-      static_cast<generic::RegisterDestinationOperand<UInt> *>(dest);
-  auto *reg = reg_dest->GetRegister();
+  auto* reg_dest =
+      static_cast<generic::RegisterDestinationOperand<UInt>*>(dest);
+  auto* reg = reg_dest->GetRegister();
   reg->data_buffer()->template Set<Result>(0, dest_value);
 }
 
@@ -654,13 +654,13 @@ inline void RVCheriotUnaryFloatOp(const Instruction *instruction,
 // NaN boxing since they produce non fp-values, but set fflags.
 template <typename Result, typename Argument>
 inline void RVCheriotUnaryFloatWithFflagsOp(
-    const Instruction *instruction,
-    std::function<Result(Argument, uint32_t &)> operation) {
+    const Instruction* instruction,
+    std::function<Result(Argument, uint32_t&)> operation) {
   Argument lhs = generic::GetInstructionSource<Argument>(instruction, 0);
   // Get the rounding mode.
   int rm_value = generic::GetInstructionSource<int>(instruction, 1);
 
-  auto *rv_fp = static_cast<CheriotState *>(instruction->state())->rv_fp();
+  auto* rv_fp = static_cast<CheriotState*>(instruction->state())->rv_fp();
   // If the rounding mode is dynamic, read it from the current state.
   if (rm_value == *FPRoundingMode::kDynamic) {
     if (!rv_fp->rounding_mode_valid()) {
@@ -675,13 +675,13 @@ inline void RVCheriotUnaryFloatWithFflagsOp(
     ScopedFPStatus set_fp_status(rv_fp->host_fp_interface(), rm_value);
     dest_value = operation(lhs, flag);
   }
-  auto *dest = instruction->Destination(0);
+  auto* dest = instruction->Destination(0);
   using UInt = typename FPTypeInfo<Result>::UIntType;
-  auto *reg_dest =
-      static_cast<generic::RegisterDestinationOperand<UInt> *>(dest);
-  auto *reg = reg_dest->GetRegister();
+  auto* reg_dest =
+      static_cast<generic::RegisterDestinationOperand<UInt>*>(dest);
+  auto* reg = reg_dest->GetRegister();
   reg->data_buffer()->template Set<Result>(0, dest_value);
-  auto *flag_db = instruction->Destination(1)->AllocateDataBuffer();
+  auto* flag_db = instruction->Destination(1)->AllocateDataBuffer();
   flag_db->Set<uint32_t>(0, flag);
   flag_db->Submit();
 }
@@ -690,7 +690,7 @@ inline void RVCheriotUnaryFloatWithFflagsOp(
 // difference is that it handles rounding mode.
 template <typename Register, typename Result, typename Argument>
 inline void RVCheriotBinaryFloatNaNBoxOp(
-    const Instruction *instruction,
+    const Instruction* instruction,
     std::function<Result(Argument, Argument)> operation) {
   Argument lhs = GetNaNBoxedSource<Register, Argument>(instruction, 0);
   Argument rhs = GetNaNBoxedSource<Register, Argument>(instruction, 1);
@@ -700,7 +700,7 @@ inline void RVCheriotBinaryFloatNaNBoxOp(
   // Get the rounding mode.
   int rm_value = generic::GetInstructionSource<int>(instruction, 2);
 
-  auto *rv_fp = static_cast<CheriotState *>(instruction->state())->rv_fp();
+  auto* rv_fp = static_cast<CheriotState*>(instruction->state())->rv_fp();
   // If the rounding mode is dynamic, read it from the current state.
   if (rm_value == *FPRoundingMode::kDynamic) {
     if (!rv_fp->rounding_mode_valid()) {
@@ -715,10 +715,10 @@ inline void RVCheriotBinaryFloatNaNBoxOp(
     dest_value = operation(lhs, rhs);
   }
   if (std::isnan(dest_value)) {
-    *reinterpret_cast<typename FPTypeInfo<Result>::UIntType *>(&dest_value) =
+    *reinterpret_cast<typename FPTypeInfo<Result>::UIntType*>(&dest_value) =
         FPTypeInfo<Result>::kCanonicalNaN;
   }
-  auto *reg = static_cast<generic::RegisterDestinationOperand<Register> *>(
+  auto* reg = static_cast<generic::RegisterDestinationOperand<Register>*>(
                   instruction->Destination(0))
                   ->GetRegister();
   // Check to see if we need to NaN box the result.
@@ -727,7 +727,7 @@ inline void RVCheriotBinaryFloatNaNBoxOp(
     // bits have to be set to all ones.
     using UReg = typename std::make_unsigned<Register>::type;
     using UInt = typename FPTypeInfo<Result>::UIntType;
-    auto dest_u_value = *reinterpret_cast<UInt *>(&dest_value);
+    auto dest_u_value = *reinterpret_cast<UInt*>(&dest_value);
     UReg reg_value = std::numeric_limits<UReg>::max();
     int shift = 8 * (sizeof(Register) - sizeof(Result));
     reg_value = (reg_value << shift) | dest_u_value;
@@ -740,7 +740,7 @@ inline void RVCheriotBinaryFloatNaNBoxOp(
 // Generic helper function for ternary floating point instructions.
 template <typename Register, typename Result, typename Argument>
 inline void RVCheriotTernaryFloatNaNBoxOp(
-    const Instruction *instruction,
+    const Instruction* instruction,
     std::function<Result(Argument, Argument, Argument)> operation) {
   Argument rs1 = generic::GetInstructionSource<Argument>(instruction, 0);
   Argument rs2 = generic::GetInstructionSource<Argument>(instruction, 1);
@@ -748,7 +748,7 @@ inline void RVCheriotTernaryFloatNaNBoxOp(
   // Get the rounding mode.
   int rm_value = generic::GetInstructionSource<int>(instruction, 3);
 
-  auto *rv_fp = static_cast<CheriotState *>(instruction->state())->rv_fp();
+  auto* rv_fp = static_cast<CheriotState*>(instruction->state())->rv_fp();
   // If the rounding mode is dynamic, read it from the current state.
   if (rm_value == *FPRoundingMode::kDynamic) {
     if (!rv_fp->rounding_mode_valid()) {
@@ -762,7 +762,7 @@ inline void RVCheriotTernaryFloatNaNBoxOp(
     ScopedFPStatus fp_status(rv_fp->host_fp_interface(), rm_value);
     dest_value = operation(rs1, rs2, rs3);
   }
-  auto *reg = static_cast<generic::RegisterDestinationOperand<Register> *>(
+  auto* reg = static_cast<generic::RegisterDestinationOperand<Register>*>(
                   instruction->Destination(0))
                   ->GetRegister();
   // Check to see if we need to NaN box the result.
@@ -771,7 +771,7 @@ inline void RVCheriotTernaryFloatNaNBoxOp(
     // bits have to be set to all ones.
     using UReg = typename std::make_unsigned<Register>::type;
     using UInt = typename FPTypeInfo<Result>::UIntType;
-    auto dest_u_value = *reinterpret_cast<UInt *>(&dest_value);
+    auto dest_u_value = *reinterpret_cast<UInt*>(&dest_value);
     UReg reg_value = std::numeric_limits<UReg>::max();
     int shift = 8 * (sizeof(Register) - sizeof(Result));
     reg_value = (reg_value << shift) | dest_u_value;
@@ -785,7 +785,7 @@ inline void RVCheriotTernaryFloatNaNBoxOp(
 template <typename T>
 typename FPTypeInfo<T>::UIntType ClassifyFP(T val) {
   using UIntType = typename FPTypeInfo<T>::UIntType;
-  auto int_value = *reinterpret_cast<UIntType *>(&val);
+  auto int_value = *reinterpret_cast<UIntType*>(&val);
   UIntType sign = int_value >> (FPTypeInfo<T>::kBitSize - 1);
   UIntType exp_mask = (1 << FPTypeInfo<T>::kExpSize) - 1;
   UIntType exp = (int_value >> FPTypeInfo<T>::kSigSize) & exp_mask;

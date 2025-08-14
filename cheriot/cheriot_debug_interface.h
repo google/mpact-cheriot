@@ -36,7 +36,7 @@ class CheriotDebugInterface : public generic::CoreDebugInterface {
   // Read tags from memory from the byte address (not tag address) given. The
   // tag address is computed by shifting the byte address right by three. The
   // length specifies the number of bytes (tags) to read.
-  virtual absl::StatusOr<size_t> ReadTagMemory(uint64_t address, void *buf,
+  virtual absl::StatusOr<size_t> ReadTagMemory(uint64_t address, void* buf,
                                                size_t length) = 0;
   // Set a data watchpoint for the given memory range. Any access matching the
   // given access type (load/store) will halt execution following the completion

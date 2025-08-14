@@ -42,14 +42,14 @@ using ::mpact::sim::riscv::RiscVState;
 using ::mpact::sim::riscv::RVFpRegister;
 
 using SourceOpGetterMap =
-    absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface *()>>;
+    absl::flat_hash_map<int, absl::AnyInvocable<SourceOperandInterface*()>>;
 using DestOpGetterMap =
     absl::flat_hash_map<int,
-                        absl::AnyInvocable<DestinationOperandInterface *(int)>>;
+                        absl::AnyInvocable<DestinationOperandInterface*(int)>>;
 
 template <typename Enum, typename Extractors>
-void AddCheriotFSourceGetters(SourceOpGetterMap &getter_map,
-                              RiscVCheriotEncodingCommon *common) {
+void AddCheriotFSourceGetters(SourceOpGetterMap& getter_map,
+                              RiscVCheriotEncodingCommon* common) {
   Insert(getter_map, *Enum::kFrs1, [common]() {
     int num = Extractors::RType::ExtractRs1(common->inst_word());
     return GetRegisterSourceOp<RVFpRegister>(
@@ -70,7 +70,7 @@ void AddCheriotFSourceGetters(SourceOpGetterMap &getter_map,
     return GetRegisterSourceOp<RVFpRegister>(
         common->state(), absl::StrCat(RiscVState::kFregPrefix, num));
   });
-  Insert(getter_map, *Enum::kRm, [common]() -> SourceOperandInterface * {
+  Insert(getter_map, *Enum::kRm, [common]() -> SourceOperandInterface* {
     uint32_t rm = (common->inst_word() >> 12) & 0x7;
     switch (rm) {
       case 0:
@@ -96,8 +96,8 @@ void AddCheriotFSourceGetters(SourceOpGetterMap &getter_map,
 }
 
 template <typename Enum, typename Extractors>
-void AddCheriotFDestGetters(DestOpGetterMap &getter_map,
-                            RiscVCheriotEncodingCommon *common) {
+void AddCheriotFDestGetters(DestOpGetterMap& getter_map,
+                            RiscVCheriotEncodingCommon* common) {
   Insert(getter_map, *Enum::kFrd, [common](int latency) {
     int num = Extractors::RType::ExtractRd(common->inst_word());
     return GetRegisterDestinationOp<RVFpRegister>(

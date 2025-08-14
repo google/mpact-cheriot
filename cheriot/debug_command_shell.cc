@@ -55,10 +55,10 @@ using PB = ::mpact::sim::cheriot::CheriotRegister::PermissionBits;
 using HaltReason = ::mpact::sim::generic::CoreDebugInterface::HaltReason;
 using ::mpact::sim::generic::operator*;  // NOLINT: used below (clang error).
 
-DebugCommandShell::InterruptListener::InterruptListener(CoreAccess *core_access)
+DebugCommandShell::InterruptListener::InterruptListener(CoreAccess* core_access)
     : core_access_(core_access),
-      state_(static_cast<CheriotState *>(core_access_->state)),
-      dbg_if_(static_cast<CheriotTop *>(core_access->debug_interface)),
+      state_(static_cast<CheriotState*>(core_access_->state)),
+      dbg_if_(static_cast<CheriotTop*>(core_access->debug_interface)),
       taken_listener_(
           absl::bind_front(&InterruptListener::SetTakenValue, this)),
       return_listener_(
@@ -68,7 +68,7 @@ DebugCommandShell::InterruptListener::InterruptListener(CoreAccess *core_access)
 }
 
 void DebugCommandShell::InterruptListener::SetReturnValue(int64_t value) {
-  auto &interrupt_info_list = state_->interrupt_info_list();
+  auto& interrupt_info_list = state_->interrupt_info_list();
   if (interrupt_info_list.empty()) {
     LOG(ERROR) << "Interrupt stack is empty";
     return;
@@ -231,26 +231,26 @@ DebugCommandShell::DebugCommandShell()
 }
 
 DebugCommandShell::~DebugCommandShell() {
-  for (auto *listener : interrupt_listeners_) {
+  for (auto* listener : interrupt_listeners_) {
     delete listener;
   }
 }
 
-void DebugCommandShell::AddCore(const CoreAccess &core_access) {
+void DebugCommandShell::AddCore(const CoreAccess& core_access) {
   core_access_.push_back(core_access);
   interrupt_listeners_.push_back(new InterruptListener(&core_access_.back()));
   core_action_point_id_.push_back(0);
   core_action_point_info_.emplace_back();
 }
 
-void DebugCommandShell::AddCores(const std::vector<CoreAccess> &core_access) {
-  for (const auto &core_access : core_access) {
+void DebugCommandShell::AddCores(const std::vector<CoreAccess>& core_access) {
+  for (const auto& core_access : core_access) {
     AddCore(core_access);
   }
 }
 
 // NOLINTBEGIN(readability/fn_size)
-void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
+void DebugCommandShell::Run(std::istream& is, std::ostream& os) {
   // TODO(torerik): refactor this function.
   // Assumes the max linesize is 512.
   command_streams_.push_back(&is);
@@ -307,7 +307,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       }
     }
     if (pcc_result.ok()) {
-      auto *loader = core_access_[current_core_].loader_getter();
+      auto* loader = core_access_[current_core_].loader_getter();
       if (loader != nullptr) {
         auto fcn_result = loader->GetFunctionName(pcc_result.value());
         if (fcn_result.ok()) {
@@ -329,11 +329,11 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       absl::StrAppend(&prompt, "\n");
     }
     auto cheriot_state =
-        static_cast<CheriotState *>(core_access_[current_core_].state);
-    auto &info_list = cheriot_state->interrupt_info_list();
+        static_cast<CheriotState*>(core_access_[current_core_].state);
+    auto& info_list = cheriot_state->interrupt_info_list();
     // Check if there is a new interrupt, if so print the info.
     if (info_list.size() > last_info_list_size) {
-      auto const &info = *info_list.rbegin();
+      auto const& info = *info_list.rbegin();
       absl::StrAppend(&prompt, info.is_interrupt ? "interrupt " : "exception ",
                       info.is_interrupt ? GetInterruptDescription(info)
                                         : GetExceptionDescription(info));
@@ -341,7 +341,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
     last_info_list_size = info_list.size();
     absl::StrAppend(&prompt, "[", current_core_, "] > ");
     while (!command_streams_.empty()) {
-      auto &current_is = *command_streams_.back();
+      auto& current_is = *command_streams_.back();
       // Ignore comments or empty lines.
       bool is_file = command_streams_.size() > 1;
       // Read a command from the input stream. If it's from a file, then ignore
@@ -385,7 +385,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
 
     // First try any added custom commands.
     bool executed = false;
-    for (auto &fcn : command_functions_) {
+    for (auto& fcn : command_functions_) {
       std::string output;
       executed = fcn(line_view, core_access_[current_core_], output);
       if (executed) {
@@ -545,7 +545,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         RE2::FullMatch(line_view, *set_break_re_, &str_value) ||
         RE2::FullMatch(line_view, *set_break2_re_, &str_value)) {
       if (str_value == "$branch") {
-        auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+        auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
             core_access_[current_core_].debug_interface);
         cheriot_interface->SetBreakOnControlFlowChange(true);
         continue;
@@ -648,7 +648,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
 
     // break clear-all
     if (RE2::FullMatch(line_view, *clear_all_break_re_)) {
-      auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+      auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
           core_access_[current_core_].debug_interface);
       cheriot_interface->SetBreakOnControlFlowChange(false);
       interrupt_listeners_[current_core_]->SetEnableExceptions(false);
@@ -668,7 +668,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
     if (std::string str_value;
         RE2::FullMatch(line_view, *clear_break_re_, &str_value)) {
       if (str_value == "$branch") {
-        auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+        auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
             core_access_[current_core_].debug_interface);
         cheriot_interface->SetBreakOnControlFlowChange(false);
         continue;
@@ -718,7 +718,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         bool active =
             core_access_[current_core_].debug_interface->HasBreakpoint(address);
         std::string symbol;
-        auto *loader = core_access_[current_core_].loader_getter();
+        auto* loader = core_access_[current_core_].loader_getter();
         if (loader != nullptr) {
           auto res = loader->GetFcnSymbolName(address);
           if (res.ok()) symbol = std::move(res.value());
@@ -728,7 +728,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
                                         active ? "active" : "inactive", address,
                                         symbol.empty() ? "-" : symbol));
       }
-      auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+      auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
           core_access_[current_core_].debug_interface);
       if (cheriot_interface->BreakOnControlFlowChange()) {
         absl::StrAppend(&bp_list,
@@ -751,7 +751,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
 
     // help
     if (RE2::FullMatch(line_view, *help_re_)) {
-      for (auto const &usage : command_usage_) {
+      for (auto const& usage : command_usage_) {
         os << usage << std::endl;
       }
       os << help_message_;
@@ -801,7 +801,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         continue;
       }
       size_t length = result.value();
-      auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+      auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
           core_access_[current_core_].debug_interface);
       auto cmd_result =
           cheriot_interface->SetDataWatchpoint(address, length, access_type);
@@ -840,7 +840,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       uint64_t address = iter->second.address;
       size_t length = iter->second.length;
       AccessType access_type = iter->second.access_type;
-      auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+      auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
           core_access_[current_core_].debug_interface);
       auto status =
           cheriot_interface->SetDataWatchpoint(address, length, access_type);
@@ -869,7 +869,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
       if (!iter->second.active) continue;
       uint64_t address = iter->second.address;
       auto access_type = iter->second.access_type;
-      auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+      auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
           core_access_[current_core_].debug_interface);
       auto status =
           cheriot_interface->ClearDataWatchpoint(address, access_type);
@@ -883,12 +883,12 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
 
     // watch clear-all
     if (RE2::FullMatch(line_view, *clear_all_watch_re_)) {
-      for (auto &[index, info] : core_access_[current_core_].watchpoint_map) {
+      for (auto& [index, info] : core_access_[current_core_].watchpoint_map) {
         if (!info.active) continue;
 
         uint64_t address = info.address;
         auto access_type = info.access_type;
-        auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+        auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
             core_access_[current_core_].debug_interface);
         auto status =
             cheriot_interface->ClearDataWatchpoint(address, access_type);
@@ -923,10 +923,10 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         access_type = AccessType::kLoadStore;
       }
       bool done = false;
-      for (auto &[index, info] : core_access_[current_core_].watchpoint_map) {
+      for (auto& [index, info] : core_access_[current_core_].watchpoint_map) {
         if ((info.address == result.value()) &&
             (info.access_type == access_type)) {
-          auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+          auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
               core_access_[current_core_].debug_interface);
           auto cmd_result = cheriot_interface->ClearDataWatchpoint(
               result.value(), access_type);
@@ -978,7 +978,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         continue;
       }
       size_t length = result.value();
-      auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+      auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
           core_access_[current_core_].debug_interface);
       auto cmd_result =
           cheriot_interface->SetDataWatchpoint(address, length, access_type);
@@ -999,10 +999,10 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
     // watch list
     if (RE2::FullMatch(line_view, *list_watch_re_)) {
       std::string bp_list;
-      for (auto const &[index, info] :
+      for (auto const& [index, info] :
            core_access_[current_core_].watchpoint_map) {
         std::string symbol;
-        auto *loader = core_access_[current_core_].loader_getter();
+        auto* loader = core_access_[current_core_].loader_getter();
         if (loader != nullptr) {
           auto res = loader->GetFcnSymbolName(info.address);
           if (res.ok()) symbol = std::move(res.value());
@@ -1082,7 +1082,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
         os << "Error: " << result.status().message() << "\n";
         continue;
       }
-      auto *db = result.value();
+      auto* db = result.value();
       // Check for null data buffer.
       if (db == nullptr) {
         os << "Error: register '$branch_trace' has no data buffer\n";
@@ -1116,7 +1116,7 @@ void DebugCommandShell::Run(std::istream &is, std::ostream &os) {
 
     if (std::string file_name;
         RE2::FullMatch(line_view, *exec_re_, &file_name)) {
-      auto *ifile = new std::ifstream(file_name);
+      auto* ifile = new std::ifstream(file_name);
       if (!ifile->is_open() || !ifile->good()) {
         os << "Error: unable to open '" << file_name << "'\n";
         os.flush();
@@ -1166,7 +1166,7 @@ constexpr absl::string_view kHexFormatCap[] = {
 
 // Templated helper function to help format integer values of different widths.
 template <typename T>
-std::string FormatDbValue(generic::DataBuffer *db, absl::string_view format,
+std::string FormatDbValue(generic::DataBuffer* db, absl::string_view format,
                           int index) {
   std::string output;
   if (index < 0 || index >= db->size<T>()) return "Error: index out of range";
@@ -1196,7 +1196,7 @@ std::string FormatDbValue(generic::DataBuffer *db, absl::string_view format,
 
 template <typename T>
 absl::Status WriteDbValue(absl::string_view str_value, absl::string_view format,
-                          int index, generic::DataBuffer *db) {
+                          int index, generic::DataBuffer* db) {
   if (index < 0 || index >= db->size<T>())
     return absl::OutOfRangeError("Error: index out of range");
   if (format[0] == 'd') {
@@ -1231,8 +1231,8 @@ absl::Status WriteDbValue(absl::string_view str_value, absl::string_view format,
 
 }  // namespace
 
-std::string DebugCommandShell::FormatSingleDbValue(generic::DataBuffer *db,
-                                                   const std::string &format,
+std::string DebugCommandShell::FormatSingleDbValue(generic::DataBuffer* db,
+                                                   const std::string& format,
                                                    int width, int index) const {
   switch (width) {
     case 8:
@@ -1248,8 +1248,8 @@ std::string DebugCommandShell::FormatSingleDbValue(generic::DataBuffer *db,
   }
 }
 
-std::string DebugCommandShell::FormatAllDbValues(generic::DataBuffer *db,
-                                                 const std::string &format,
+std::string DebugCommandShell::FormatAllDbValues(generic::DataBuffer* db,
+                                                 const std::string& format,
                                                  int width) const {
   std::string output;
   std::string sep;
@@ -1286,7 +1286,7 @@ std::string DebugCommandShell::FormatAllDbValues(generic::DataBuffer *db,
 }
 
 absl::Status DebugCommandShell::WriteSingleValueToDb(
-    absl::string_view str_value, generic::DataBuffer *db, std::string format,
+    absl::string_view str_value, generic::DataBuffer* db, std::string format,
     int width, int index) const {
   switch (width) {
     case 8:
@@ -1304,7 +1304,7 @@ absl::Status DebugCommandShell::WriteSingleValueToDb(
 }
 
 std::string DebugCommandShell::ReadMemory(int core,
-                                          const std::string &str_value,
+                                          const std::string& str_value,
                                           absl::string_view format) {
   int size = 0;
   char format_char = 'x';
@@ -1361,7 +1361,7 @@ std::string DebugCommandShell::ReadMemory(int core,
   // that need to be loaded, taking into account misalignment.
   auto tag_address = address & ~0x7ULL;
   int tag_size = (address + size - tag_address + 7) / 8;
-  auto *cheriot_interface = reinterpret_cast<CheriotDebugInterface *>(
+  auto* cheriot_interface = reinterpret_cast<CheriotDebugInterface*>(
       core_access_[current_core_].debug_interface);
   auto tag_result =
       cheriot_interface->ReadTagMemory(tag_address, tag_buffer_, tag_size);
@@ -1376,15 +1376,15 @@ std::string DebugCommandShell::ReadMemory(int core,
   }
   absl::StrAppend(&tag_string, "]");
   // Get the result and format it.
-  void *void_buffer = mem_buffer_;
+  void* void_buffer = mem_buffer_;
   std::string output;
   if ((format_char == 'f') && (bit_width >= 32)) {
     switch (bit_width) {
       case 32:
-        output = absl::StrCat(*reinterpret_cast<float *>(void_buffer));
+        output = absl::StrCat(*reinterpret_cast<float*>(void_buffer));
         break;
       case 64:
-        output = absl::StrCat(*reinterpret_cast<double *>(void_buffer));
+        output = absl::StrCat(*reinterpret_cast<double*>(void_buffer));
         break;
       default:
         break;
@@ -1392,16 +1392,16 @@ std::string DebugCommandShell::ReadMemory(int core,
   } else if (format_char == 'd') {
     switch (bit_width) {
       case 8:
-        output = absl::StrCat(*static_cast<int8_t *>(void_buffer));
+        output = absl::StrCat(*static_cast<int8_t*>(void_buffer));
         break;
       case 16:
-        output = absl::StrCat(*static_cast<int16_t *>(void_buffer));
+        output = absl::StrCat(*static_cast<int16_t*>(void_buffer));
         break;
       case 32:
-        output = absl::StrCat(*static_cast<int32_t *>(void_buffer));
+        output = absl::StrCat(*static_cast<int32_t*>(void_buffer));
         break;
       case 64:
-        output = absl::StrCat(*static_cast<int64_t *>(void_buffer));
+        output = absl::StrCat(*static_cast<int64_t*>(void_buffer));
         break;
       default:
         break;
@@ -1411,19 +1411,19 @@ std::string DebugCommandShell::ReadMemory(int core,
     auto pad = absl::PadSpec::kNoPad;
     switch (bit_width) {
       case 8:
-        val = *static_cast<uint8_t *>(void_buffer);
+        val = *static_cast<uint8_t*>(void_buffer);
         pad = absl::PadSpec::kZeroPad2;
         break;
       case 16:
-        val = *static_cast<uint16_t *>(void_buffer);
+        val = *static_cast<uint16_t*>(void_buffer);
         pad = absl::PadSpec::kZeroPad4;
         break;
       case 32:
-        val = *static_cast<uint32_t *>(void_buffer);
+        val = *static_cast<uint32_t*>(void_buffer);
         pad = absl::PadSpec::kZeroPad8;
         break;
       case 64:
-        val = *static_cast<uint64_t *>(void_buffer);
+        val = *static_cast<uint64_t*>(void_buffer);
         pad = absl::PadSpec::kZeroPad16;
         break;
     }
@@ -1441,9 +1441,9 @@ std::string DebugCommandShell::ReadMemory(int core,
 }
 
 std::string DebugCommandShell::WriteMemory(int core,
-                                           const std::string &str_value1,
-                                           const std::string &format,
-                                           const std::string &str_value2) {
+                                           const std::string& str_value1,
+                                           const std::string& format,
+                                           const std::string& str_value2) {
   int size = 0;
   char format_char = '\0';
   int radix = 0;
@@ -1512,7 +1512,7 @@ std::string DebugCommandShell::WriteMemory(int core,
 }
 
 absl::StatusOr<uint64_t> DebugCommandShell::GetValueFromString(
-    int core, const std::string &str_value, int radix) {
+    int core, const std::string& str_value, int radix) {
   size_t index;
   // Attempt to convert to a number.
   auto convert_result = riscv::internal::stoull(str_value, &index, radix);
@@ -1525,7 +1525,7 @@ absl::StatusOr<uint64_t> DebugCommandShell::GetValueFromString(
     return convert_result.status();
   }
   // If all else fails, let's see if it's a symbol.
-  auto *loader = core_access_[core].loader_getter();
+  auto* loader = core_access_[core].loader_getter();
   if (loader == nullptr)
     return absl::NotFoundError("No symbol table available");
   auto result = loader->GetSymbol(str_value);
@@ -1533,7 +1533,7 @@ absl::StatusOr<uint64_t> DebugCommandShell::GetValueFromString(
   return result.value().first;
 }
 
-absl::Status DebugCommandShell::StepOverCall(int core, std::ostream &os) {
+absl::Status DebugCommandShell::StepOverCall(int core, std::ostream& os) {
   auto pcc_result =
       core_access_[current_core_].debug_interface->ReadRegister("pcc");
   if (!pcc_result.ok()) {
@@ -1545,7 +1545,7 @@ absl::Status DebugCommandShell::StepOverCall(int core, std::ostream &os) {
   if (!inst_res.ok()) {
     return absl::UnavailableError(inst_res.status().message());
   }
-  auto *inst = inst_res.value();
+  auto* inst = inst_res.value();
   auto opcode = inst->opcode();
   // If it's not a jump-and-link, it's a single step.
   if ((opcode != *isa32::OpcodeEnum::kCheriotJal) &&
@@ -1596,7 +1596,7 @@ absl::Status DebugCommandShell::StepOverCall(int core, std::ostream &os) {
 }
 
 std::string DebugCommandShell::FormatCapabilityRegister(
-    int core, const std::string &reg_name) const {
+    int core, const std::string& reg_name) const {
   std::string output;
   std::vector<uint64_t> values;
   auto res =
@@ -1607,7 +1607,7 @@ std::string DebugCommandShell::FormatCapabilityRegister(
   }
   values.push_back(res.value());
   // Read the capability components.
-  for (auto const &suffix :
+  for (auto const& suffix :
        {"tag", "base", "top", "length", "object_type", "permissions"}) {
     res = core_access_[current_core_].debug_interface->ReadRegister(
         absl::StrCat(reg_name, ".", suffix));
@@ -1644,12 +1644,12 @@ std::string DebugCommandShell::FormatCapabilityRegister(
 }
 
 bool DebugCommandShell::IsCapabilityRegister(
-    const std::string &reg_name) const {
+    const std::string& reg_name) const {
   return capability_registers_.contains(reg_name);
 }
 
 std::string DebugCommandShell::FormatRegister(
-    int core, const std::string &reg_name) const {
+    int core, const std::string& reg_name) const {
   if (IsCapabilityRegister(reg_name)) {
     return FormatCapabilityRegister(current_core_, reg_name);
   }
@@ -1669,13 +1669,13 @@ std::string DebugCommandShell::FormatAllRegisters(int core) const {
   std::string output;
   // Interrupt stack.
   auto cheriot_state =
-      static_cast<CheriotState *>(core_access_[current_core_].state);
-  auto &info_list = cheriot_state->interrupt_info_list();
+      static_cast<CheriotState*>(core_access_[current_core_].state);
+  auto& info_list = cheriot_state->interrupt_info_list();
   int count = 0;
   if (!info_list.empty()) {
     absl::StrAppend(&output, "Interrupt stack:\n");
     for (auto iter = info_list.rbegin(); iter != info_list.rend(); ++iter) {
-      auto const &info = *iter;
+      auto const& info = *iter;
       absl::StrAppend(&output, "[", count++, "] ",
                       info.is_interrupt ? "interrupt" : "exception", " ",
                       info.is_interrupt ? GetInterruptDescription(info)
@@ -1684,7 +1684,7 @@ std::string DebugCommandShell::FormatAllRegisters(int core) const {
     absl::StrAppend(&output, "\n");
   }
   // Registers.
-  for (auto const &reg_name : reg_vector_) {
+  for (auto const& reg_name : reg_vector_) {
     absl::StrAppend(&output, FormatRegister(current_core_, reg_name), "\n");
   }
   return output;
@@ -1693,8 +1693,8 @@ std::string DebugCommandShell::FormatAllRegisters(int core) const {
 // Action point methods.
 std::string DebugCommandShell::ListActionPoints() {
   std::string output;
-  auto &action_map = core_action_point_info_[current_core_];
-  for (auto const &[local_id, info] : action_map) {
+  auto& action_map = core_action_point_info_[current_core_];
+  for (auto const& [local_id, info] : action_map) {
     absl::StrAppend(
         &output,
         absl::StrFormat("%02d  [0x%08lx] %8s  %s\n", local_id, info.address,
@@ -1704,24 +1704,24 @@ std::string DebugCommandShell::ListActionPoints() {
 }
 
 std::string DebugCommandShell::EnableActionPointN(
-    const std::string &index_str) {
+    const std::string& index_str) {
   auto res = riscv::internal::stoull(index_str, nullptr, 10);
   if (!res.ok()) {
     return std::string(res.status().message());
   }
-  auto &action_map = core_action_point_info_[current_core_];
+  auto& action_map = core_action_point_info_[current_core_];
   int index = res.value();
   auto it = action_map.find(index);
   if (it == action_map.end()) {
     return absl::StrCat("Action point ", index, " not found");
   }
-  auto &info = it->second;
+  auto& info = it->second;
   if (info.is_enabled) {
     return absl::StrCat("Action point ", index, " is already enabled");
   }
   info.is_enabled = true;
-  auto *dbg_if = core_access_[current_core_].debug_interface;
-  auto *cheriot_dbg_if = static_cast<CheriotDebugInterface *>(dbg_if);
+  auto* dbg_if = core_access_[current_core_].debug_interface;
+  auto* cheriot_dbg_if = static_cast<CheriotDebugInterface*>(dbg_if);
   auto status = cheriot_dbg_if->EnableAction(info.address, info.id);
   if (!status.ok()) {
     return absl::StrCat("Error: ", status.message());
@@ -1730,24 +1730,24 @@ std::string DebugCommandShell::EnableActionPointN(
 }
 
 std::string DebugCommandShell::DisableActionPointN(
-    const std::string &index_str) {
+    const std::string& index_str) {
   auto res = riscv::internal::stoull(index_str, nullptr, 10);
   if (!res.ok()) {
     return std::string(res.status().message());
   }
-  auto &action_map = core_action_point_info_[current_core_];
+  auto& action_map = core_action_point_info_[current_core_];
   int index = res.value();
   auto it = action_map.find(index);
   if (it == action_map.end()) {
     return absl::StrCat("Action point ", index, " not found");
   }
-  auto &info = it->second;
+  auto& info = it->second;
   if (!info.is_enabled) {
     return absl::StrCat("Action point ", index, " is already disabled");
   }
   info.is_enabled = false;
-  auto *dbg_if = core_access_[current_core_].debug_interface;
-  auto *cheriot_dbg_if = static_cast<CheriotDebugInterface *>(dbg_if);
+  auto* dbg_if = core_access_[current_core_].debug_interface;
+  auto* cheriot_dbg_if = static_cast<CheriotDebugInterface*>(dbg_if);
   auto status = cheriot_dbg_if->DisableAction(info.address, info.id);
   if (!status.ok()) {
     return absl::StrCat("Error: ", status.message());
@@ -1755,20 +1755,20 @@ std::string DebugCommandShell::DisableActionPointN(
   return "";
 }
 
-std::string DebugCommandShell::ClearActionPointN(const std::string &index_str) {
+std::string DebugCommandShell::ClearActionPointN(const std::string& index_str) {
   auto res = riscv::internal::stoull(index_str, nullptr, 10);
   if (!res.ok()) {
     return std::string(res.status().message());
   }
-  auto &action_map = core_action_point_info_[current_core_];
+  auto& action_map = core_action_point_info_[current_core_];
   int index = res.value();
   auto it = action_map.find(index);
   if (it == action_map.end()) {
     return absl::StrCat("Action point ", index, " not found");
   }
-  auto &info = it->second;
-  auto *dbg_if = core_access_[current_core_].debug_interface;
-  auto *cheriot_dbg_if = static_cast<CheriotDebugInterface *>(dbg_if);
+  auto& info = it->second;
+  auto* dbg_if = core_access_[current_core_].debug_interface;
+  auto* cheriot_dbg_if = static_cast<CheriotDebugInterface*>(dbg_if);
   auto status = cheriot_dbg_if->ClearActionPoint(info.address, info.id);
   if (!status.ok()) {
     return absl::StrCat("Error: ", status.message());
@@ -1779,9 +1779,9 @@ std::string DebugCommandShell::ClearActionPointN(const std::string &index_str) {
 
 std::string DebugCommandShell::ClearAllActionPoints() {
   std::string output;
-  auto *dbg_if = core_access_[current_core_].debug_interface;
-  auto *cheriot_dbg_if = static_cast<CheriotDebugInterface *>(dbg_if);
-  for (auto &[local_id, info] : core_action_point_info_[current_core_]) {
+  auto* dbg_if = core_access_[current_core_].debug_interface;
+  auto* cheriot_dbg_if = static_cast<CheriotDebugInterface*>(dbg_if);
+  for (auto& [local_id, info] : core_action_point_info_[current_core_]) {
     auto status = cheriot_dbg_if->ClearActionPoint(info.address, info.id);
     if (!status.ok()) {
       absl::StrAppend(&output, "Error: ", status.message());
@@ -1793,21 +1793,21 @@ std::string DebugCommandShell::ClearAllActionPoints() {
 absl::Status DebugCommandShell::SetActionPoint(
     uint64_t address, std::string name,
     absl::AnyInvocable<void(uint64_t, int)> function) {
-  auto *dbg_if = core_access_[current_core_].debug_interface;
-  auto *cheriot_dbg_if = static_cast<CheriotDebugInterface *>(dbg_if);
+  auto* dbg_if = core_access_[current_core_].debug_interface;
+  auto* cheriot_dbg_if = static_cast<CheriotDebugInterface*>(dbg_if);
   auto result = cheriot_dbg_if->SetActionPoint(address, std::move(function));
   if (!result.ok()) {
     return absl::InternalError(result.status().message());
   }
   int id = result.value();
   int local_id = core_action_point_id_[current_core_]++;
-  auto &action_map = core_action_point_info_[current_core_];
+  auto& action_map = core_action_point_info_[current_core_];
   action_map.emplace(local_id, ActionPointInfo{address, id, name, true});
   return absl::OkStatus();
 }
 
 std::string DebugCommandShell::GetInterruptDescription(
-    const InterruptInfo &info) const {
+    const InterruptInfo& info) const {
   std::string output;
   if (!info.is_interrupt) return output;
   switch (info.cause & 0x7fff'ffff) {
@@ -1847,7 +1847,7 @@ std::string DebugCommandShell::GetInterruptDescription(
 }
 
 std::string DebugCommandShell::GetExceptionDescription(
-    const InterruptInfo &info) const {
+    const InterruptInfo& info) const {
   std::string output;
   if (info.is_interrupt) return output;
   absl::StrAppend(&output, " Exception taken at ", absl::Hex(info.epc), ": ");

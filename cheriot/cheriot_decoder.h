@@ -42,7 +42,7 @@ using ::mpact::sim::generic::ArchState;
 class CheriotIsaFactory : public isa32::RiscVCheriotInstructionSetFactory {
  public:
   std::unique_ptr<isa32::Riscv32CheriotSlot> CreateRiscv32CheriotSlot(
-      ArchState *state) override {
+      ArchState* state) override {
     return std::make_unique<isa32::Riscv32CheriotSlot>(state);
   }
 };
@@ -54,37 +54,37 @@ class CheriotDecoder : public generic::DecoderInterface {
   using SlotEnum = isa32::SlotEnum;
   using OpcodeEnum = isa32::OpcodeEnum;
 
-  CheriotDecoder(CheriotState *state, util::MemoryInterface *memory);
+  CheriotDecoder(CheriotState* state, util::MemoryInterface* memory);
   CheriotDecoder() = delete;
   ~CheriotDecoder() override;
 
   // This will always return a valid instruction that can be executed. In the
   // case of a decode error, the semantic function in the instruction object
   // instance will raise an internal simulator error when executed.
-  generic::Instruction *DecodeInstruction(uint64_t address) override;
+  generic::Instruction* DecodeInstruction(uint64_t address) override;
 
   // Return the number of opcodes supported by this decoder.
   int GetNumOpcodes() const override {
     return static_cast<int>(OpcodeEnum::kPastMaxValue);
   }
   // Return the name of the opcode at the given index.
-  const char *GetOpcodeName(int index) const override {
+  const char* GetOpcodeName(int index) const override {
     return isa32::kOpcodeNames[index];
   }
 
   // Getter.
-  isa32::RiscVCheriotEncoding *cheriot_encoding() const {
+  isa32::RiscVCheriotEncoding* cheriot_encoding() const {
     return cheriot_encoding_;
   }
 
  private:
-  CheriotState *state_;
-  util::MemoryInterface *memory_;
+  CheriotState* state_;
+  util::MemoryInterface* memory_;
   generic::DataBufferFactory db_factory_;
-  generic::DataBuffer *inst_db_;
-  isa32::RiscVCheriotEncoding *cheriot_encoding_;
-  isa32::RiscVCheriotInstructionSetFactory *cheriot_isa_factory_;
-  isa32::RiscVCheriotInstructionSet *cheriot_isa_;
+  generic::DataBuffer* inst_db_;
+  isa32::RiscVCheriotEncoding* cheriot_encoding_;
+  isa32::RiscVCheriotInstructionSetFactory* cheriot_isa_factory_;
+  isa32::RiscVCheriotInstructionSet* cheriot_isa_;
 };
 
 }  // namespace cheriot

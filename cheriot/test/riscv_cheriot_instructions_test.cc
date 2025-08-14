@@ -112,8 +112,8 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
     memory_ = new TaggedFlatDemandMemory(kCapabilityGranule);
     state_ = new CheriotState("test_state", memory_);
     ResetInstruction(kInstSizeNormal);
-    for (auto &[reg_name, cap_reg_ptr] :
-         std::vector<std::tuple<std::string, CheriotRegister **>>{
+    for (auto& [reg_name, cap_reg_ptr] :
+         std::vector<std::tuple<std::string, CheriotRegister**>>{
              {kC1, &c1_reg_},
              {kC2, &c2_reg_},
              {kC3, &c3_reg_},
@@ -124,7 +124,7 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
     }
     state_->set_on_trap([this](bool is_interrupt, uint64_t trap_value,
                                uint64_t exception_code, uint64_t epc,
-                               const Instruction *inst) {
+                               const Instruction* inst) {
       return TrapHandler(is_interrupt, trap_value, exception_code, epc, inst);
     });
   }
@@ -139,32 +139,32 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
   // information for checks.
   bool TrapHandler(bool is_interrupt, uint64_t trap_value,
                    uint64_t exception_code, uint64_t epc,
-                   const Instruction *inst);
+                   const Instruction* inst);
   // Clear the captured trap values.
   void ResetTrapHandler();
 
-  void AppendCapabilityOperands(Instruction *inst,
+  void AppendCapabilityOperands(Instruction* inst,
                                 absl::Span<const std::string> sources,
                                 absl::Span<const std::string> dests) {
-    for (auto &reg_name : sources) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& reg_name : sources) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendSource(reg->CreateSourceOperand(reg_name));
     }
-    for (auto &reg_name : dests) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& reg_name : dests) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendDestination(reg->CreateDestinationOperand(0, reg_name));
     }
   }
 
   template <typename T>
-  void AppendImmediateOperand(Instruction *inst, T value) {
-    auto *src = new ImmediateOperand<T>(value);
+  void AppendImmediateOperand(Instruction* inst, T value) {
+    auto* src = new ImmediateOperand<T>(value);
     inst_->AppendSource(src);
   }
 
   template <typename T>
-  void AppendImmediateOperands(const std::vector<T> &values) {
-    for (auto &value : values) {
+  void AppendImmediateOperands(const std::vector<T>& values) {
+    for (auto& value : values) {
       AppendImmediateOperand<T>(inst_, value);
     }
   }
@@ -173,8 +173,8 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
   // named register and sets it to the corresponding value.
   template <typename T>
   void SetRegisterValues(const std::vector<std::tuple<std::string, T>> values) {
-    for (auto &[reg_name, value] : values) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& [reg_name, value] : values) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       reg->set_address(value);
     }
   }
@@ -186,18 +186,18 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
   }
 
   // Return true if the capability is null (except for address field).
-  bool IsNullCapability(CheriotRegister *cap) {
+  bool IsNullCapability(CheriotRegister* cap) {
     return cap->is_null() ||
            (cap->top() == 0 && cap->base() == 0 && cap->permissions() == 0 &&
             cap->tag() == 0 && cap->object_type() == 0 && cap->reserved() == 0);
   }
 
   void SetUpForLoadCapabilityTest(uint32_t address,
-                                  const CheriotRegister *cap) {
+                                  const CheriotRegister* cap) {
     ResetInstruction(kInstSizeNormal);
     inst()->set_semantic_function(&CheriotCLc);
     // Add the child instruction.
-    auto *child = new Instruction(kInstAddress, state());
+    auto* child = new Instruction(kInstAddress, state());
     child->set_semantic_function(&CheriotCLcChild);
     inst()->AppendChild(child);
     child->DecRef();
@@ -213,48 +213,48 @@ class RiscVCheriotInstructionsTest : public ::testing::Test {
   }
 
   // Accessors.
-  Instruction *inst() { return inst_; }
-  TaggedFlatDemandMemory *memory() { return memory_; }
-  CheriotState *state() { return state_; }
+  Instruction* inst() { return inst_; }
+  TaggedFlatDemandMemory* memory() { return memory_; }
+  CheriotState* state() { return state_; }
   // Capability register pointers.
-  CheriotRegister *c1_reg() { return c1_reg_; }
-  CheriotRegister *c2_reg() { return c2_reg_; }
-  CheriotRegister *c3_reg() { return c3_reg_; }
-  CheriotRegister *c4_reg() { return c4_reg_; }
-  CheriotRegister *c5_reg() { return c5_reg_; }
-  CheriotRegister *cra_reg() { return cra_reg_; }
-  absl::BitGen &bitgen() { return bitgen_; }
+  CheriotRegister* c1_reg() { return c1_reg_; }
+  CheriotRegister* c2_reg() { return c2_reg_; }
+  CheriotRegister* c3_reg() { return c3_reg_; }
+  CheriotRegister* c4_reg() { return c4_reg_; }
+  CheriotRegister* c5_reg() { return c5_reg_; }
+  CheriotRegister* cra_reg() { return cra_reg_; }
+  absl::BitGen& bitgen() { return bitgen_; }
   bool trap_taken() { return trap_taken_; }
   bool trap_is_interrupt() { return trap_is_interrupt_; }
   uint64_t trap_value() { return trap_value_; }
   uint64_t trap_exception_code() { return trap_exception_code_; }
   uint64_t trap_epc() { return trap_epc_; }
-  const Instruction *trap_inst() { return trap_inst_; }
+  const Instruction* trap_inst() { return trap_inst_; }
 
  private:
-  Instruction *inst_ = nullptr;
-  TaggedFlatDemandMemory *memory_;
-  CheriotState *state_;
-  CheriotRegister *c1_reg_;
-  CheriotRegister *c2_reg_;
-  CheriotRegister *c3_reg_;
-  CheriotRegister *c4_reg_;
-  CheriotRegister *c5_reg_;
-  CheriotRegister *cra_reg_;
+  Instruction* inst_ = nullptr;
+  TaggedFlatDemandMemory* memory_;
+  CheriotState* state_;
+  CheriotRegister* c1_reg_;
+  CheriotRegister* c2_reg_;
+  CheriotRegister* c3_reg_;
+  CheriotRegister* c4_reg_;
+  CheriotRegister* c5_reg_;
+  CheriotRegister* cra_reg_;
   absl::BitGen bitgen_;
   bool trap_taken_ = false;
   bool trap_is_interrupt_ = false;
   uint64_t trap_value_ = 0;
   uint64_t trap_exception_code_ = 0;
   uint64_t trap_epc_ = 0;
-  const Instruction *trap_inst_ = nullptr;
+  const Instruction* trap_inst_ = nullptr;
 };
 
 bool RiscVCheriotInstructionsTest::TrapHandler(bool is_interrupt,
                                                uint64_t trap_value,
                                                uint64_t exception_code,
                                                uint64_t epc,
-                                               const Instruction *inst) {
+                                               const Instruction* inst) {
   trap_taken_ = true;
   trap_is_interrupt_ = is_interrupt;
   trap_value_ = trap_value;
@@ -1261,9 +1261,9 @@ TEST_F(RiscVCheriotInstructionsTest, CSc) {
   c3_reg()->set_address(kDataSeal10);
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
-  auto *db = state()->db_factory()->Allocate<uint32_t>(2);
+  auto* db = state()->db_factory()->Allocate<uint32_t>(2);
   db->set_latency(0);
-  auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  auto* tag_db = state()->db_factory()->Allocate<uint8_t>(1);
   tag_db->set_latency(0);
   memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
   EXPECT_EQ(tag_db->Get<uint8_t>(0), 1);
@@ -1362,9 +1362,9 @@ TEST_F(RiscVCheriotInstructionsTest, CScStoreLocalCapViolation) {
   c3_reg()->ClearPermissions(PB::kPermitGlobal);
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
-  auto *db = state()->db_factory()->Allocate<uint32_t>(2);
+  auto* db = state()->db_factory()->Allocate<uint32_t>(2);
   db->set_latency(0);
-  auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  auto* tag_db = state()->db_factory()->Allocate<uint8_t>(1);
   tag_db->set_latency(0);
   memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
   // Expect the tag to be cleared.
@@ -1389,9 +1389,9 @@ TEST_F(RiscVCheriotInstructionsTest, CScStoreLocalCapViolationBackwardSentry) {
   EXPECT_TRUE(c3_reg()->IsBackwardSentry());
   inst()->Execute(nullptr);
   EXPECT_FALSE(trap_taken());
-  auto *db = state()->db_factory()->Allocate<uint32_t>(2);
+  auto* db = state()->db_factory()->Allocate<uint32_t>(2);
   db->set_latency(0);
-  auto *tag_db = state()->db_factory()->Allocate<uint8_t>(1);
+  auto* tag_db = state()->db_factory()->Allocate<uint8_t>(1);
   tag_db->set_latency(0);
   memory()->Load(kMemAddress + 0x200, db, tag_db, nullptr, nullptr);
   // Expect the tag to be cleared.

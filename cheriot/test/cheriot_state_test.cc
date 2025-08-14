@@ -43,17 +43,17 @@ constexpr uint32_t kMemValue = 0xdeadbeef;
 TEST(CheriotStateTest, Basic) {
   TaggedFlatDemandMemory mem(8);
 
-  auto *state = new CheriotState("test", &mem, nullptr);
+  auto* state = new CheriotState("test", &mem, nullptr);
   // Make sure pc has been created.
   auto iter = state->registers()->find("pcc");
-  auto *ptr = (iter != state->registers()->end()) ? iter->second : nullptr;
+  auto* ptr = (iter != state->registers()->end()) ? iter->second : nullptr;
   CHECK_NE(ptr, nullptr);
-  auto *pcc = static_cast<CheriotRegister *>(ptr);
+  auto* pcc = static_cast<CheriotRegister*>(ptr);
   // Make pcc an executable root.
   pcc->CopyFrom(*state->executable_root());
   // Set pc to 0x1000, then read value back through pc operand.
   pcc->data_buffer()->Set<uint32_t>(0, kPcValue);
-  auto *pc_op = state->pc_operand();
+  auto* pc_op = state->pc_operand();
   EXPECT_EQ(pc_op->AsUint32(0), kPcValue);
   delete state;
 }
@@ -61,8 +61,8 @@ TEST(CheriotStateTest, Basic) {
 TEST(CheriotStateTest, Memory) {
   TaggedFlatDemandMemory mem(8);
 
-  auto *state = new CheriotState("test", &mem, nullptr);
-  auto *db = state->db_factory()->Allocate<uint32_t>(1);
+  auto* state = new CheriotState("test", &mem, nullptr);
+  auto* db = state->db_factory()->Allocate<uint32_t>(1);
   state->LoadMemory(nullptr, kMemAddr, db, nullptr, nullptr);
   EXPECT_EQ(db->Get<uint32_t>(0), 0);
   db->Set<uint32_t>(0, kMemValue);
@@ -77,11 +77,11 @@ TEST(CheriotStateTest, Memory) {
 TEST(CheriotStateTest, OutOfBoundLoad) {
   TaggedFlatDemandMemory mem(8);
 
-  auto *state = new CheriotState("test", &mem, nullptr);
+  auto* state = new CheriotState("test", &mem, nullptr);
   state->set_max_physical_address(kMemAddr - 4);
   state->set_on_trap([](bool is_interrupt, uint64_t trap_value,
                         uint64_t exception_code, uint64_t epc,
-                        const mpact::sim::riscv::Instruction *inst) -> bool {
+                        const mpact::sim::riscv::Instruction* inst) -> bool {
     if (exception_code ==
         static_cast<uint64_t>(
             mpact::sim::riscv::ExceptionCode::kLoadAccessFault)) {
@@ -90,9 +90,9 @@ TEST(CheriotStateTest, OutOfBoundLoad) {
     }
     return false;
   });
-  auto *db = state->db_factory()->Allocate<uint32_t>(1);
+  auto* db = state->db_factory()->Allocate<uint32_t>(1);
   // Create a dummy instruction so trap can dereference the address.
-  auto *dummy_inst = new mpact::sim::generic::Instruction(0x0, nullptr);
+  auto* dummy_inst = new mpact::sim::generic::Instruction(0x0, nullptr);
   dummy_inst->set_size(4);
   testing::internal::CaptureStderr();
   state->LoadMemory(dummy_inst, kMemAddr, db, nullptr, nullptr);
@@ -105,15 +105,15 @@ TEST(CheriotStateTest, OutOfBoundLoad) {
 
 // Verify that the mshwm register decrements by 16.
 TEST(CheriotStateTest, Mshwm) {
-  auto *mem = new mpact::sim::util::TaggedFlatDemandMemory(8);
-  auto *state = new CheriotState("test", mem);
-  auto *byte_db = state->db_factory()->Allocate<uint8_t>(1);
+  auto* mem = new mpact::sim::util::TaggedFlatDemandMemory(8);
+  auto* state = new CheriotState("test", mem);
+  auto* byte_db = state->db_factory()->Allocate<uint8_t>(1);
   auto mshwmb_res = state->csr_set()->GetCsr("mshwmb");
   CHECK_OK(mshwmb_res);
-  auto *mshwmb = mshwmb_res.value();
+  auto* mshwmb = mshwmb_res.value();
   auto mshwm_res = state->csr_set()->GetCsr("mshwm");
   CHECK_OK(mshwm_res);
-  auto *mshwm = mshwm_res.value();
+  auto* mshwm = mshwm_res.value();
   mshwmb->Write(0x0U);
   mshwm->Write(0x80000000);
   state->StoreMemory(nullptr, 0x7fff'ffff, byte_db);

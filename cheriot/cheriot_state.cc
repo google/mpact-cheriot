@@ -87,9 +87,9 @@ struct CsrInfo<uint32_t> {
 // This creates the CSR and assigns it to a pointer in the state object. Type
 // can be inferred from the state object pointer.
 template <typename T, typename... Ps>
-T *CreateCsr(CheriotState *state, T *&ptr,
-             std::vector<RiscVCsrInterface *> &csr_vec, Ps... pargs) {
-  auto *csr = new T(pargs...);
+T* CreateCsr(CheriotState* state, T*& ptr,
+             std::vector<RiscVCsrInterface*>& csr_vec, Ps... pargs) {
+  auto* csr = new T(pargs...);
   auto result = state->csr_set()->AddCsr(csr);
   if (!result.ok()) {
     LOG(ERROR) << absl::StrCat("Failed to add csr '", csr->name(),
@@ -106,9 +106,9 @@ T *CreateCsr(CheriotState *state, T *&ptr,
 // that pointer is of abstract type, so the CSR type cannot be inferred, but
 // has to be specified in the call.
 template <typename T, typename... Ps>
-T *CreateCsr(CheriotState *state, RiscVCsrInterface *&ptr,
-             std::vector<RiscVCsrInterface *> &csr_vec, Ps... pargs) {
-  auto *csr = new T(pargs...);
+T* CreateCsr(CheriotState* state, RiscVCsrInterface*& ptr,
+             std::vector<RiscVCsrInterface*>& csr_vec, Ps... pargs) {
+  auto* csr = new T(pargs...);
   auto result = state->csr_set()->AddCsr(csr);
   if (!result.ok()) {
     LOG(ERROR) << absl::StrCat("Failed to add csr '", csr->name(),
@@ -125,9 +125,9 @@ T *CreateCsr(CheriotState *state, RiscVCsrInterface *&ptr,
 // object. That means the type cannot be inferred, but has to be specified
 // in the call.
 template <typename T, typename... Ps>
-T *CreateCsr(CheriotState *state, std::vector<RiscVCsrInterface *> &csr_vec,
+T* CreateCsr(CheriotState* state, std::vector<RiscVCsrInterface*>& csr_vec,
              Ps... pargs) {
-  auto *csr = new T(pargs...);
+  auto* csr = new T(pargs...);
   auto result = state->csr_set()->AddCsr(csr);
   if (!result.ok()) {
     LOG(ERROR) << absl::StrCat("Failed to add csr '", csr->name(),
@@ -142,12 +142,11 @@ T *CreateCsr(CheriotState *state, std::vector<RiscVCsrInterface *> &csr_vec,
 // Templated helper function that is used to create the set of CSRs needed
 // for simulation.
 template <typename T>
-void CreateCsrs(CheriotState *state,
-                std::vector<RiscVCsrInterface *> &csr_vec) {
+void CreateCsrs(CheriotState* state, std::vector<RiscVCsrInterface*>& csr_vec) {
   absl::Status result;
   // Create CSRs.
   // misa
-  auto *misa = CreateCsr(state, state->misa_, csr_vec,
+  auto* misa = CreateCsr(state, state->misa_, csr_vec,
                          CsrInfo<T>::kMisaInitialValue, state);
   CHECK_NE(misa, nullptr);
   // mtvec is replaced by mtcc
@@ -160,11 +159,11 @@ void CreateCsrs(CheriotState *state,
 
   // Mip and Mie are always 32 bit.
   // mip
-  auto *mip = CreateCsr(state, state->mip_, csr_vec, 0, state);
+  auto* mip = CreateCsr(state, state->mip_, csr_vec, 0, state);
   CHECK_NE(mip, nullptr);
 
   // mie
-  auto *mie = CreateCsr(state, state->mie_, csr_vec, 0, state);
+  auto* mie = CreateCsr(state, state->mie_, csr_vec, 0, state);
   CHECK_NE(mie, nullptr);
 
   // mhartid
@@ -185,48 +184,48 @@ void CreateCsrs(CheriotState *state,
   // mideleg - machine mode interrupt delegation register. Not used.
 
   // mstatus
-  auto *mstatus =
+  auto* mstatus =
       CreateCsr(state, state->mstatus_, csr_vec,
                 CsrInfo<uint32_t>::kMstatusInitialValue, state, misa);
   CHECK_NE(mstatus, nullptr);
   // mtval
-  auto *mtval = CreateCsr<RiscVSimpleCsr<T>>(
+  auto* mtval = CreateCsr<RiscVSimpleCsr<T>>(
       state, state->mtval_, csr_vec, "mtval", *RiscVCsrEnum::kMTval, 0, state);
   CHECK_NE(mtval, nullptr);
 
   // minstret/minstreth
-  auto *minstret = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
+  auto* minstret = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
       state, csr_vec, "minstret", RiscVCsrEnum ::kMInstret, state);
   CHECK_NE(minstret, nullptr);
   auto minstreth = CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
       state, csr_vec, "minstreth", RiscVCsrEnum::kMInstretH, state,
-      reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(minstret));
+      reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState>*>(minstret));
   CHECK_NE(minstreth, nullptr);
   // mcycle/mcycleh
-  auto *mcycle = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
+  auto* mcycle = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
       state, csr_vec, "mcycle", RiscVCsrEnum::kMCycle, state);
   CHECK_NE(mcycle, nullptr);
-  auto *mcycleh = CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
+  auto* mcycleh = CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
       state, csr_vec, "mcycleh", RiscVCsrEnum::kMCycleH, state,
-      reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(mcycle));
+      reinterpret_cast<RiscVCounterCsr<uint32_t, CheriotState>*>(mcycle));
   CHECK_NE(mcycleh, nullptr);
 
   // Stack high water mark CSRs. Mshwm gets updated automatically during
   // execution. mshwm
-  auto *mshwm = CreateCsr<RiscVSimpleCsr<T>>(
+  auto* mshwm = CreateCsr<RiscVSimpleCsr<T>>(
       state, state->mshwm_, csr_vec, "mshwm", *RiscVCheriotCsrEnum::kMshwm,
       /*initial_value=*/0,
       /*read_mask=*/0xffff'fff0, /*write_mask=*/0xffff'fff0, state);
   CHECK_NE(mshwm, nullptr);
   // mshwmb
-  auto *mshwmb = CreateCsr<RiscVSimpleCsr<T>>(
+  auto* mshwmb = CreateCsr<RiscVSimpleCsr<T>>(
       state, state->mshwmb_, csr_vec, "mshwmb", *RiscVCheriotCsrEnum::kMshwmb,
       /*initial_value=*/0,
       /*read_mask=*/0xffff'fff0, /*write_mask=*/0xffff'fff0, state);
   CHECK_NE(mshwmb, nullptr);
 
   // mccsr.
-  auto *mccsr = CreateCsr<RiscVSimpleCsr<T>>(
+  auto* mccsr = CreateCsr<RiscVSimpleCsr<T>>(
       state, csr_vec, "mccsr", *RiscVCheriotCsrEnum::kMCcsr,
       /*initial_value=*/0x3,
       /*read_mask=*/0x3, /*write_mask=*/0x2, state);
@@ -269,14 +268,14 @@ void CreateCsrs(CheriotState *state,
 constexpr uint64_t kRiscv32MaxMemorySize = 0x3f'ffff'ffffULL;
 
 CheriotState::CheriotState(std::string_view id,
-                           util::TaggedMemoryInterface *memory,
-                           util::AtomicMemoryOpInterface *atomic_memory)
+                           util::TaggedMemoryInterface* memory,
+                           util::AtomicMemoryOpInterface* atomic_memory)
     : generic::ArchState(id),
       tagged_memory_(memory),
       atomic_tagged_memory_(atomic_memory),
       counter_interrupts_taken_("interrupts_taken", 0),
       counter_interrupt_returns_("interrupt_returns", 0) {
-  for (auto &[name, index] : std::vector<std::pair<std::string, unsigned>>{
+  for (auto& [name, index] : std::vector<std::pair<std::string, unsigned>>{
            {"c0", 0b0'00000},   {"c1", 0b0'00001},   {"c2", 0b0'00010},
            {"c3", 0b0'00011},   {"c4", 0b0'00100},   {"c5", 0b0'00101},
            {"c6", 0b0'00110},   {"c7", 0b0'00111},   {"c8", 0b0'01000},
@@ -346,7 +345,7 @@ CheriotState::~CheriotState() {
   delete sealing_root_;
   delete memory_root_;
   delete pc_src_operand_;
-  for (auto *csr : csr_vec_) delete csr;
+  for (auto* csr : csr_vec_) delete csr;
   delete csr_set_;
   delete pmp_;
   delete temp_reg_;
@@ -354,7 +353,7 @@ CheriotState::~CheriotState() {
 }
 
 void CheriotState::Reset() {
-  for (auto &[unused, reg_ptr] : *registers()) {
+  for (auto& [unused, reg_ptr] : *registers()) {
     reg_ptr->data_buffer()->Set<uint32_t>(0, 0);
   }
   // Reset CSRs.
@@ -375,13 +374,13 @@ void CheriotState::Reset() {
   csr_set_->GetCsr("misa").value()->Set(CsrInfo<uint32_t>::kMisaInitialValue);
 }
 
-void CheriotState::HandleCheriRegException(const Instruction *instruction,
+void CheriotState::HandleCheriRegException(const Instruction* instruction,
                                            uint64_t epc, ExceptionCode code,
-                                           const CheriotRegister *reg) {
+                                           const CheriotRegister* reg) {
   // Map the CHERIoT exception to a RiscV trap.
   unsigned mcause = kCheriExceptionCode;
   uint32_t mtval = *code & 0b1'1111;
-  auto const &name = reg->name();
+  auto const& name = reg->name();
   auto iter = cap_index_map_.find(name);
   uint32_t cap_index = 0x1f;  // Set to a default value.
   if (iter != cap_index_map_.end()) {
@@ -399,10 +398,10 @@ void CheriotState::set_min_physical_address(uint64_t min_physical_address) {
   min_physical_address_ = std::min(min_physical_address, max_physical_address_);
 }
 
-void CheriotState::LoadCapability(const Instruction *instruction,
-                                  uint32_t address, DataBuffer *db,
-                                  DataBuffer *tags, Instruction *child,
-                                  CapabilityLoadContext32 *context) {
+void CheriotState::LoadCapability(const Instruction* instruction,
+                                  uint32_t address, DataBuffer* db,
+                                  DataBuffer* tags, Instruction* child,
+                                  CapabilityLoadContext32* context) {
   // Check for alignment.
   uint64_t mask = db->size<uint8_t>() - 1;
   if ((address & mask) != 0) {
@@ -426,9 +425,9 @@ void CheriotState::LoadCapability(const Instruction *instruction,
   load_tags_->IncRef();
 }
 
-void CheriotState::StoreCapability(const Instruction *instruction,
-                                   uint32_t address, DataBuffer *db,
-                                   DataBuffer *tags) {
+void CheriotState::StoreCapability(const Instruction* instruction,
+                                   uint32_t address, DataBuffer* db,
+                                   DataBuffer* tags) {
   // Check for alignment.
   uint64_t mask = db->size<uint8_t>() - 1;
   if ((address & mask) != 0) {
@@ -456,9 +455,9 @@ void CheriotState::StoreCapability(const Instruction *instruction,
   store_tags_->IncRef();
 }
 
-void CheriotState::LoadMemory(const Instruction *inst, uint64_t address,
-                              DataBuffer *db, Instruction *child_inst,
-                              ReferenceCount *context) {
+void CheriotState::LoadMemory(const Instruction* inst, uint64_t address,
+                              DataBuffer* db, Instruction* child_inst,
+                              ReferenceCount* context) {
   // Check for physical address violation.
   if (address < min_physical_address_ || address > max_physical_address_) {
     Trap(/*is_interrupt*/ false, address, *EC::kLoadAccessFault,
@@ -474,10 +473,10 @@ void CheriotState::LoadMemory(const Instruction *inst, uint64_t address,
   load_tags_ = nullptr;
 }
 
-void CheriotState::LoadMemory(const Instruction *inst, DataBuffer *address_db,
-                              DataBuffer *mask_db, int el_size, DataBuffer *db,
-                              Instruction *child_inst,
-                              ReferenceCount *context) {
+void CheriotState::LoadMemory(const Instruction* inst, DataBuffer* address_db,
+                              DataBuffer* mask_db, int el_size, DataBuffer* db,
+                              Instruction* child_inst,
+                              ReferenceCount* context) {
   // For now, we don't check for alignment on vector memory accesses.
 
   // Check for physical address violation.
@@ -492,8 +491,8 @@ void CheriotState::LoadMemory(const Instruction *inst, DataBuffer *address_db,
   tagged_memory_->Load(address_db, mask_db, el_size, db, child_inst, context);
 }
 
-void CheriotState::StoreMemory(const Instruction *inst, uint64_t address,
-                               DataBuffer *db) {
+void CheriotState::StoreMemory(const Instruction* inst, uint64_t address,
+                               DataBuffer* db) {
   // Check for physical address violation.
   if (address < min_physical_address_ || address > max_physical_address_) {
     Trap(/*is_interrupt*/ false, address, *EC::kStoreAccessFault,
@@ -515,9 +514,9 @@ void CheriotState::StoreMemory(const Instruction *inst, uint64_t address,
   store_tags_ = nullptr;
 }
 
-void CheriotState::StoreMemory(const Instruction *inst, DataBuffer *address_db,
-                               DataBuffer *mask_db, int el_size,
-                               DataBuffer *db) {
+void CheriotState::StoreMemory(const Instruction* inst, DataBuffer* address_db,
+                               DataBuffer* mask_db, int el_size,
+                               DataBuffer* db) {
   // Ignore alignment check for vector memory accesses.
 
   // Check for physical address violation.
@@ -540,24 +539,24 @@ void CheriotState::StoreMemory(const Instruction *inst, DataBuffer *address_db,
   tagged_memory_->Store(address_db, mask_db, el_size, db);
 }
 
-void CheriotState::DbgStoreMemory(uint64_t address, DataBuffer *db) {
+void CheriotState::DbgStoreMemory(uint64_t address, DataBuffer* db) {
   tagged_memory_->Store(address, db);
 }
 
-void CheriotState::DbgLoadMemory(uint64_t address, DataBuffer *db) {
+void CheriotState::DbgLoadMemory(uint64_t address, DataBuffer* db) {
   tagged_memory_->Load(address, db, nullptr, nullptr);
 }
 
-void CheriotState::Fence(const Instruction *inst, int fm, int predecessor,
+void CheriotState::Fence(const Instruction* inst, int fm, int predecessor,
                          int successor) {
   // TODO: Add fence operation once operations have non-zero latency.
 }
 
-void CheriotState::FenceI(const Instruction *inst) {
+void CheriotState::FenceI(const Instruction* inst) {
   // TODO: Add instruction fence operation when needed.
 }
 
-void CheriotState::ECall(const Instruction *inst) {
+void CheriotState::ECall(const Instruction* inst) {
   // If there is a handler, call it.
   if (on_ecall_ != nullptr) {
     auto res = on_ecall_(inst);
@@ -577,9 +576,9 @@ void CheriotState::ECall(const Instruction *inst) {
   Trap(/*is_interrupt*/ false, 0, *code, epc, inst);
 }
 
-void CheriotState::EBreak(const Instruction *inst) {
+void CheriotState::EBreak(const Instruction* inst) {
   // Call the handlers.
-  for (auto &handler : on_ebreak_) {
+  for (auto& handler : on_ebreak_) {
     bool res = handler(inst);
     // If a handler returns true, the ebreak has been handled. Just return.
     if (res) return;
@@ -590,7 +589,7 @@ void CheriotState::EBreak(const Instruction *inst) {
   Trap(/*is_interrupt=*/false, /*trap_value=*/epc, 3, epc, inst);
 }
 
-void CheriotState::WFI(const Instruction *inst) {
+void CheriotState::WFI(const Instruction* inst) {
   // Call the handler.
   if (on_wfi_ != nullptr) {
     bool res = on_wfi_(inst);
@@ -606,7 +605,7 @@ void CheriotState::WFI(const Instruction *inst) {
   LOG(INFO) << "No handler for wfi: treating as nop: " << where;
 }
 
-void CheriotState::Cease(const Instruction *inst) {
+void CheriotState::Cease(const Instruction* inst) {
   // Call the handler.
   if (on_cease_ != nullptr) {
     const bool res = on_cease_(inst);
@@ -625,7 +624,7 @@ void CheriotState::Cease(const Instruction *inst) {
 
 void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
                         uint64_t exception_code, uint64_t epc,
-                        const Instruction *inst) {
+                        const Instruction* inst) {
   // LOG(INFO) << "Trap: " << std::hex << is_interrupt << " " << trap_value
   //  << " " << exception_code << " " << epc;  // Call the handler.
   if (on_trap_ != nullptr) {
@@ -693,7 +692,7 @@ void CheriotState::Trap(bool is_interrupt, uint64_t trap_value,
     if (epc == trap_target) {
       std::string trap_list;
       int i = 0;
-      for (auto &info : interrupt_info_list_) {
+      for (auto& info : interrupt_info_list_) {
         absl::StrAppend(&trap_list, "    [", i++,
                         "]: ", info.is_interrupt ? "Interrupt" : "Trap",
                         " was taken", " at 0x",
@@ -791,7 +790,7 @@ bool CheriotState::MustRevoke(uint32_t address) const {
 }
 
 uint64_t RiscVCheri32PcSourceOperand::GetPC() {
-  auto *pcc = state_->pcc();
+  auto* pcc = state_->pcc();
   // PCC should always be a valid capability, otherwise an exception would
   // have been taken. It should also have execute permissions. The only thing
   // to check for is that the address is within bounds.

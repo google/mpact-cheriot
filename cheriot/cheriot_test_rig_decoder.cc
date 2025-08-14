@@ -35,7 +35,7 @@ using ::mpact::sim::cheriot::encoding::FormatEnum;
 using RV_EC = ::mpact::sim::riscv::ExceptionCode;
 using ::mpact::sim::cheriot::isa32::OpcodeEnum;  // NOLINT: is used below.
 
-CheriotTestRigDecoder::CheriotTestRigDecoder(CheriotState *state)
+CheriotTestRigDecoder::CheriotTestRigDecoder(CheriotState* state)
     : state_(state) {
   // Get a handle to the internal error in the program error controller.
   decode_error_ = state->program_error_controller()->GetProgramError(
@@ -54,18 +54,18 @@ CheriotTestRigDecoder::~CheriotTestRigDecoder() {
   delete cheriot_isa_factory_;
 }
 
-generic::Instruction *CheriotTestRigDecoder::DecodeInstruction(
-    uint64_t address, uint32_t inst_word, DecodeInfo &decode_info) {
+generic::Instruction* CheriotTestRigDecoder::DecodeInstruction(
+    uint64_t address, uint32_t inst_word, DecodeInfo& decode_info) {
   uint16_t inst_word16 = static_cast<uint16_t>(inst_word & 0xffff);
   // First check that the address is aligned properly. If not, create and return
   // an instruction object that will raise an exception.
   if (address & 0x1) {
-    auto *inst = new generic::Instruction(0, state_);
+    auto* inst = new generic::Instruction(0, state_);
     inst->set_size(1);
     inst->SetDisassemblyString("Misaligned instruction address");
     inst->set_opcode(*isa32::OpcodeEnum::kNone);
     inst->set_address(address);
-    inst->set_semantic_function([this](generic::Instruction *inst) {
+    inst->set_semantic_function([this](generic::Instruction* inst) {
       state_->Trap(/*is_interrupt*/ false, inst->address(),
                    *RV_EC::kInstructionAddressMisaligned, inst->address() ^ 0x1,
                    inst);
@@ -244,7 +244,7 @@ generic::Instruction *CheriotTestRigDecoder::DecodeInstruction(
   }
   // Call the isa decoder to obtain a new instruction object for the instruction
   // word that was parsed above.
-  auto *instruction = cheriot_isa_->Decode(address, cheriot_encoding_);
+  auto* instruction = cheriot_isa_->Decode(address, cheriot_encoding_);
   // For these formats, sail does not populate the rs1/rs2 address fields.
   if (format == FormatEnum::kIType || format == FormatEnum::kI5Type ||
       format == FormatEnum::kR2Type || format == FormatEnum::kCB ||

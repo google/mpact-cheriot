@@ -45,9 +45,9 @@ class RiscVCheriotVectorPermuteInstructionsTest
 
 // Helper function for vector-vector vrgather instructions.
 template <typename T, typename I>
-void VrgatherVVHelper(RiscVCheriotVectorPermuteInstructionsTest *tester,
-                      Instruction *inst) {
-  auto *rv_vector = tester->rv_vector();
+void VrgatherVVHelper(RiscVCheriotVectorPermuteInstructionsTest* tester,
+                      Instruction* inst) {
+  auto* rv_vector = tester->rv_vector();
   // Configure vector unit for sew and maximum lmul.
   uint32_t vtype = 0;
   int max_regs = 8;
@@ -115,9 +115,9 @@ void VrgatherVVHelper(RiscVCheriotVectorPermuteInstructionsTest *tester,
 
 // Helper function for vector-scalar vrgather instructions.
 template <typename T>
-void VrgatherVSHelper(RiscVCheriotVectorPermuteInstructionsTest *tester,
-                      Instruction *inst) {
-  auto *rv_vector = tester->rv_vector();
+void VrgatherVSHelper(RiscVCheriotVectorPermuteInstructionsTest* tester,
+                      Instruction* inst) {
+  auto* rv_vector = tester->rv_vector();
   // Configure vector unit.
   uint32_t vtype =
       (kSewSettingsByByteSize[sizeof(T)] << 3) | kLmulSettingByLogSize[7];
@@ -255,9 +255,9 @@ TEST_F(RiscVCheriotVectorPermuteInstructionsTest, Vrgatherei16VV64) {
 
 // Helper function for slideup/down instructions.
 template <typename T>
-void SlideHelper(RiscVCheriotVectorPermuteInstructionsTest *tester,
-                 Instruction *inst, bool is_slide_up) {
-  auto *rv_vector = tester->rv_vector();
+void SlideHelper(RiscVCheriotVectorPermuteInstructionsTest* tester,
+                 Instruction* inst, bool is_slide_up) {
+  auto* rv_vector = tester->rv_vector();
   uint32_t vtype =
       (kSewSettingsByByteSize[sizeof(T)] << 3) | kLmulSettingByLogSize[7];
   tester->ConfigureVectorUnit(vtype, 2048);
@@ -401,9 +401,9 @@ TEST_F(RiscVCheriotVectorPermuteInstructionsTest, Vslidedown64) {
 }
 
 template <typename T>
-void Slide1Helper(RiscVCheriotVectorPermuteInstructionsTest *tester,
-                  Instruction *inst, bool is_slide_up) {
-  auto *rv_vector = tester->rv_vector();
+void Slide1Helper(RiscVCheriotVectorPermuteInstructionsTest* tester,
+                  Instruction* inst, bool is_slide_up) {
+  auto* rv_vector = tester->rv_vector();
   uint32_t vtype =
       (kSewSettingsByByteSize[sizeof(T)] << 3) | kLmulSettingByLogSize[7];
   tester->ConfigureVectorUnit(vtype, 2048);
@@ -539,9 +539,9 @@ TEST_F(RiscVCheriotVectorPermuteInstructionsTest, Vslide1down64) {
 }
 
 template <typename T>
-void CompressHelper(RiscVCheriotVectorPermuteInstructionsTest *tester,
-                    Instruction *inst) {
-  auto *rv_vector = tester->rv_vector();
+void CompressHelper(RiscVCheriotVectorPermuteInstructionsTest* tester,
+                    Instruction* inst) {
+  auto* rv_vector = tester->rv_vector();
   uint32_t vtype =
       (kSewSettingsByByteSize[sizeof(T)] << 3) | kLmulSettingByLogSize[7];
   tester->ConfigureVectorUnit(vtype, 2048);

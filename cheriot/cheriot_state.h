@@ -99,7 +99,7 @@ enum class ExceptionCode : uint32_t {
 // Load context used for capability tag loads. See below for the context type
 // for capability loads.
 struct CapabilityTagsLoadContext32 : public generic::ReferenceCount {
-  CapabilityTagsLoadContext32(DataBuffer *tags, CheriotRegister *dest)
+  CapabilityTagsLoadContext32(DataBuffer* tags, CheriotRegister* dest)
       : tags(tags), dest(dest) {}
   ~CapabilityTagsLoadContext32() override {
     if (tags != nullptr) tags->DecRef();
@@ -111,14 +111,14 @@ struct CapabilityTagsLoadContext32 : public generic::ReferenceCount {
     generic::ReferenceCount::OnRefCountIsZero();
   }
   // Data buffer for the tags. One tag bit is stored in each byte.
-  DataBuffer *tags;
+  DataBuffer* tags;
   // The destination register.
-  CheriotRegister *dest;
+  CheriotRegister* dest;
 };
 
 // Load context used for capability loads.
 struct CapabilityLoadContext32 : public generic::ReferenceCount {
-  CapabilityLoadContext32(DataBuffer *db, DataBuffer *tag_db,
+  CapabilityLoadContext32(DataBuffer* db, DataBuffer* tag_db,
                           uint32_t permissions, bool clear_tag)
       : db(db),
         tag_db(tag_db),
@@ -138,9 +138,9 @@ struct CapabilityLoadContext32 : public generic::ReferenceCount {
   }
 
   // Data buffer for the memory content.
-  DataBuffer *db;
+  DataBuffer* db;
   // Data buffer for the tags. One tag bit is stored in each byte.
-  DataBuffer *tag_db;
+  DataBuffer* tag_db;
   // The permissions of the capability used for the load.
   uint32_t permissions;
   // If true, clear the tag upon writing the result to the capability register.
@@ -152,7 +152,7 @@ class CheriotState;
 // Forward declare a template function defined in the .cc file that is
 // a friend of the state class.
 template <typename T>
-void CreateCsrs(CheriotState *, std::vector<RiscVCsrInterface *> &);
+void CreateCsrs(CheriotState*, std::vector<RiscVCsrInterface*>&);
 
 class RiscVCheri32PcSourceOperand;
 
@@ -177,10 +177,10 @@ class CheriotState : public generic::ArchState {
   static constexpr char kFregPrefix[] = "f";
   static constexpr char kXregPrefix[] = "x";
   static constexpr char kCsrName[] = "csr";
-  friend void CreateCsrs<uint32_t>(CheriotState *,
-                                   std::vector<RiscVCsrInterface *> &);
-  friend void CreateCsrs<uint64_t>(CheriotState *,
-                                   std::vector<RiscVCsrInterface *> &);
+  friend void CreateCsrs<uint32_t>(CheriotState*,
+                                   std::vector<RiscVCsrInterface*>&);
+  friend void CreateCsrs<uint64_t>(CheriotState*,
+                                   std::vector<RiscVCsrInterface*>&);
   auto static constexpr kVregPrefix =
       ::mpact::sim::riscv::RiscVState::kVregPrefix;
 
@@ -189,17 +189,17 @@ class CheriotState : public generic::ArchState {
   // Pc name.
   static constexpr char kPcName[] = "pcc";
   // Constructors and destructor.
-  CheriotState(std::string_view id, util::TaggedMemoryInterface *memory,
-               util::AtomicMemoryOpInterface *atomic_memory);
-  CheriotState(std::string_view id, util::TaggedMemoryInterface *memory)
+  CheriotState(std::string_view id, util::TaggedMemoryInterface* memory,
+               util::AtomicMemoryOpInterface* atomic_memory);
+  CheriotState(std::string_view id, util::TaggedMemoryInterface* memory)
       : CheriotState(id, memory, nullptr) {}
   ~CheriotState() override;
 
   // Deleted constructors and operators.
-  CheriotState(const CheriotState &) = delete;
-  CheriotState &operator=(const CheriotState &) = delete;
-  CheriotState(CheriotState &&) = delete;
-  CheriotState &operator=(CheriotState &&) = delete;
+  CheriotState(const CheriotState&) = delete;
+  CheriotState& operator=(const CheriotState&) = delete;
+  CheriotState(CheriotState&&) = delete;
+  CheriotState& operator=(CheriotState&&) = delete;
 
   // Reset all registers and CSRs to initial values.
   void Reset();
@@ -207,25 +207,24 @@ class CheriotState : public generic::ArchState {
   // is true if the register had to be created, and false if it was found
   // in the register map (or if nullptr is returned).
   template <typename RegisterType>
-  std::pair<RegisterType *, bool> GetRegister(absl::string_view name) {
+  std::pair<RegisterType*, bool> GetRegister(absl::string_view name) {
     // If the register already exists, return a pointer to the register.
     auto ptr = registers()->find(std::string(name));
     if (ptr != registers()->end())
-      return std::make_pair(static_cast<RegisterType *>(ptr->second), false);
+      return std::make_pair(static_cast<RegisterType*>(ptr->second), false);
     // Create a new register and return a pointer to the object.
     return std::make_pair(AddRegister<RegisterType>(name), true);
   }
 
   // Specialization for RiscV vector registers.
   template <>
-  std::pair<RVVectorRegister *, bool> GetRegister<RVVectorRegister>(
+  std::pair<RVVectorRegister*, bool> GetRegister<RVVectorRegister>(
       absl::string_view name) {
     int vector_byte_width = vector_register_width();
     if (vector_byte_width == 0) return std::make_pair(nullptr, false);
     auto ptr = registers()->find(std::string(name));
     if (ptr != registers()->end())
-      return std::make_pair(static_cast<RVVectorRegister *>(ptr->second),
-                            false);
+      return std::make_pair(static_cast<RVVectorRegister*>(ptr->second), false);
     // Create a new register and return a pointer to the object.
     return std::make_pair(
         AddRegister<RVVectorRegister>(name, vector_byte_width), true);
@@ -245,50 +244,50 @@ class CheriotState : public generic::ArchState {
   }
   // This is called by instruction semantic functions to register a CHERIoT
   // specific exception.
-  void HandleCheriRegException(const Instruction *inst, uint64_t epc,
-                               ExceptionCode code, const CheriotRegister *reg);
+  void HandleCheriRegException(const Instruction* inst, uint64_t epc,
+                               ExceptionCode code, const CheriotRegister* reg);
 
   // Methods called by instruction semantic functions to load from memory.
-  void LoadMemory(const Instruction *inst, uint64_t address, DataBuffer *db,
-                  Instruction *child_inst, ReferenceCount *context);
-  void LoadMemory(const Instruction *inst, DataBuffer *address_db,
-                  DataBuffer *mask_db, int el_size, DataBuffer *db,
-                  Instruction *child_inst, ReferenceCount *context);
+  void LoadMemory(const Instruction* inst, uint64_t address, DataBuffer* db,
+                  Instruction* child_inst, ReferenceCount* context);
+  void LoadMemory(const Instruction* inst, DataBuffer* address_db,
+                  DataBuffer* mask_db, int el_size, DataBuffer* db,
+                  Instruction* child_inst, ReferenceCount* context);
   // Methods called by instruction semantic functions to store to memory.
-  void StoreMemory(const Instruction *inst, uint64_t address, DataBuffer *db);
-  void StoreMemory(const Instruction *inst, DataBuffer *address_db,
-                   DataBuffer *mask_db, int el_size, DataBuffer *db);
+  void StoreMemory(const Instruction* inst, uint64_t address, DataBuffer* db);
+  void StoreMemory(const Instruction* inst, DataBuffer* address_db,
+                   DataBuffer* mask_db, int el_size, DataBuffer* db);
   // Methods called by instruction semantic functions to load and store
   // capabilities.
-  void LoadCapability(const Instruction *instruction, uint32_t address,
-                      DataBuffer *db, DataBuffer *tags, Instruction *child,
-                      CapabilityLoadContext32 *context);
-  void StoreCapability(const Instruction *instruction, uint32_t address,
-                       DataBuffer *db, DataBuffer *tags);
+  void LoadCapability(const Instruction* instruction, uint32_t address,
+                      DataBuffer* db, DataBuffer* tags, Instruction* child,
+                      CapabilityLoadContext32* context);
+  void StoreCapability(const Instruction* instruction, uint32_t address,
+                       DataBuffer* db, DataBuffer* tags);
 
   // Debug memory methods.
-  void DbgLoadMemory(uint64_t address, DataBuffer *db);
-  void DbgStoreMemory(uint64_t address, DataBuffer *db);
+  void DbgLoadMemory(uint64_t address, DataBuffer* db);
+  void DbgStoreMemory(uint64_t address, DataBuffer* db);
   // Called by the fence instruction semantic function to signal a fence
   // operation.
-  void Fence(const Instruction *inst, int fm, int predecessor, int successor);
+  void Fence(const Instruction* inst, int fm, int predecessor, int successor);
   // Synchronize instruction and data streams.
-  void FenceI(const Instruction *inst);
+  void FenceI(const Instruction* inst);
   // System call.
-  void ECall(const Instruction *inst);
+  void ECall(const Instruction* inst);
   // Breakpoint.
-  void EBreak(const Instruction *inst);
+  void EBreak(const Instruction* inst);
   // WFI
-  void WFI(const Instruction *inst);
+  void WFI(const Instruction* inst);
   // Ceases execution on the core. This is a non-standard instruction that
   // quiesces traffic for embedded cores before halting. The core must be reset
   // to come out of this state.
-  void Cease(const Instruction *inst);
+  void Cease(const Instruction* inst);
   // This method is called to trigger a RiscV trap.
   void Trap(bool is_interrupt, uint64_t trap_value, uint64_t exception_code,
-            uint64_t epc, const Instruction *inst);
+            uint64_t epc, const Instruction* inst);
   // Add ebreak handler.
-  void AddEbreakHandler(absl::AnyInvocable<bool(const Instruction *)> handler) {
+  void AddEbreakHandler(absl::AnyInvocable<bool(const Instruction*)> handler) {
     on_ebreak_.emplace_back(std::move(handler));
   }
   // This function is called after any event that may have caused an interrupt
@@ -312,11 +311,11 @@ class CheriotState : public generic::ArchState {
   }
   // Returns the interrupt counters. This allows code to be connected to the
   // counters when the value changes.
-  SimpleCounter<int64_t> *counter_interrupts_taken() {
+  SimpleCounter<int64_t>* counter_interrupts_taken() {
     return &counter_interrupts_taken_;
   }
 
-  SimpleCounter<int64_t> *counter_interrupt_returns() {
+  SimpleCounter<int64_t>* counter_interrupt_returns() {
     return &counter_interrupt_returns_;
   }
 
@@ -337,15 +336,15 @@ class CheriotState : public generic::ArchState {
   inline void reset_is_interrupt_available() {
     is_interrupt_available_ = false;
   }
-  void set_tagged_memory(util::TaggedMemoryInterface *tagged_memory) {
+  void set_tagged_memory(util::TaggedMemoryInterface* tagged_memory) {
     tagged_memory_ = tagged_memory;
   }
-  util::TaggedMemoryInterface *tagged_memory() const { return tagged_memory_; }
-  util::AtomicMemoryOpInterface *atomic_tagged_memory() const {
+  util::TaggedMemoryInterface* tagged_memory() const { return tagged_memory_; }
+  util::AtomicMemoryOpInterface* atomic_tagged_memory() const {
     return atomic_tagged_memory_;
   }
   void set_atomic_tagged_memory(
-      util::AtomicMemoryOpInterface *atomic_tagged_memory) {
+      util::AtomicMemoryOpInterface* atomic_tagged_memory) {
     atomic_tagged_memory_ = atomic_tagged_memory;
   }
 
@@ -358,13 +357,13 @@ class CheriotState : public generic::ArchState {
   uint64_t min_physical_address() const { return min_physical_address_; }
   // These root capabilities are clean versions of each type of capability with
   // maximum permissions.
-  const CheriotRegister *executable_root() const { return executable_root_; }
-  const CheriotRegister *sealing_root() const { return sealing_root_; }
-  const CheriotRegister *memory_root() const { return memory_root_; }
+  const CheriotRegister* executable_root() const { return executable_root_; }
+  const CheriotRegister* sealing_root() const { return sealing_root_; }
+  const CheriotRegister* memory_root() const { return memory_root_; }
   // Special capability registers. Pcc replaces the pc. Cgp is a global pointer
   // capability that is aliased with c3.
-  CheriotRegister *pcc() const { return pcc_; }
-  CheriotRegister *cgp() const { return cgp_; }
+  CheriotRegister* pcc() const { return pcc_; }
+  CheriotRegister* cgp() const { return cgp_; }
   // True if the misa register encodes support for compact instructions.
   bool has_compact() const {
     return (misa_->AsUint64() & *IsaExtension::kCompressed) != 0;
@@ -373,48 +372,48 @@ class CheriotState : public generic::ArchState {
   // instruction.
   int num_tags_per_load() const { return num_tags_per_load_; }
   // Provides access to the set of CSRs of this architectural state instance.
-  RiscVCsrSet *csr_set() { return csr_set_; }
+  RiscVCsrSet* csr_set() { return csr_set_; }
   // Setters for handlers for ecall, and trap. The handler returns true
   // if the instruction/event was handled, and false otherwise.
 
-  void set_on_ecall(absl::AnyInvocable<bool(const Instruction *)> callback) {
+  void set_on_ecall(absl::AnyInvocable<bool(const Instruction*)> callback) {
     on_ecall_ = std::move(callback);
   }
 
-  void set_on_wfi(absl::AnyInvocable<bool(const Instruction *)> callback) {
+  void set_on_wfi(absl::AnyInvocable<bool(const Instruction*)> callback) {
     on_wfi_ = std::move(callback);
   }
 
-  void set_on_cease(absl::AnyInvocable<bool(const Instruction *)> callback) {
+  void set_on_cease(absl::AnyInvocable<bool(const Instruction*)> callback) {
     on_cease_ = std::move(callback);
   }
 
   void set_on_trap(
       absl::AnyInvocable<bool(bool /*is_interrupt*/, uint64_t /*trap_value*/,
                               uint64_t /*exception_code*/, uint64_t /*epc*/,
-                              const Instruction *)>
+                              const Instruction*)>
           callback) {
     on_trap_ = std::move(callback);
   }
 
-  RiscVFPState *rv_fp() { return rv_fp_; }
-  void set_rv_fp(RiscVFPState *rv_fp) { rv_fp_ = rv_fp; }
-  CheriotVectorState *rv_vector() { return rv_vector_; }
-  void set_rv_vector(CheriotVectorState *rv_vector) { rv_vector_ = rv_vector; }
+  RiscVFPState* rv_fp() { return rv_fp_; }
+  void set_rv_fp(RiscVFPState* rv_fp) { rv_fp_ = rv_fp; }
+  CheriotVectorState* rv_vector() { return rv_vector_; }
+  void set_rv_vector(CheriotVectorState* rv_vector) { rv_vector_ = rv_vector; }
   void set_vector_register_width(int value) { vector_register_width_ = value; }
   int vector_register_width() const { return vector_register_width_; }
-  RiscVMStatus *mstatus() { return mstatus_; }
-  RiscVMIsa *misa() { return misa_; }
-  RiscVMIp *mip() { return mip_; }
-  RiscVMIe *mie() { return mie_; }
-  CheriotRegister *mtcc() { return mtcc_; }
-  CheriotRegister *mepcc() { return mepcc_; }
-  CheriotRegister *mscratchc() { return mscratchc_; }
-  CheriotRegister *mtdc() { return mtdc_; }
-  CheriotRegister *temp_reg() { return temp_reg_; }
-  RiscVCsrInterface *mcause() { return mcause_; }
-  RiscVCheri32PcSourceOperand *pc_src_operand() { return pc_src_operand_; }
-  const InterruptInfoList &interrupt_info_list() const {
+  RiscVMStatus* mstatus() { return mstatus_; }
+  RiscVMIsa* misa() { return misa_; }
+  RiscVMIp* mip() { return mip_; }
+  RiscVMIe* mie() { return mie_; }
+  CheriotRegister* mtcc() { return mtcc_; }
+  CheriotRegister* mepcc() { return mepcc_; }
+  CheriotRegister* mscratchc() { return mscratchc_; }
+  CheriotRegister* mtdc() { return mtdc_; }
+  CheriotRegister* temp_reg() { return temp_reg_; }
+  RiscVCsrInterface* mcause() { return mcause_; }
+  RiscVCheri32PcSourceOperand* pc_src_operand() { return pc_src_operand_; }
+  const InterruptInfoList& interrupt_info_list() const {
     return interrupt_info_list_;
   }
   uint64_t revocation_mem_base() const { return revocation_mem_base_; }
@@ -424,15 +423,15 @@ class CheriotState : public generic::ArchState {
   bool tracing_active() const { return tracing_active_; }
   void set_tracing_active(bool active) { tracing_active_ = active; }
   uint64_t load_address() const { return load_address_; }
-  DataBuffer *load_db() const { return load_db_; }
-  void set_load_db(DataBuffer *db) { load_db_ = db; }
-  DataBuffer *load_tags() const { return load_tags_; }
-  void set_load_tags(DataBuffer *tags) { load_tags_ = tags; }
+  DataBuffer* load_db() const { return load_db_; }
+  void set_load_db(DataBuffer* db) { load_db_ = db; }
+  DataBuffer* load_tags() const { return load_tags_; }
+  void set_load_tags(DataBuffer* tags) { load_tags_ = tags; }
   uint64_t store_address() const { return store_address_; }
-  DataBuffer *store_db() const { return store_db_; }
-  void set_store_db(DataBuffer *db) { store_db_ = db; }
-  DataBuffer *store_tags() const { return store_tags_; }
-  void set_store_tags(DataBuffer *tags) { store_tags_ = tags; }
+  DataBuffer* store_db() const { return store_db_; }
+  void set_store_db(DataBuffer* db) { store_db_ = db; }
+  DataBuffer* store_tags() const { return store_tags_; }
+  void set_store_tags(DataBuffer* tags) { store_tags_ = tags; }
 
  private:
   InterruptCode PickInterrupt(uint32_t interrupts);
@@ -442,30 +441,30 @@ class CheriotState : public generic::ArchState {
   // A map from register name to entry in the mtval register.
   absl::flat_hash_map<std::string, uint32_t> cap_index_map_;
   // These are root capabilities
-  CheriotRegister *executable_root_ = nullptr;
-  CheriotRegister *sealing_root_ = nullptr;
-  CheriotRegister *memory_root_ = nullptr;
+  CheriotRegister* executable_root_ = nullptr;
+  CheriotRegister* sealing_root_ = nullptr;
+  CheriotRegister* memory_root_ = nullptr;
   // Special capability registers.
-  CheriotRegister *pcc_ = nullptr;
-  CheriotRegister *cgp_ = nullptr;
+  CheriotRegister* pcc_ = nullptr;
+  CheriotRegister* cgp_ = nullptr;
   bool branch_ = false;
   int vector_register_width_ = 0;
   uint64_t max_physical_address_;
   uint64_t min_physical_address_ = 0;
   int num_tags_per_load_;
-  util::TaggedMemoryInterface *tagged_memory_;
-  util::AtomicMemoryOpInterface *atomic_tagged_memory_;
-  RiscVCsrSet *csr_set_;
-  std::vector<absl::AnyInvocable<bool(const Instruction *)>> on_ebreak_;
-  absl::AnyInvocable<bool(const Instruction *)> on_ecall_;
+  util::TaggedMemoryInterface* tagged_memory_;
+  util::AtomicMemoryOpInterface* atomic_tagged_memory_;
+  RiscVCsrSet* csr_set_;
+  std::vector<absl::AnyInvocable<bool(const Instruction*)>> on_ebreak_;
+  absl::AnyInvocable<bool(const Instruction*)> on_ecall_;
   absl::AnyInvocable<bool(bool, uint64_t, uint64_t, uint64_t,
-                          const Instruction *)>
+                          const Instruction*)>
       on_trap_;
-  absl::AnyInvocable<bool(const Instruction *)> on_wfi_;
-  absl::AnyInvocable<bool(const Instruction *)> on_cease_;
-  std::vector<RiscVCsrInterface *> csr_vec_;
-  RiscVFPState *rv_fp_ = nullptr;
-  CheriotVectorState *rv_vector_ = nullptr;
+  absl::AnyInvocable<bool(const Instruction*)> on_wfi_;
+  absl::AnyInvocable<bool(const Instruction*)> on_cease_;
+  std::vector<RiscVCsrInterface*> csr_vec_;
+  RiscVFPState* rv_fp_ = nullptr;
+  CheriotVectorState* rv_vector_ = nullptr;
   // For interrupt handling.
   bool is_interrupt_available_ = false;
   SimpleCounter<int64_t> counter_interrupts_taken_;
@@ -475,44 +474,44 @@ class CheriotState : public generic::ArchState {
   // By default, execute in machine mode.
   PrivilegeMode privilege_mode_ = PrivilegeMode::kMachine;
   // Handles to frequently used CSRs.
-  RiscVMStatus *mstatus_ = nullptr;
-  RiscVMIsa *misa_ = nullptr;
-  RiscVMIp *mip_ = nullptr;
-  RiscVMIe *mie_ = nullptr;
-  RiscVSimpleCsr<uint32_t> *mshwm_ = nullptr;
-  RiscVSimpleCsr<uint32_t> *mshwmb_ = nullptr;
-  CheriotRegister *mtcc_ = nullptr;
-  CheriotRegister *mepcc_ = nullptr;
-  CheriotRegister *mscratchc_ = nullptr;
-  CheriotRegister *mtdc_ = nullptr;
-  CheriotRegister *temp_reg_ = nullptr;
-  RiscVPmp *pmp_ = nullptr;
-  RiscVCsrInterface *mtval_ = nullptr;
-  RiscVCsrInterface *mcause_ = nullptr;
-  RiscVCheri32PcSourceOperand *pc_src_operand_ = nullptr;
+  RiscVMStatus* mstatus_ = nullptr;
+  RiscVMIsa* misa_ = nullptr;
+  RiscVMIp* mip_ = nullptr;
+  RiscVMIe* mie_ = nullptr;
+  RiscVSimpleCsr<uint32_t>* mshwm_ = nullptr;
+  RiscVSimpleCsr<uint32_t>* mshwmb_ = nullptr;
+  CheriotRegister* mtcc_ = nullptr;
+  CheriotRegister* mepcc_ = nullptr;
+  CheriotRegister* mscratchc_ = nullptr;
+  CheriotRegister* mtdc_ = nullptr;
+  CheriotRegister* temp_reg_ = nullptr;
+  RiscVPmp* pmp_ = nullptr;
+  RiscVCsrInterface* mtval_ = nullptr;
+  RiscVCsrInterface* mcause_ = nullptr;
+  RiscVCheri32PcSourceOperand* pc_src_operand_ = nullptr;
   // DataBuffer and info used to check for revocation.
-  DataBuffer *revocation_db_ = nullptr;
+  DataBuffer* revocation_db_ = nullptr;
   uint64_t revocation_mem_base_;
   uint64_t revocation_ram_base_;
   // Active tracing flag.
   bool tracing_active_ = false;
   // Members for collecting trace data.
   uint64_t load_address_;
-  DataBuffer *load_db_ = nullptr;
-  DataBuffer *load_tags_ = nullptr;
+  DataBuffer* load_db_ = nullptr;
+  DataBuffer* load_tags_ = nullptr;
   uint64_t store_address_;
-  DataBuffer *store_db_ = nullptr;
-  DataBuffer *store_tags_ = nullptr;
+  DataBuffer* store_db_ = nullptr;
+  DataBuffer* store_tags_ = nullptr;
 };
 
 // This class implements the source operand interface on top of a capability
 // register so that its value (contained address) can be read as an operand.
 class RiscVCheri32PcSourceOperand : public generic::SourceOperandInterface {
  public:
-  explicit RiscVCheri32PcSourceOperand(CheriotState *state) : state_(state) {}
+  explicit RiscVCheri32PcSourceOperand(CheriotState* state) : state_(state) {}
   RiscVCheri32PcSourceOperand() = delete;
-  RiscVCheri32PcSourceOperand(const RiscVCheri32PcSourceOperand &) = delete;
-  RiscVCheri32PcSourceOperand &operator=(const RiscVCheri32PcSourceOperand &) =
+  RiscVCheri32PcSourceOperand(const RiscVCheri32PcSourceOperand&) = delete;
+  RiscVCheri32PcSourceOperand& operator=(const RiscVCheri32PcSourceOperand&) =
       delete;
   ~RiscVCheri32PcSourceOperand() override = default;
   // Methods for accessing the nth value element.
@@ -544,7 +543,7 @@ class RiscVCheri32PcSourceOperand : public generic::SourceOperandInterface {
 
  private:
   uint64_t GetPC();
-  CheriotState *state_;
+  CheriotState* state_;
 };
 
 }  // namespace cheriot

@@ -24,7 +24,6 @@
 #include "cheriot/riscv_cheriot_decoder.h"
 #include "cheriot/riscv_cheriot_encoding.h"
 #include "cheriot/riscv_cheriot_enums.h"
-#include "cheriot/test_rig_packets.h"
 #include "mpact/sim/generic/arch_state.h"
 #include "mpact/sim/generic/decoder_interface.h"
 #include "mpact/sim/generic/instruction.h"
@@ -44,7 +43,7 @@ class CheriotTestRigIsaFactory
     : public isa32::RiscVCheriotInstructionSetFactory {
  public:
   std::unique_ptr<isa32::Riscv32CheriotSlot> CreateRiscv32CheriotSlot(
-      generic::ArchState *state) override {
+      generic::ArchState* state) override {
     return std::make_unique<isa32::Riscv32CheriotSlot>(state);
   }
 };
@@ -60,23 +59,23 @@ class CheriotTestRigDecoder {
     int rs2;
   };
 
-  explicit CheriotTestRigDecoder(CheriotState *state);
+  explicit CheriotTestRigDecoder(CheriotState* state);
   CheriotTestRigDecoder() = delete;
-  CheriotTestRigDecoder(const CheriotTestRigDecoder &) = delete;
-  CheriotTestRigDecoder &operator=(const CheriotTestRigDecoder &) = delete;
+  CheriotTestRigDecoder(const CheriotTestRigDecoder&) = delete;
+  CheriotTestRigDecoder& operator=(const CheriotTestRigDecoder&) = delete;
   virtual ~CheriotTestRigDecoder();
 
   // Decode a single instruction and fill in decode time information in the
   // TestRIG execution packet.
-  generic::Instruction *DecodeInstruction(uint64_t address, uint32_t inst_word,
-                                          DecodeInfo &decode_info);
+  generic::Instruction* DecodeInstruction(uint64_t address, uint32_t inst_word,
+                                          DecodeInfo& decode_info);
 
  private:
-  CheriotState *state_;
+  CheriotState* state_;
   std::unique_ptr<generic::ProgramError> decode_error_;
-  isa32::RiscVCheriotEncoding *cheriot_encoding_;
-  isa32::RiscVCheriotInstructionSetFactory *cheriot_isa_factory_;
-  isa32::RiscVCheriotInstructionSet *cheriot_isa_;
+  isa32::RiscVCheriotEncoding* cheriot_encoding_;
+  isa32::RiscVCheriotInstructionSetFactory* cheriot_isa_factory_;
+  isa32::RiscVCheriotInstructionSet* cheriot_isa_;
 };
 
 }  // namespace cheriot

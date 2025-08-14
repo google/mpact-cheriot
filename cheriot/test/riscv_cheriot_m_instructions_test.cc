@@ -83,29 +83,29 @@ class RVCheriotMInstructionTest : public testing::Test {
 
   // Appends the source and destination operands for the register names
   // given in the two vectors.
-  void AppendRegisterOperands(Instruction *inst,
-                              const std::vector<std::string> &sources,
-                              const std::vector<std::string> &destinations) {
-    for (auto &reg_name : sources) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+  void AppendRegisterOperands(Instruction* inst,
+                              const std::vector<std::string>& sources,
+                              const std::vector<std::string>& destinations) {
+    for (auto& reg_name : sources) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendSource(reg->CreateSourceOperand());
     }
-    for (auto &reg_name : destinations) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& reg_name : destinations) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendDestination(reg->CreateDestinationOperand(0));
     }
   }
 
-  void AppendRegisterOperands(const std::vector<std::string> &sources,
-                              const std::vector<std::string> &destinations) {
+  void AppendRegisterOperands(const std::vector<std::string>& sources,
+                              const std::vector<std::string>& destinations) {
     AppendRegisterOperands(instruction_, sources, destinations);
   }
 
   // Appends immediate source operands with the given values.
   template <typename T>
-  void AppendImmediateOperands(const std::vector<T> &values) {
+  void AppendImmediateOperands(const std::vector<T>& values) {
     for (auto value : values) {
-      auto *src = new ImmediateOperand<T>(value);
+      auto* src = new ImmediateOperand<T>(value);
       instruction_->AppendSource(src);
     }
   }
@@ -114,8 +114,8 @@ class RVCheriotMInstructionTest : public testing::Test {
   // named register and sets it to the corresponding value.
   template <typename T>
   void SetRegisterValues(const std::vector<std::tuple<std::string, T>> values) {
-    for (auto &[reg_name, value] : values) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& [reg_name, value] : values) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       reg->set_address(value);
     }
   }
@@ -128,16 +128,16 @@ class RVCheriotMInstructionTest : public testing::Test {
   // Returns the value of the named register.
   template <typename T>
   T GetRegisterValue(std::string_view reg_name) {
-    auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
     return reg->address();
   }
 
-  TaggedFlatDemandMemory *mem_;
-  CheriotState *state_;
-  Instruction *instruction_;
-  CheriotRegister *creg_1_;
-  CheriotRegister *creg_2_;
-  CheriotRegister *creg_3_;
+  TaggedFlatDemandMemory* mem_;
+  CheriotState* state_;
+  Instruction* instruction_;
+  CheriotRegister* creg_1_;
+  CheriotRegister* creg_2_;
+  CheriotRegister* creg_3_;
   absl::BitGen bitgen_;
 };
 

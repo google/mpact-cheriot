@@ -16,7 +16,6 @@
 
 #include <cstdint>
 #include <cstring>
-#include <new>
 #include <string>
 
 #include "absl/functional/bind_front.h"
@@ -64,7 +63,7 @@ CheriotTestRig::CheriotTestRig()
   // Set up sim state.
   state_ = new CheriotState(kCheriotTestRigName, tagged_memory_watcher_);
   // Initialize pcc to 0x8000'0000.
-  pcc_ = static_cast<CheriotRegister *>(
+  pcc_ = static_cast<CheriotRegister*>(
       state_->registers()->at(CheriotState::kPcName));
   pcc_->set_address(0x8000'0000);
   cheriot_decoder_ = new CheriotTestRigDecoder(state_);
@@ -110,10 +109,10 @@ CheriotTestRig::CheriotTestRig()
   auto minstreth_res = state_->csr_set()->GetCsr("minstreth");
   CHECK_OK(minstret_res.status());
   CHECK_OK(minstreth_res.status());
-  auto *minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
+  auto* minstret = static_cast<RiscVCounterCsr<uint32_t, CheriotState>*>(
       minstret_res.value());
-  auto *minstreth =
-      static_cast<RiscVCounterCsrHigh<CheriotState> *>(minstreth_res.value());
+  auto* minstreth =
+      static_cast<RiscVCounterCsrHigh<CheriotState>*>(minstreth_res.value());
   minstret->set_counter(&counter_num_instructions_);
   minstreth->set_counter(&counter_num_instructions_);
 
@@ -123,10 +122,10 @@ CheriotTestRig::CheriotTestRig()
   auto mcycleh_res = state_->csr_set()->GetCsr("mcycleh");
   CHECK_OK(mcycle_res.status());
   CHECK_OK(mcycleh_res.status());
-  auto *mcycle = static_cast<RiscVCounterCsr<uint32_t, CheriotState> *>(
-      mcycle_res.value());
-  auto *mcycleh =
-      static_cast<RiscVCounterCsrHigh<CheriotState> *>(mcycleh_res.value());
+  auto* mcycle =
+      static_cast<RiscVCounterCsr<uint32_t, CheriotState>*>(mcycle_res.value());
+  auto* mcycleh =
+      static_cast<RiscVCounterCsrHigh<CheriotState>*>(mcycleh_res.value());
   mcycle->set_counter(&counter_num_instructions_);
   mcycleh->set_counter(&counter_num_instructions_);
   // Set memory limits according to the memory space for TestRIG.
@@ -148,7 +147,7 @@ CheriotTestRig::~CheriotTestRig() {
 }
 
 absl::Status CheriotTestRig::Execute(
-    const test_rig::InstructionPacket &inst_packet, int fd) {
+    const test_rig::InstructionPacket& inst_packet, int fd) {
   switch (trace_version_) {
     case 1:
       return ExecuteV1(inst_packet, fd);
@@ -171,7 +170,7 @@ absl::Status CheriotTestRig::SetVersion(int version) {
 }
 
 absl::Status CheriotTestRig::ExecuteV1(
-    const test_rig::InstructionPacket &inst_packet, int fd) {
+    const test_rig::InstructionPacket& inst_packet, int fd) {
   test_rig::ExecutionPacket ep;
   uint32_t inst_word = inst_packet.rvfi_insn;
   ep.rvfi_halt = 0;
@@ -188,7 +187,7 @@ absl::Status CheriotTestRig::ExecuteV1(
   ep.rvfi_pc_rdata = pc;
   // Decode fills in rd_addr, rs2_addr, rs1_addr.
   CheriotTestRigDecoder::DecodeInfo decode_info;
-  auto *inst = cheriot_decoder_->DecodeInstruction(pc, inst_word, decode_info);
+  auto* inst = cheriot_decoder_->DecodeInstruction(pc, inst_word, decode_info);
   ep.rvfi_rd_addr = decode_info.rd;
   ep.rvfi_rs1_addr = decode_info.rs1;
   ep.rvfi_rs2_addr = decode_info.rs2;
@@ -261,12 +260,12 @@ absl::Status CheriotTestRig::ExecuteV1(
 }
 
 absl::Status CheriotTestRig::ExecuteV2(
-    const test_rig::InstructionPacket &inst_packet, int fd) {
+    const test_rig::InstructionPacket& inst_packet, int fd) {
   test_rig::ExecutionPacketExtInteger ep_ext_integer;
   test_rig::ExecutionPacketExtMemAccess ep_ext_mem_access;
   test_rig::ExecutionPacketV2 ep_v2;
-  test_rig::ExecutionPacketMetaData &ep_metadata = ep_v2.basic_data;
-  test_rig::ExecutionPacketPC &ep_pc = ep_v2.pc_data;
+  test_rig::ExecutionPacketMetaData& ep_metadata = ep_v2.basic_data;
+  test_rig::ExecutionPacketPC& ep_pc = ep_v2.pc_data;
 
   uint32_t inst_word = inst_packet.rvfi_insn;
   ep_metadata.rvfi_halt = 0;
@@ -283,7 +282,7 @@ absl::Status CheriotTestRig::ExecuteV2(
   ep_pc.rvfi_pc_rdata = pc;
   // Decode fills in rd_addr, rs2_addr, rs1_addr.
   CheriotTestRigDecoder::DecodeInfo decode_info;
-  auto *inst = cheriot_decoder_->DecodeInstruction(pc, inst_word, decode_info);
+  auto* inst = cheriot_decoder_->DecodeInstruction(pc, inst_word, decode_info);
   ep_ext_integer.rvfi_rd_addr = decode_info.rd;
   ep_ext_integer.rvfi_rs1_addr = decode_info.rs1;
   ep_ext_integer.rvfi_rs2_addr = decode_info.rs2;
@@ -418,12 +417,12 @@ void CheriotTestRig::ResetArch() {
   // Reset instruction counter.
   counter_num_instructions_.SetValue(0);
   // Set all capability registers to memory root capability.
-  for (auto const &name :
+  for (auto const& name :
        {"c1",  "c2",  "c3",  "c4",  "c5",  "c6",  "c7",  "c8",
         "c9",  "c10", "c11", "c12", "c13", "c14", "c15", "c16",
         "c17", "c18", "c19", "c20", "c21", "c22", "c23", "c24",
         "c25", "c26", "c27", "c28", "c29", "c30", "c31"}) {
-    auto *cap_reg = state_->GetRegister<CheriotRegister>(name).first;
+    auto* cap_reg = state_->GetRegister<CheriotRegister>(name).first;
     cap_reg->ResetMemoryRoot();
   }
 }
@@ -475,7 +474,7 @@ absl::Status CheriotTestRig::ResetV2(uint8_t halt, int fd) {
 // Just capture that a trap occurred.
 bool CheriotTestRig::OnTrap(bool is_interrupt, uint64_t trap_value,
                             uint64_t exception_code, uint64_t epc,
-                            const Instruction *inst) {
+                            const Instruction* inst) {
   trap_set_ = true;
   return false;
 }
@@ -545,8 +544,8 @@ uint32_t CheriotTestRig::GetRegister(uint32_t reg_id) {
   if (ptr == state_->registers()->end()) {
     return 0;
   } else {
-    auto *reg = ptr->second;
-    auto *creg = static_cast<CheriotRegister *>(reg);
+    auto* reg = ptr->second;
+    auto* creg = static_cast<CheriotRegister*>(reg);
     return creg->address();
   }
 }

@@ -29,8 +29,8 @@ namespace cheriot {
 using ::mpact::sim::generic::Instruction;
 
 // Sum reduction.
-void Vredsum(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vredsum(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -60,8 +60,8 @@ void Vredsum(Instruction *inst) {
 }
 
 // And reduction.
-void Vredand(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vredand(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -91,8 +91,8 @@ void Vredand(Instruction *inst) {
 }
 
 // Or reduction.
-void Vredor(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vredor(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -122,8 +122,8 @@ void Vredor(Instruction *inst) {
 }
 
 // Xor reduction.
-void Vredxor(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vredxor(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -153,8 +153,8 @@ void Vredxor(Instruction *inst) {
 }
 
 // Unsigned min reduction.
-void Vredminu(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vredminu(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -188,8 +188,8 @@ void Vredminu(Instruction *inst) {
 }
 
 // Signed min reduction.
-void Vredmin(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vredmin(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -222,8 +222,8 @@ void Vredmin(Instruction *inst) {
 }
 
 // Unsigned max reduction.
-void Vredmaxu(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vredmaxu(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -257,8 +257,8 @@ void Vredmaxu(Instruction *inst) {
 }
 
 // Signed max reduction.
-void Vredmax(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vredmax(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -291,8 +291,8 @@ void Vredmax(Instruction *inst) {
 }
 
 // Unsigned widening (SEW->SEW * 2) reduction.
-void Vwredsumu(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vwredsumu(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:
@@ -321,8 +321,8 @@ void Vwredsumu(Instruction *inst) {
 }
 
 // Signed widening (SEW->SEW * 2) reduction.
-void Vwredsum(Instruction *inst) {
-  auto *rv_vector = static_cast<CheriotState *>(inst->state())->rv_vector();
+void Vwredsum(Instruction* inst) {
+  auto* rv_vector = static_cast<CheriotState*>(inst->state())->rv_vector();
   int sew = rv_vector->selected_element_width();
   switch (sew) {
     case 1:

@@ -32,7 +32,7 @@ class CheriotState;
 
 class CheriotVectorTrueOperand : public RV32VectorSourceOperand {
  public:
-  explicit CheriotVectorTrueOperand(CheriotState *state);
+  explicit CheriotVectorTrueOperand(CheriotState* state);
 
   CheriotVectorTrueOperand() = delete;
   bool AsBool(int) final { return true; }

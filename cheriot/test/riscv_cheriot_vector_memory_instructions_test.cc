@@ -129,7 +129,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
     child_instruction_ = new Instruction(kInstAddress, state_);
     child_instruction_->set_size(4);
     // Initialize a portion of memory with a known pattern.
-    auto *db = state_->db_factory()->Allocate(8192);
+    auto* db = state_->db_factory()->Allocate(8192);
     auto span = db->Get<uint8_t>();
     for (int i = 0; i < 8192; i++) {
       span[i] = i & 0xff;
@@ -158,10 +158,10 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
   // Creates immediate operands with the values from the vector and appends them
   // to the given instruction.
   template <typename T>
-  void AppendImmediateOperands(Instruction *inst,
-                               const std::vector<T> &values) {
+  void AppendImmediateOperands(Instruction* inst,
+                               const std::vector<T>& values) {
     for (auto value : values) {
-      auto *src = new ImmediateOperand<T>(value);
+      auto* src = new ImmediateOperand<T>(value);
       inst->AppendSource(src);
     }
   }
@@ -169,46 +169,46 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
   // Creates immediate operands with the values from the vector and appends them
   // to the default instruction.
   template <typename T>
-  void AppendImmediateOperands(const std::vector<T> &values) {
+  void AppendImmediateOperands(const std::vector<T>& values) {
     AppendImmediateOperands<T>(instruction_, values);
   }
 
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the given instruction.
-  void AppendRegisterOperands(Instruction *inst,
-                              const std::vector<std::string> &sources,
-                              const std::vector<std::string> &destinations) {
-    for (auto &reg_name : sources) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+  void AppendRegisterOperands(Instruction* inst,
+                              const std::vector<std::string>& sources,
+                              const std::vector<std::string>& destinations) {
+    for (auto& reg_name : sources) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendSource(reg->CreateSourceOperand());
     }
-    for (auto &reg_name : destinations) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+    for (auto& reg_name : destinations) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
       inst->AppendDestination(reg->CreateDestinationOperand(0));
     }
   }
 
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the default instruction.
-  void AppendRegisterOperands(const std::vector<std::string> &sources,
-                              const std::vector<std::string> &destinations) {
+  void AppendRegisterOperands(const std::vector<std::string>& sources,
+                              const std::vector<std::string>& destinations) {
     AppendRegisterOperands(instruction_, sources, destinations);
   }
 
   // Returns the value of the named vector register.
   template <typename T>
   T GetRegisterValue(absl::string_view vreg_name) {
-    auto *reg = state_->GetRegister<CheriotRegister>(vreg_name).first;
+    auto* reg = state_->GetRegister<CheriotRegister>(vreg_name).first;
     return reg->data_buffer()->Get<T>();
   }
 
   // named register and sets it to the corresponding value.
   template <typename T>
   void SetRegisterValues(
-      const std::vector<tuple<std::string, const T>> &values) {
-    for (auto &[reg_name, value] : values) {
-      auto *reg = state_->GetRegister<CheriotRegister>(reg_name).first;
-      auto *db = state_->db_factory()->Allocate<CheriotRegister::ValueType>(1);
+      const std::vector<tuple<std::string, const T>>& values) {
+    for (auto& [reg_name, value] : values) {
+      auto* reg = state_->GetRegister<CheriotRegister>(reg_name).first;
+      auto* db = state_->db_factory()->Allocate<CheriotRegister::ValueType>(1);
       db->Set<T>(0, value);
       reg->SetDataBuffer(db);
       db->DecRef();
@@ -217,43 +217,43 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
 
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the given instruction.
-  void AppendVectorRegisterOperands(Instruction *inst,
-                                    const std::vector<int> &sources,
-                                    const std::vector<int> &destinations) {
-    for (auto &reg_no : sources) {
-      std::vector<RegisterBase *> reg_vec;
+  void AppendVectorRegisterOperands(Instruction* inst,
+                                    const std::vector<int>& sources,
+                                    const std::vector<int>& destinations) {
+    for (auto& reg_no : sources) {
+      std::vector<RegisterBase*> reg_vec;
       for (int i = 0; (i < 8) && (i + reg_no < 32); i++) {
         std::string reg_name = absl::StrCat("v", i + reg_no);
         reg_vec.push_back(
             state_->GetRegister<RVVectorRegister>(reg_name).first);
       }
-      auto *op = new RV32VectorSourceOperand(
-          absl::Span<RegisterBase *>(reg_vec), absl::StrCat("v", reg_no));
+      auto* op = new RV32VectorSourceOperand(absl::Span<RegisterBase*>(reg_vec),
+                                             absl::StrCat("v", reg_no));
       inst->AppendSource(op);
     }
-    for (auto &reg_no : destinations) {
-      std::vector<RegisterBase *> reg_vec;
+    for (auto& reg_no : destinations) {
+      std::vector<RegisterBase*> reg_vec;
       for (int i = 0; (i < 8) && (i + reg_no < 32); i++) {
         std::string reg_name = absl::StrCat("v", i + reg_no);
         reg_vec.push_back(
             state_->GetRegister<RVVectorRegister>(reg_name).first);
       }
-      auto *op = new RV32VectorDestinationOperand(
-          absl::Span<RegisterBase *>(reg_vec), 0, absl::StrCat("v", reg_no));
+      auto* op = new RV32VectorDestinationOperand(
+          absl::Span<RegisterBase*>(reg_vec), 0, absl::StrCat("v", reg_no));
       inst->AppendDestination(op);
     }
   }
   // Creates source and destination scalar register operands for the registers
   // named in the two vectors and append them to the default instruction.
-  void AppendVectorRegisterOperands(const std::vector<int> &sources,
-                                    const std::vector<int> &destinations) {
+  void AppendVectorRegisterOperands(const std::vector<int>& sources,
+                                    const std::vector<int>& destinations) {
     AppendVectorRegisterOperands(instruction_, sources, destinations);
   }
 
   // Returns the value of the named vector register.
   template <typename T>
   T GetVectorRegisterValue(absl::string_view reg_name) {
-    auto *reg = state_->GetRegister<RVVectorRegister>(reg_name).first;
+    auto* reg = state_->GetRegister<RVVectorRegister>(reg_name).first;
     return reg->data_buffer()->Get<T>(0);
   }
 
@@ -262,10 +262,10 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
   // value.
   template <typename T>
   void SetVectorRegisterValues(
-      const std::vector<tuple<std::string, Span<const T>>> &values) {
-    for (auto &[vreg_name, span] : values) {
-      auto *vreg = state_->GetRegister<RVVectorRegister>(vreg_name).first;
-      auto *db = state_->db_factory()->MakeCopyOf(vreg->data_buffer());
+      const std::vector<tuple<std::string, Span<const T>>>& values) {
+    for (auto& [vreg_name, span] : values) {
+      auto* vreg = state_->GetRegister<RVVectorRegister>(vreg_name).first;
+      auto* db = state_->db_factory()->MakeCopyOf(vreg->data_buffer());
       db->template Set<T>(span);
       vreg->SetDataBuffer(db);
       db->DecRef();
@@ -273,7 +273,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
   }
 
   // Initializes the semantic function of the instruction object.
-  void SetSemanticFunction(Instruction *inst,
+  void SetSemanticFunction(Instruction* inst,
                            Instruction::SemanticFunction fcn) {
     inst->set_semantic_function(fcn);
   }
@@ -293,7 +293,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
 
   // Configure the vector unit according to the vtype and vlen values.
   void ConfigureVectorUnit(uint32_t vtype, uint32_t vlen) {
-    Instruction *inst = new Instruction(state_);
+    Instruction* inst = new Instruction(state_);
     AppendImmediateOperands<uint32_t>(inst, {vlen, vtype});
     SetSemanticFunction(inst, absl::bind_front(&Vsetvl, true, false));
     inst->Execute(nullptr);
@@ -303,7 +303,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
   template <typename T>
   T ComputeValue(int address) {
     T value = 0;
-    uint8_t *ptr = reinterpret_cast<uint8_t *>(&value);
+    uint8_t* ptr = reinterpret_cast<uint8_t*>(&value);
     for (int j = 0; j < sizeof(T); j++) {
       ptr[j] = (address + j) & 0xff;
     }
@@ -815,7 +815,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
         reg_span[i] = static_cast<T>(reg * reg_span.size() + i + 1);
       }
     }
-    auto *clear_mem_db = state_->db_factory()->Allocate<T>(0x8000);
+    auto* clear_mem_db = state_->db_factory()->Allocate<T>(0x8000);
     memset(clear_mem_db->raw_ptr(), 0, 0x8000);
     // Iterate over different lmul values.
     for (int lmul_index = 0; lmul_index < 7; lmul_index++) {
@@ -833,7 +833,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
         instruction_->Execute(nullptr);
 
         // Check memory values.
-        auto *data_db = state_->db_factory()->Allocate<T>(1);
+        auto* data_db = state_->db_factory()->Allocate<T>(1);
         uint64_t base = kDataStoreAddress;
         T value = 1;
         for (int i = 0; i < 8 * kVectorLengthInBytes / sizeof(T); i++) {
@@ -883,7 +883,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
       }
     }
 
-    auto *data_db = state_->db_factory()->Allocate<ValueType>(1);
+    auto* data_db = state_->db_factory()->Allocate<ValueType>(1);
     // Iterate over different lmul values.
     for (int lmul_index = 0; lmul_index < 7; lmul_index++) {
       // Configure vector unit.
@@ -976,7 +976,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
 
     int num_values_per_register = kVectorLengthInBytes / sizeof(T);
     // Can load all the data in one load, so set the data_db size accordingly.
-    auto *data_db =
+    auto* data_db =
         state_->db_factory()->Allocate<uint8_t>(kVectorLengthInBytes * 8);
     // Iterate over legal values in the nf field.
     for (int nf = 1; nf < 8; nf++) {
@@ -1089,7 +1089,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
 
     int num_values_per_register = kVectorLengthInBytes / sizeof(T);
 
-    auto *data_db = state_->db_factory()->Allocate<T>(1);
+    auto* data_db = state_->db_factory()->Allocate<T>(1);
     // Iterate over legal values in the nf field.
     for (int nf = 1; nf < 8; nf++) {
       int num_fields = nf + 1;
@@ -1211,7 +1211,7 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
     int index_values_per_reg = kVectorLengthInBytes / sizeof(IndexType);
     int num_values_per_register = kVectorLengthInBytes / sizeof(T);
 
-    auto *data_db = state_->db_factory()->Allocate<T>(1);
+    auto* data_db = state_->db_factory()->Allocate<T>(1);
     // Iterate over legal values in the nf field.
     for (int num_fields = 1; num_fields < 8; num_fields++) {
       // Set the number of fields in the source operand.
@@ -1341,13 +1341,13 @@ class RiscVCheriotVInstructionsTest : public testing::Test {
   }
 
  protected:
-  CheriotRegister *creg_[32];
-  RVVectorRegister *vreg_[32];
-  CheriotState *state_;
-  Instruction *instruction_;
-  Instruction *child_instruction_;
-  TaggedFlatDemandMemory *memory_;
-  CheriotVectorState *rv_vector_;
+  CheriotRegister* creg_[32];
+  RVVectorRegister* vreg_[32];
+  CheriotState* state_;
+  Instruction* instruction_;
+  Instruction* child_instruction_;
+  TaggedFlatDemandMemory* memory_;
+  CheriotVectorState* rv_vector_;
 };
 
 // Test the vector configuration set instructions. There are three separate
@@ -1798,7 +1798,7 @@ TEST_F(RiscVCheriotVInstructionsTest, Vsm) {
 
   // Verify result.
   EXPECT_FALSE(rv_vector_->vector_exception());
-  auto *data_db = state_->db_factory()->Allocate<uint8_t>(kVectorLengthInBytes);
+  auto* data_db = state_->db_factory()->Allocate<uint8_t>(kVectorLengthInBytes);
   state_->DbgLoadMemory(kDataStoreAddress, data_db);
   auto span = data_db->Get<uint8_t>();
   for (int i = 0; i < kVectorLengthInBytes; i++) {
