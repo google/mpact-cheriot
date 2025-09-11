@@ -933,6 +933,7 @@ absl::StatusOr<Instruction*> CheriotTop::GetInstruction(uint64_t address) {
   if (inst_swap) {
     (void)rv_ap_manager_->ap_memory_interface()->WriteOriginalInstruction(
         address);
+    cheriot_decode_cache_->Invalidate(address);
   }
   // Get the decoded instruction.
   Instruction* inst = cheriot_decode_cache_->GetDecodedInstruction(address);
