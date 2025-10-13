@@ -146,7 +146,7 @@ class CheriotRenode : public util::renode::RenodeDebugInterface {
  private:
   std::string name_;
   MemoryInterface* renode_sysbus_ = nullptr;
-  TaggedMemoryInterface* data_memory_ = nullptr;
+  [[maybe_unused]] TaggedMemoryInterface* data_memory_ = nullptr;
   TaggedMemoryInterface* tagged_sysbus_ = nullptr;
   CheriotState* cheriot_state_ = nullptr;
   DecoderInterface* cheriot_decoder_ = nullptr;

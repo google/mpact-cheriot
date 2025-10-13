@@ -350,7 +350,7 @@ absl::Status CheriotRenode::SetConfig(const char* config_names[],
   std::string dcache_cfg;
   uint64_t tagged_memory_base = 0;
   uint64_t tagged_memory_size = 0;
-  uint64_t revocation_memory_base = 0;
+  [[maybe_unused]] uint64_t revocation_memory_base = 0;
   uint64_t clint_mmr_base = 0;
   uint64_t clint_period = 100;  // 100 by default.
   bool do_inst_profile = false;
