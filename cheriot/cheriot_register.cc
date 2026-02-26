@@ -213,7 +213,7 @@ void CheriotRegister::SetBoundsRoundDown(uint32_t req_base,
   // representable length for the exponent, and if so, set the length to the
   // maximum representable length. Otherwise, perform any rounding down of the
   // length that may be required based on the exponent.
-  if (req_length > 511 * (1ULL << exp)) {
+  if ((req_length >> exp) >= 512) {
     new_length = 511 * (1ULL << exp);
   } else {
     new_length = (req_length >> exp) << exp;
