@@ -14,6 +14,7 @@
 
 #include "cheriot/cheriot_register.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -184,6 +185,45 @@ bool CheriotRegister::SetBounds(uint32_t req_base, uint64_t req_length) {
   // If the length and the base are the same as requested, the bounds were
   // set exactly.
   return (req_base == new_base) && (new_length == req_length);
+}
+
+void CheriotRegister::SetBoundsRoundDown(uint32_t req_base,
+                                         uint64_t req_length) {
+  if (is_null_) {
+    Expand(address(), 0, /*tag=*/false);
+    is_null_ = false;
+  }
+  // If the requested length is 0, set the base and top to the requested base.
+  if (req_length == 0) {
+    set_base(req_base);
+    set_top(req_base);
+    exponent_ = 0;
+    raw_ = Compress();
+    return;
+  }
+  // Compute the exponent that will be used. Note, the largest exponent is 14.
+  uint64_t ext_base = req_base;
+  uint32_t trunc_length = static_cast<uint32_t>(req_length);
+  uint32_t exp_l = 31 - absl::countl_zero(trunc_length);
+  uint32_t exp_b = absl::countr_zero(ext_base);
+  uint32_t exp = std::min(14u, std::min(exp_l, exp_b));
+  // Reduce the requested length to the nearest representable length.
+  uint64_t new_length;
+  // First check if the requested length is larger than the maximum
+  // representable length for the exponent, and if so, set the length to the
+  // maximum representable length. Otherwise, perform any rounding down of the
+  // length that may be required based on the exponent.
+  if (req_length > 511 * (1ULL << exp)) {
+    new_length = 511 * (1ULL << exp);
+  } else {
+    new_length = (req_length >> exp) << exp;
+  }
+  // Recompute the top based on the rounded length.
+  uint64_t new_top = req_base + new_length;
+  set_base(req_base);
+  set_top(new_top);
+  exponent_ = exp;
+  raw_ = Compress();
 }
 
 std::pair<uint32_t, uint64_t> CheriotRegister::ComputeBounds() {

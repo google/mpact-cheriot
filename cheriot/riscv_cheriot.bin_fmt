@@ -249,6 +249,7 @@ instruction group RiscVCheriotInst32[32] : Inst32Format {
   cheriot_setaddr        : RType : func7 == 0x10, func3 == 0, opcode == 0x5b;
   cheriot_setbounds      : RType : func7 == 0x08, func3 == 0, opcode == 0x5b;
   cheriot_setboundsexact : RType : func7 == 0x09, func3 == 0, opcode == 0x5b;
+  cheriot_setboundsrounddown: RType : func7 == 0x0a, func3 == 0, opcode == 0x5b;
   cheriot_setboundsimm   : IType : func3 == 0x02, opcode == 0x5b;
   cheriot_setequalexact  : RType : func7 == 0x21, func3 == 0, opcode == 0x5b;
   cheriot_sethigh        : RType : func7 == 0x16, func3 == 0, opcode == 0x5b;
@@ -455,21 +456,21 @@ instruction group RiscVCheriotInst16[16] : Inst16Format {
   csw       : CS : func3 == 0b110, op == 0b00;
   csc       : CS : func3 == 0b111, op == 0b00;
   cnop      : CI : func3 == 0b000, imm1 == 0, rs1 == 0, imm5 == 0, op == 0b01;
-  chint     : CI : func3 == 0b000, imm6 != 0, rs1 == 0, op == 0b01;
+  !chint     : CI : func3 == 0b000, imm6 != 0, rs1 == 0, op == 0b01;
   caddi     : CI : func3 == 0b000, imm6 != 0, rd != 0, op == 0b01;
-  chint     : CI : func3 == 0b000, imm6 == 0, rd != 0, op == 0b01;
+  !chint     : CI : func3 == 0b000, imm6 == 0, rd != 0, op == 0b01;
   cli       : CI : func3 == 0b010, rd != 0, op == 0b01;
-  chint     : CI : func3 == 0b010, rd == 0, op == 0b01;
+  !chint     : CI : func3 == 0b010, rd == 0, op == 0b01;
   caddi16sp : CI : func3 == 0b011, ci_imm10 != 0, rd == 2, op == 0b01;
   clui      : CI : func3 == 0b011, rd != 0, rd != 2, imm18 != 0, op == 0b01;
-  chint     : CI : func3 == 0b011, rd == 0, imm18 != 0, op == 0b01;
+  !chint     : CI : func3 == 0b011, rd == 0, imm18 != 0, op == 0b01;
   // TODO(torerik): The following two instructions should have imm1 == 0  and 
   // imm5 != 0 instead of imm6 != 0 in the constraints, but that has been 
   // temporarily removed so as to make it easier to verify in TestRIG 
   csrli     : CSH : func3 == 0b100, op2 == 0b00, uimm6 != 0, op == 0b01;
-  chint     : CSH : func3 == 0b100, op2 == 0b00, uimm6 == 0, op == 0b01;
+  !chint     : CSH : func3 == 0b100, op2 == 0b00, uimm6 == 0, op == 0b01;
   csrai     : CSH : func3 == 0b100, op2 == 0b01, uimm6 != 0, op == 0b01;
-  chint     : CSH : func3 == 0b100, op2 == 0b01, uimm6 == 0, op == 0b01;
+  !chint     : CSH : func3 == 0b100, op2 == 0b01, uimm6 == 0, op == 0b01;
   candi     : CSH : func3 == 0b100, op2 == 0b10, op == 0b01;
   csub      : CA : func6 == 0b100'011, func2 == 0b00, op == 0b01;
   cxor      : CA : func6 == 0b100'011, func2 == 0b01, op == 0b01;
@@ -478,14 +479,14 @@ instruction group RiscVCheriotInst16[16] : Inst16Format {
   cbeqz     : CB : func3 == 0b110, op == 0b01;
   cbnez     : CB : func3 == 0b111, op == 0b01;
   cslli     : CI : func3 == 0b000, imm1 == 0, imm5 != 0, rs1 != 0, op == 0b10;
-  chint     : CI : func3 == 0b000, imm1 == 0, rs1 == 0, imm5 != 0, op == 0b10;
-  chint     : CI : func3 == 0b000, imm6 == 0, op == 0b10;
+  !chint     : CI : func3 == 0b000, imm1 == 0, rs1 == 0, imm5 != 0, op == 0b10;
+  !chint     : CI : func3 == 0b000, imm6 == 0, op == 0b10;
   clwsp     : CI : func3 == 0b010, rd != 0, op == 0b10;
   clcsp     : CI : func3 == 0b011, rd != 0, op == 0b10;
   cmv       : CR : func4 == 0b1000, rs1 != 0, rs2 != 0, op == 0b10;
   cebreak   : Inst16Format : func3 == 0b100, bits == 0b1'00000'00000, op == 0b10;
   cadd      : CR : func4 == 0b1001, rs1 != 0, rs2 != 0, op == 0b10;
-  chint     : CR : func4 == 0b1001, rs1 == 0, rs2 != 0, op == 0b10;
+  !chint     : CR : func4 == 0b1001, rs1 == 0, rs2 != 0, op == 0b10;
   cswsp     : CSS: func3 == 0b110, op == 0b10;
   cscsp     : CSS: func3 == 0b111, op == 0b10;
   cheriot_cj        : CJ : func3 == 0b101, op == 0b01;

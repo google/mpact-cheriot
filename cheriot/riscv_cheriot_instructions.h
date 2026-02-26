@@ -126,6 +126,10 @@ void CheriotCSetBounds(const Instruction* instruction);
 // source capability, source 1 is an integer value. Destination 0 is the
 // target capability.
 void CheriotCSetBoundsExact(const Instruction* instruction);
+// This takes 2 source operands and 1 destination operand. Source 0 is the
+// source capability, source 1 is an integer value. Destination 0 is the
+// target capability.
+void CheriotCSetBoundsRoundDown(const Instruction* instruction);
 // This takes 2 source operands and 1 destination operand. Sources 0 and 1
 // are capabilities. Destination 0 is an integer register.
 void CheriotCSetEqualExact(const Instruction* instruction);

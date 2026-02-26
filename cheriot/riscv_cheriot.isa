@@ -259,6 +259,9 @@ slot cheriot {
     cheriot_setboundsexact{: cs1, rs2 : cd},
       disasm: "csetboundsexact", "%cd, %cs1, %rs2",
       semfunc: "&CheriotCSetBoundsExact";
+    cheriot_setboundsrounddown{: cs1, rs2 : cd},
+      disasm: "csetboundsrounddown", "%cd, %cs1, %rs2",
+      semfunc: "&CheriotCSetBoundsRoundDown";
     cheriot_setboundsimm{: cs1, I_uimm12 : cd},
       disasm: "csetboundsimm", "%cd, %cs1, 0x%(I_uimm12:08x)",
       semfunc: "&CheriotCSetBounds";

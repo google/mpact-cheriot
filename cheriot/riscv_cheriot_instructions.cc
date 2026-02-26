@@ -589,6 +589,24 @@ void CheriotCSetBoundsExact(const Instruction* instruction) {
   if (!exact || !valid) cd->Invalidate();
 }
 
+void CheriotCSetBoundsRoundDown(const Instruction* instruction) {
+  auto* cs1 = GetCapSource(instruction, 0);
+  auto rs2 = generic::GetInstructionSource<uint32_t>(instruction, 1);
+  auto* cd = GetCapDest(instruction, 0);
+  bool valid = true;
+  auto cs1_address = cs1->address();
+  // If cs1 is sealed, then invalidate the capability.
+  if (cs1->IsSealed()) valid = false;
+  // If outside the requested representable range, invalidate.
+  auto [cs1_base, cs1_top] = cs1->ComputeBounds();
+  auto new_top =
+      static_cast<uint64_t>(cs1_address) + static_cast<uint64_t>(rs2);
+  valid &= (cs1_address >= cs1_base) && (new_top <= cs1_top);
+  cd->CopyFrom(*cs1);
+  cd->SetBoundsRoundDown(cs1_address, rs2);
+  if (!valid) cd->Invalidate();
+}
+
 void CheriotCSetEqualExact(const Instruction* instruction) {
   auto* cs1 = GetCapSource(instruction, 0);
   auto* cs2 = GetCapSource(instruction, 1);

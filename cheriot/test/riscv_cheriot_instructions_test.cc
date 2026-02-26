@@ -77,6 +77,7 @@ using ::mpact::sim::cheriot::CheriotCSeal;
 using ::mpact::sim::cheriot::CheriotCSetAddr;
 using ::mpact::sim::cheriot::CheriotCSetBounds;
 using ::mpact::sim::cheriot::CheriotCSetBoundsExact;
+using ::mpact::sim::cheriot::CheriotCSetBoundsRoundDown;
 using ::mpact::sim::cheriot::CheriotCSetEqualExact;
 using ::mpact::sim::cheriot::CheriotCSetHigh;
 using ::mpact::sim::cheriot::CheriotCSpecialR;
@@ -1572,6 +1573,42 @@ TEST_F(RiscVCheriotInstructionsTest, CSetBounds) {
   inst()->Execute(nullptr);
   EXPECT_EQ(c3_reg()->base(), kMemAddress);
   EXPECT_EQ(c3_reg()->length(), 0x100);
+  EXPECT_FALSE(c3_reg()->tag());
+}
+
+TEST_F(RiscVCheriotInstructionsTest, CSetBoundsRoundDown) {
+  inst()->set_semantic_function(&CheriotCSetBoundsRoundDown);
+  AppendCapabilityOperands(inst(), {kC1, kC2}, {kC3});
+  c1_reg()->ResetMemoryRoot();
+  // Set the requested new base.
+  uint32_t base = kMemAddress << 10;
+  c1_reg()->set_address(base);
+  for (uint32_t len = 1; len < 0x8000'0000; len <<= 1) {
+    // Set the requested new length.
+    c2_reg()->set_address(len);
+    inst()->Execute(nullptr);
+    // The bounds will be no larger than requested.
+    EXPECT_EQ(c3_reg()->base(), base);
+    EXPECT_LE(c3_reg()->length(), len);
+    EXPECT_TRUE(c3_reg()->tag());
+  }
+  // Request length outside the capability.
+  c1_reg()->SetBounds(kMemAddress, 0x200);
+  c1_reg()->set_address(base);
+  c2_reg()->set_address(0x400);
+  inst()->Execute(nullptr);
+  EXPECT_EQ(c3_reg()->base(), base);
+  EXPECT_EQ(c3_reg()->length(), 0x400);
+  EXPECT_FALSE(c3_reg()->tag());
+  // Sealed capability.
+  c1_reg()->ResetMemoryRoot();
+  EXPECT_TRUE(c1_reg()->Seal(*(state()->sealing_root()), kDataSeal10).ok());
+  c1_reg()->SetBounds(kMemAddress, 0x800);
+  c1_reg()->set_address(base);
+  c2_reg()->set_address(0x400);
+  inst()->Execute(nullptr);
+  EXPECT_EQ(c3_reg()->base(), base);
+  EXPECT_EQ(c3_reg()->length(), 0x400);
   EXPECT_FALSE(c3_reg()->tag());
 }
 

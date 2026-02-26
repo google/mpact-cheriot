@@ -156,6 +156,9 @@ class CheriotRegister : public generic::Register<uint32_t> {
   // Set bounds, return true if they're precise, i.e., that the base and length
   // do not have to be rounded, false otherwise.
   bool SetBounds(uint32_t req_base, uint64_t req_length);
+  // Set bounds, but make sure the length is set to the largest value less than
+  // or equal to the requested length that preserves the alignment of the base.
+  void SetBoundsRoundDown(uint32_t req_base, uint64_t req_length);
   // Return true if the address is in bounds of the capability.
   bool IsInBounds(uint32_t cap_address, uint32_t size) const {
     return (cap_address >= base()) &&
