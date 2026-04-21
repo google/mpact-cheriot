@@ -251,6 +251,11 @@ class DebugCommandShell : public DebugCommandShellInterface {
   std::vector<absl::btree_map<int, ActionPointInfo>> core_action_point_info_;
   std::vector<int> core_action_point_id_;
   std::vector<InterruptListener*> interrupt_listeners_;
+
+  static constexpr absl::string_view kTextColor = "\033[38;5;58m";
+  static constexpr absl::string_view kSymbolColor = "\033[38;5;21m";
+  static constexpr absl::string_view kValueColor = "\033[38;5;27m";
+  static constexpr absl::string_view kDefaultColor = "\033[0m";
 };
 
 }  // namespace cheriot

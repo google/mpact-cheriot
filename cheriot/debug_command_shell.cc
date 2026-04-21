@@ -15,6 +15,7 @@
 #include "cheriot/debug_command_shell.h"
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <functional>
@@ -39,6 +40,7 @@
 #include "cheriot/cheriot_top.h"
 #include "cheriot/riscv_cheriot_enums.h"
 #include "cheriot/riscv_cheriot_register_aliases.h"
+#include "linenoise.h"
 #include "mpact/sim/generic/core_debug_interface.h"
 #include "mpact/sim/generic/data_buffer.h"
 #include "mpact/sim/generic/instruction.h"
@@ -261,11 +263,12 @@ void DebugCommandShell::Run(std::istream& is, std::ostream& os) {
   absl::string_view line_view;
   bool halt_reason = false;
   int last_info_list_size = 0;
+  linenoiseHistorySetMaxLen(1000);
   while (true) {
     // Prompt and read in the next command.
     auto pcc_result =
         core_access_[current_core_].debug_interface->ReadRegister("pcc");
-    std::string prompt;
+    std::string pre_prompt;
     if (halt_reason) {
       halt_reason = false;
       auto result =
@@ -273,49 +276,53 @@ void DebugCommandShell::Run(std::istream& is, std::ostream& os) {
       if (result.ok()) {
         switch (result.value()) {
           case *HaltReason::kSoftwareBreakpoint:
-            absl::StrAppend(&prompt, "Stopped at software breakpoint\n");
+            absl::StrAppend(&pre_prompt, "Stopped at software breakpoint\n");
             break;
           case *HaltReason::kUserRequest:
-            absl::StrAppend(&prompt, "Stopped at user request\n");
+            absl::StrAppend(&pre_prompt, "Stopped at user request\n");
             break;
           case *HaltReason::kDataWatchPoint:
-            absl::StrAppend(&prompt, "Stopped at data watchpoint\n");
+            absl::StrAppend(&pre_prompt, "Stopped at data watchpoint\n");
             break;
           case InterruptListener::kInterruptTaken:
-            absl::StrAppend(&prompt, "Stopped at taken interrupt\n");
+            absl::StrAppend(&pre_prompt, "Stopped at taken interrupt\n");
             break;
           case InterruptListener::kInterruptReturn:
-            absl::StrAppend(&prompt,
+            absl::StrAppend(&pre_prompt,
                             "Stopped at return from interrupt handler\n");
             break;
           case InterruptListener::kExceptionTaken:
-            absl::StrAppend(&prompt, "Stopped at exception\n");
+            absl::StrAppend(&pre_prompt, "Stopped at exception\n");
             break;
           case InterruptListener::kExceptionReturn:
-            absl::StrAppend(&prompt, "Stopped at return exception handler\n");
+            absl::StrAppend(&pre_prompt,
+                            "Stopped at return exception handler\n");
             break;
           case *HaltReason::kProgramDone:
-            absl::StrAppend(&prompt, "Program done\n");
+            absl::StrAppend(&pre_prompt, "Program done\n");
             break;
           default:
             if ((result.value() >= *HaltReason::kUserSpecifiedMin) &&
                 (result.value() <= *HaltReason::kUserSpecifiedMax)) {
-              absl::StrAppend(&prompt, "Stopped for custom halt reason\n");
+              absl::StrAppend(&pre_prompt, "Stopped for custom halt reason\n");
             }
             break;
         }
       }
     }
+    std::string prompt;
     if (pcc_result.ok()) {
       auto* loader = core_access_[current_core_].loader_getter();
       if (loader != nullptr) {
         auto fcn_result = loader->GetFunctionName(pcc_result.value());
         if (fcn_result.ok()) {
-          absl::StrAppend(&prompt, "[", fcn_result.value(), "]:\n");
+          absl::StrAppend(&pre_prompt, kSymbolColor, "[", fcn_result.value(),
+                          "]:\n", kDefaultColor);
         }
         auto symbol_result = loader->GetFcnSymbolName(pcc_result.value());
         if (symbol_result.ok()) {
-          absl::StrAppend(&prompt, symbol_result.value(), ":\n");
+          absl::StrAppend(&pre_prompt, kSymbolColor, symbol_result.value(),
+                          ":\n", kDefaultColor);
         }
       }
       absl::StrAppend(&prompt,
@@ -324,9 +331,10 @@ void DebugCommandShell::Run(std::istream& is, std::ostream& os) {
           core_access_[current_core_].debug_interface->GetDisassembly(
               pcc_result.value());
       if (disasm_result.ok()) {
-        absl::StrAppend(&prompt, "   ", disasm_result.value());
+        absl::StrAppend(&pre_prompt, "   ", kTextColor, disasm_result.value(),
+                        kDefaultColor);
       }
-      absl::StrAppend(&prompt, "\n");
+      absl::StrAppend(&pre_prompt, "\n");
     }
     auto cheriot_state =
         static_cast<CheriotState*>(core_access_[current_core_].state);
@@ -334,12 +342,15 @@ void DebugCommandShell::Run(std::istream& is, std::ostream& os) {
     // Check if there is a new interrupt, if so print the info.
     if (info_list.size() > last_info_list_size) {
       auto const& info = *info_list.rbegin();
-      absl::StrAppend(&prompt, info.is_interrupt ? "interrupt " : "exception ",
+      absl::StrAppend(&pre_prompt,
+                      info.is_interrupt ? "interrupt " : "exception ",
                       info.is_interrupt ? GetInterruptDescription(info)
                                         : GetExceptionDescription(info));
     }
     last_info_list_size = info_list.size();
-    absl::StrAppend(&prompt, "[", current_core_, "] > ");
+
+    if (!pre_prompt.empty()) absl::StrAppend(&pre_prompt, "\n");
+    absl::StrAppend(&prompt, " [", current_core_, "] > ");
     while (!command_streams_.empty()) {
       auto& current_is = *command_streams_.back();
       // Ignore comments or empty lines.
@@ -347,8 +358,18 @@ void DebugCommandShell::Run(std::istream& is, std::ostream& os) {
       // Read a command from the input stream. If it's from a file, then ignore
       // empty lines and comments.
       do {
-        if (command_streams_.size() == 1) os << prompt;
-        current_is.getline(line, kLineSize);
+        if (command_streams_.size() == 1) {
+          os << pre_prompt;
+          char* line_c = linenoise(prompt.c_str());
+          if (line_c != nullptr) {
+            absl::SNPrintF(line, kLineSize, "%s", line_c);
+            free(line_c);
+          } else {
+            line[0] = '\0';
+          }
+        } else {
+          current_is.getline(line, kLineSize);
+        }
       } while ((is_file && RE2::FullMatch(line, *empty_re_)) &&
                !current_is.bad() && !current_is.eof());
 
@@ -378,6 +399,7 @@ void DebugCommandShell::Run(std::istream& is, std::ostream& os) {
 
     if (line[0] != '\0') {
       previous_line = line;
+      linenoiseHistoryAdd(line);
     }
     line_view = absl::string_view(previous_line);
 
@@ -1638,11 +1660,12 @@ std::string DebugCommandShell::FormatCapabilityRegister(
                    values[6] & PB::kPermitUnseal ? "U" : "-",
                    values[6] & PB::kUserPerm0 ? "0" : "-");
   absl::StrAppend(
-      &output,
+      &output, kValueColor,
       absl::StrFormat(
           "%-5s = 0x%08x (v: %1x 0x%08x-0x%09x l: 0x%09x o: 0x%x p: %s)",
           reg_name, values[0], values[1], values[2], values[3], values[4],
-          obj_type, permissions));
+          obj_type, permissions),
+      kDefaultColor);
   return output;
 }
 
@@ -1660,7 +1683,8 @@ std::string DebugCommandShell::FormatRegister(
   auto result =
       core_access_[current_core_].debug_interface->ReadRegister(reg_name);
   if (result.ok()) {
-    absl::StrAppend(&output, reg_name, " = ", absl::Hex(result.value()));
+    absl::StrAppend(&output, kValueColor, reg_name, " = ",
+                    absl::Hex(result.value()), kDefaultColor);
   } else {
     absl::StrAppend(&output, "Error reading '", reg_name,
                     "': ", result.status().message());

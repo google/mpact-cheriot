@@ -195,7 +195,7 @@ void CreateCsrs(CheriotState* state, std::vector<RiscVCsrInterface*>& csr_vec) {
 
   // minstret/minstreth
   auto* minstret = CreateCsr<RiscVCounterCsr<T, CheriotState>>(
-      state, csr_vec, "minstret", RiscVCsrEnum ::kMInstret, state);
+      state, csr_vec, "minstret", RiscVCsrEnum::kMInstret, state);
   CHECK_NE(minstret, nullptr);
   auto minstreth = CreateCsr<RiscVCounterCsrHigh<CheriotState>>(
       state, csr_vec, "minstreth", RiscVCsrEnum::kMInstretH, state,
@@ -237,7 +237,7 @@ void CreateCsrs(CheriotState* state, std::vector<RiscVCsrInterface*>& csr_vec) {
   // User level CSRs
   // instret/instreth
   CHECK_NE(CreateCsr<RiscVShadowCsr<T>>(
-               state, csr_vec, "instret", RiscVCsrEnum ::kInstret,
+               state, csr_vec, "instret", RiscVCsrEnum::kInstret,
                std::numeric_limits<T>::max(), 0, state, minstret),
            nullptr);
   CHECK_NE(CreateCsr<RiscVShadowCsr<T>>(
