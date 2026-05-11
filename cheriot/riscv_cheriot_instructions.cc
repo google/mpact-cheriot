@@ -16,6 +16,7 @@
 
 #include <any>
 #include <cstdint>
+#include <iostream>
 #include <type_traits>
 
 #include "absl/log/log.h"
@@ -147,7 +148,6 @@ void CheriotCGetTag(const Instruction* instruction) {
 void CheriotCGetTop(const Instruction* instruction) {
   auto* cs1 = GetCapSource(instruction, 0);
   auto [unused, top] = cs1->ComputeBounds();
-  // auto top = cs1->top();
   if (top == 0x1'0000'0000ULL) {
     top = 0xffff'ffff;
   }

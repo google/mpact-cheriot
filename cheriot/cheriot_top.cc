@@ -17,10 +17,12 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <iostream>
 #include <string>
 #include <thread>  // NOLINT: third party code.
 #include <utility>
 
+#include "absl/flags/flag.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
@@ -53,6 +55,8 @@
 #include "riscv//riscv_action_point_memory_interface.h"
 #include "riscv//riscv_csr.h"
 #include "riscv//riscv_register.h"
+
+ABSL_FLAG(bool, trace, false, "Enables instruction tracing.");
 
 namespace mpact {
 namespace sim {
@@ -229,9 +233,9 @@ bool CheriotTop::ExecuteInstruction(Instruction* inst) {
   // Execute the instruction.
   inst->Execute(nullptr);
   counter_pc_.SetValue(inst->address());
-  // Comment out instruction logging during execution.
-  // LOG(INFO) << "[" << std::hex << inst->address() << "] " <<
-  // inst->AsString();
+  if (absl::GetFlag(FLAGS_trace)) {
+    LOG(INFO) << "[" << std::hex << inst->address() << "] " << inst->AsString();
+  }
   return true;
 }
 

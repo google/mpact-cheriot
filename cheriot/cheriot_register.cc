@@ -204,7 +204,7 @@ void CheriotRegister::SetBoundsRoundDown(uint32_t req_base,
   // Compute the exponent that will be used. Note, the largest exponent is 14.
   uint64_t ext_base = req_base;
   uint32_t trunc_length = static_cast<uint32_t>(req_length);
-  uint32_t exp_l = 31 - absl::countl_zero(trunc_length);
+  uint32_t exp_l = 23 - absl::countl_zero(trunc_length | 0x1ff);
   uint32_t exp_b = absl::countr_zero(ext_base);
   uint32_t exp = std::min(14u, std::min(exp_l, exp_b));
   // Reduce the requested length to the nearest representable length.
@@ -232,6 +232,8 @@ std::pair<uint32_t, uint64_t> CheriotRegister::ComputeBounds() {
   }
   uint64_t base_bits = raw_ & 0x1ff;
   uint64_t top_bits = (raw_ >> 9) & 0x1ff;
+  uint64_t exp = (raw_ >> 18) & 0xf;
+  if (exp == 15) exp = 24;
   uint64_t a_mid = (address() >> exponent_) & 0x1ff;
   uint64_t a_hi = (a_mid < base_bits ? 1 : 0);
   uint64_t t_hi = top_bits < base_bits ? 1 : 0;
