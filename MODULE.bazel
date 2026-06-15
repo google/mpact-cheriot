@@ -14,17 +14,17 @@
 
 module(
     name = "mpact-cheriot",
-    version = "1.0.0",
+    version = "1.0.2",
 )
 
 # Core Dependencies
 bazel_dep(
     name = "mpact-sim",
-    version = "1.0.0",
+    version = "1.0.2",
 )
 bazel_dep(
     name = "mpact-riscv",
-    version = "1.0.0",
+    version = "1.0.1",
 )
 bazel_dep(
     name = "abseil-cpp",
